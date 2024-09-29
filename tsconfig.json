@@ -1,0 +1,24 @@
+{
+  "compilerOptions": {
+    /* Language and Environment */
+    "target": "es2016",
+    /* Modules */
+    "module": "commonjs",
+    "rootDir": "./src", // Ensure root directory is correct
+    "outDir": "./dist", // Output directory for compiled files
+    "esModuleInterop": true,
+    "forceConsistentCasingInFileNames": true,
+    /* Type Checking */
+    "strict": true,
+    "noImplicitAny": true,
+    "strictNullChecks": true,
+    "skipLibCheck": true
+  },
+  "include": [
+    "src/**/*.ts"
+  ], // Ensure only .ts files are included
+  "exclude": [
+    "dist",
+    "node_modules"
+  ] // Exclude 'dist' and 'node_modules'
+}

@@ -1,0 +1,18 @@
+# Ignore ENV files
+*.env*
+
+# Ignore Package lock files
+*lock.json*
+
+# Ignore build outputs
+/dist
+/out
+
+# Ignore TypeScript incremental build information
+tsconfig.tsbuildinfo
+
+# Node modules
+node_modules
+
+# Logs and temporary files
+*.log
