@@ -1,20 +1,28 @@
 import axiosSimPRO from "../config/axiosSimProConfig";
 import { SimproCompanyType } from "../types/types";
 
-export const fetchSimproPaginatedData = async (url: string, columns: string): Promise<SimproCompanyType[]> => {
+export const fetchSimproPaginatedData = async (url: string, columns: string, ifModifiedSinceHeader: string): Promise<SimproCompanyType[]> => {
     try {
         let pageNum: number = 1;
         let allCustomers: SimproCompanyType[] = [];
         let totalPages: number = 1;
 
         do {
-            const response = await axiosSimPRO.get(url, {
+            const requestOptions: any = {
                 params: {
                     page: pageNum,
                     search: 'any',
                     columns: columns,
                 }
-            });
+            };
+
+            if (ifModifiedSinceHeader) {
+                requestOptions.headers = {
+                    'If-Modified-Since': ifModifiedSinceHeader
+                };
+            }
+
+            const response = await axiosSimPRO.get(url, requestOptions);
 
             const customers = response.data;
             if (!customers || customers.length === 0) {

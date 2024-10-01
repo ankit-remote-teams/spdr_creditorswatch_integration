@@ -2,33 +2,45 @@ import { Request, Response } from 'express-serve-static-core';
 import axiosSimPRO from '../config/axiosSimProConfig';
 import axiosCreditorsWatch from '../config/axiosCreditorsWatchConfig';
 import { AxiosError } from 'axios';
-import { CreditorsWatchContactType, SimproCompanyType } from '../types/types';
+import { CreditorsWatchContactType, MappingType, SimproCompanyType } from '../types/types';
 import { chunkArray } from '../utils/helper';
 import { fetchSimproPaginatedData } from '../services/simproService';
 import { transformToCreditorWatchArray } from '../utils/transformDataHelper';
-
-const CHUNK_SIZE = 5;
+import ContactMappingModel from '../models/contactMappingModel';
+import { creditorsWatchPostWithRetry } from '../utils/apiUtils';
 
 
 
 // Controller to handle syncing contact data
 export const syncInitialSimproContactData = async (req: Request, res: Response): Promise<void> => {
     try {
-        let simproCustomerResponse = await fetchSimproPaginatedData('/customers/companies/', "ID,CompanyName,Email,Archived,EIN,Phone,AltPhone")
+        let simproCustomerResponse = await fetchSimproPaginatedData('/customers/companies/?Archived=false', "ID,CompanyName,Email,Archived,EIN,Phone,AltPhone", "")
         let simproCustomerResponseArr: SimproCompanyType[] = simproCustomerResponse || [];
 
-        // Transform data from Simpro to CreditorsWatch format
-        const creditorWatchDataArray: CreditorsWatchContactType[] = transformToCreditorWatchArray('Simpro', simproCustomerResponseArr);
-
-
-        // Write logic to insert or update data in CreditorsWatch  from simpro 
-        const chunkedArray = chunkArray(creditorWatchDataArray, CHUNK_SIZE);
-
-
-        for (const chunk of chunkedArray) {
+        // Transform data to CreditorsWatch format and chunk it
+        let creditorWatchDataArray: CreditorsWatchContactType[] = transformToCreditorWatchArray('Simpro', simproCustomerResponseArr);
+        for (const row of creditorWatchDataArray) {
             try {
-                const response = await axiosCreditorsWatch.post('/contacts', chunk);
-                console.log(`Successfully synced ${chunk.length} contacts to CreditorsWatch. Response: ${JSON.stringify(response.data)}`);
+                const response = await creditorsWatchPostWithRetry('/contacts', { contact: { ...row } });
+                if (!response) {
+                    console.error('Failed to sync contact data after multiple attempts.');
+                    continue;
+                }
+
+                let creditorWatchContactData = response?.data?.contact;
+                if (!creditorWatchContactData) {
+                    console.error('Data unavailable to create mapping.');
+                    continue;
+                }
+
+                let newMapping: MappingType = {
+                    simproId: creditorWatchContactData.external_id,
+                    creditorsWatchId: String(creditorWatchContactData.id),
+                    lastSyncedAt: new Date(),
+                };
+
+                let savedMapping = await ContactMappingModel.create(newMapping);
+                console.log('Mapping created:', savedMapping);
             } catch (error) {
                 if (error instanceof AxiosError) {
                     console.error('Error syncing contact data:', error.response?.data || error.message);
@@ -40,14 +52,7 @@ export const syncInitialSimproContactData = async (req: Request, res: Response):
             }
         }
 
-
-
-
-
-        res.json({
-            message: 'Syncing contact data...',
-            customerData: simproCustomerResponseArr
-        });
+        res.status(200).json({ message: "Synced data successfully", data: creditorWatchDataArray })
     } catch (error) {
         if (error instanceof AxiosError) {
             console.error('Error syncing contact data:', error.response?.data || error.message);

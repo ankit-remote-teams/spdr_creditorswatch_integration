@@ -1,3 +1,5 @@
+import { Document } from "mongoose";
+
 export type CreditorsWatchContactType = {
     id?: number;
     external_id: string;
@@ -22,3 +24,20 @@ export type SimproCompanyType = {
     Phone: string;
     AltPhone: string;
 };
+
+export type MappingType = {
+    _id?: string,
+    simproId: string;
+    creditorsWatchId: string;
+    lastSyncedAt: Date;
+    createdAt?: Date;
+    updatedAt?: Date;
+}
+
+export interface IMapping extends Document {
+    simproId: string;
+    creditorsWatchId: string;
+    lastSyncedAt: Date;
+    createdAt: Date;
+    updatedAt: Date;
+}
