@@ -5,7 +5,7 @@ import { AxiosError } from 'axios';
 import { CreditorsWatchContactType, MappingType, SimproCompanyType } from '../types/types';
 import { chunkArray } from '../utils/helper';
 import { fetchSimproPaginatedData } from '../services/simproService';
-import { transformToCreditorWatchArray } from '../utils/transformDataHelper';
+import { transformContactDataToCreditorsWatchArray } from '../utils/transformDataHelper';
 import ContactMappingModel from '../models/contactMappingModel';
 import { creditorsWatchPostWithRetry } from '../utils/apiUtils';
 
@@ -18,8 +18,8 @@ export const syncInitialSimproContactData = async (req: Request, res: Response):
         let simproCustomerResponseArr: SimproCompanyType[] = simproCustomerResponse || [];
 
         // Transform data to CreditorsWatch format and chunk it
-        let creditorWatchDataArray: CreditorsWatchContactType[] = transformToCreditorWatchArray('Simpro', simproCustomerResponseArr);
-        for (const row of creditorWatchDataArray) {
+        let creditorWatchContactDataArray: CreditorsWatchContactType[] = transformContactDataToCreditorsWatchArray('Simpro', simproCustomerResponseArr);
+        for (const row of creditorWatchContactDataArray) {
             try {
                 const response = await creditorsWatchPostWithRetry('/contacts', { contact: { ...row } });
                 if (!response) {
@@ -52,7 +52,7 @@ export const syncInitialSimproContactData = async (req: Request, res: Response):
             }
         }
 
-        res.status(200).json({ message: "Synced data successfully", data: creditorWatchDataArray })
+        res.status(200).json({ message: "Synced data successfully", data: creditorWatchContactDataArray })
     } catch (error) {
         if (error instanceof AxiosError) {
             console.error('Error syncing contact data:', error.response?.data || error.message);

@@ -41,3 +41,20 @@ export interface IMapping extends Document {
     createdAt: Date;
     updatedAt: Date;
 }
+
+
+export type CreditorsWatchInvoiceType = {
+    id?: number;
+    external_id: string,
+    external_contact_id: string,
+    status: string,
+    invoice_number: string,
+    currency_code: string,
+    currency_rate: string,
+    amount_due: number,
+    amount_paid: number,
+    total_amount: number,
+    invoice_date: string,
+    due_date: string,
+    paid_date: string | null,
+}
