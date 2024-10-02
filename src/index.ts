@@ -8,14 +8,14 @@ const app = express();
 const PORT: number = parseInt(process.env.PORT as string, 10) || 6001;
 
 // For Dev
-if (process.env.NODE_ENV === 'development') {
-    const cronJobs = [
-        './cron/createUpdateContactsDataScheduler.ts',
-    ];
-    cronJobs.forEach(job => {
-        require(job);
-    });
-}
+// if (process.env.NODE_ENV === 'development') {
+//     const cronJobs = [
+//         './cron/createUpdateContactsDataScheduler.ts',
+//     ];
+//     cronJobs.forEach(job => {
+//         require(job);
+//     });
+// }
 
 app.use('/api', syncRoutes);
 

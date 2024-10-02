@@ -6,13 +6,9 @@ import { fetchSimproPaginatedData } from '../services/simproService';
 import { CreditorsWatchContactType, MappingType, SimproCompanyType } from '../types/types';
 import { transformContactDataToCreditorsWatchArray } from '../utils/transformDataHelper';
 import { creditorsWatchPostWithRetry, creditorsWatchPutWithRetry } from '../utils/apiUtils';
+import { get25HoursAgoDate } from '../utils/helper';
 
 
-const get25HoursAgoDate = (): string => {
-    const now = new Date();
-    const twentyFourHoursAgo = new Date(now.getTime() - 25 * 60 * 60 * 1000);
-    return twentyFourHoursAgo.toUTCString();
-};
 
 const updateContactsData = async () => {
     try {

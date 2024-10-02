@@ -1,29 +1,25 @@
 const cron = require('node-cron');
 import { AxiosError } from 'axios';
-import ContactMappingModel from '../models/contactMappingModel';
+import InvoiceMappingModel from '../models/invoiceMappingModel';
 import moment from 'moment';
 import { fetchSimproPaginatedData } from '../services/simproService';
-import { CreditorsWatchContactType, MappingType, SimproCompanyType } from '../types/types';
-import { transformContactDataToCreditorsWatchArray } from '../utils/transformDataHelper';
+import { CreditorsWatchInvoiceType, MappingType, SimproInvoiceType } from '../types/types';
+import { transformInvoiceDataToCreditorsWatchArray } from '../utils/transformDataHelper';
 import { creditorsWatchPostWithRetry, creditorsWatchPutWithRetry } from '../utils/apiUtils';
+import { get25HoursAgoDate } from '../utils/helper';
 
 
-const get25HoursAgoDate = (): string => {
-    const now = new Date();
-    const twentyFourHoursAgo = new Date(now.getTime() - 25 * 60 * 60 * 1000);
-    return twentyFourHoursAgo.toUTCString();
-};
 
-const updateContactsData = async () => {
+const updateInvoiceData = async () => {
     try {
         const ifModifiedSinceHeader = get25HoursAgoDate();
-        let simproCustomerResponseArr: SimproCompanyType[] = await fetchSimproPaginatedData('/customers/companies/', "ID,CompanyName,Email,Archived,EIN,Phone,AltPhone", ifModifiedSinceHeader);
-        let creditorWatchContactDataArray: CreditorsWatchContactType[] = transformContactDataToCreditorsWatchArray('Simpro', simproCustomerResponseArr);
+        let simproInvoiceResponseArr: SimproInvoiceType[] = await fetchSimproPaginatedData('/customers/companies/', "ID,CompanyName,Email,Archived,EIN,Phone,AltPhone", ifModifiedSinceHeader);
+        let creditorWatchContactDataArray: CreditorsWatchInvoiceType[] = transformInvoiceDataToCreditorsWatchArray('Simpro', simproInvoiceResponseArr);
 
         let simproIdDocumentToFetchFromMapping: string[] = [];
-        simproCustomerResponseArr.forEach(item => simproIdDocumentToFetchFromMapping.push(item.ID.toString()))
+        simproInvoiceResponseArr.forEach(item => simproIdDocumentToFetchFromMapping.push(item.ID.toString()))
 
-        const mappingData = await ContactMappingModel.find({ simproId: { $in: simproIdDocumentToFetchFromMapping } });
+        const mappingData = await InvoiceMappingModel.find({ simproId: { $in: simproIdDocumentToFetchFromMapping } });
 
         if (mappingData.length) {
             let simproCWIDMap: { [key: string]: string } = {};
@@ -31,8 +27,8 @@ const updateContactsData = async () => {
             creditorWatchContactDataArray.forEach(item => item.id = parseInt(simproCWIDMap[item.external_id]))
         }
 
-        let dataToUpdate: CreditorsWatchContactType[] = [];
-        let dataToAdd: CreditorsWatchContactType[] = [];
+        let dataToUpdate: CreditorsWatchInvoiceType[] = [];
+        let dataToAdd: CreditorsWatchInvoiceType[] = [];
         creditorWatchContactDataArray.forEach(item => {
             if (item.id) {
                 dataToUpdate.push(item);
@@ -86,7 +82,7 @@ const updateContactsData = async () => {
                     lastSyncedAt: new Date(),
                 };
 
-                let savedMapping = await ContactMappingModel.create(newMapping);
+                let savedMapping = await InvoiceMappingModel.create(newMapping);
                 console.log('Mapping created:', savedMapping);
 
             } catch (error) {
@@ -114,5 +110,5 @@ const updateContactsData = async () => {
 
 cron.schedule("* * * * *", async () => {
     console.log(`CONTACTS SCHEDULER: Task executed at ${moment().format('YYYY-MM-DD HH:mm:ss')}`);
-    await updateContactsData();
+    await updateInvoiceData();
 });

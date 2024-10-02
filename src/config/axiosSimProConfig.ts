@@ -8,7 +8,7 @@ const axiosSimPRO: AxiosInstance = axios.create({
         'Content-Type': 'application/json',
         Authorization: `Bearer ${process.env.SIMPRO_ACCESS_TOKEN}`,
     },
-    timeout: 5000,
+    timeout: 30000,
 });
 
 // Request Interceptor

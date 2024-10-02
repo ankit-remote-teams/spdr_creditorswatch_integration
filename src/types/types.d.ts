@@ -58,3 +58,41 @@ export type CreditorsWatchInvoiceType = {
     due_date: string,
     paid_date: string | null,
 }
+
+export type SimproInvoiceType = {
+    ID: number;
+    Customer: {
+        ID: number;
+        CompanyName: string;
+        GivenName: string;
+        FamilyName: string;
+    };
+    Status: {
+        ID: number;
+        Name: string;
+    };
+    Stage: string;
+    OrderNo: string;
+    Total: {
+        ExTax: number;
+        IncTax: number;
+        Tax: number;
+        ReverseChargeTax: number;
+        AmountApplied: number;
+        BalanceDue: number;
+    };
+    IsPaid: boolean;
+    DateIssued: string;
+    DatePaid: string;
+    DateCreated: string;
+    DateModified: string;
+    PaymentTerms: {
+        Days: number;
+        Type: string;
+        DueDate: string;
+    };
+    Period: {
+        StartDate: string;
+        EndDate: string;
+    };
+};

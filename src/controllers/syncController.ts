@@ -2,10 +2,10 @@ import { Request, Response } from 'express-serve-static-core';
 import axiosSimPRO from '../config/axiosSimProConfig';
 import axiosCreditorsWatch from '../config/axiosCreditorsWatchConfig';
 import { AxiosError } from 'axios';
-import { CreditorsWatchContactType, MappingType, SimproCompanyType } from '../types/types';
+import { CreditorsWatchContactType, CreditorsWatchInvoiceType, MappingType, SimproCompanyType, SimproInvoiceType } from '../types/types';
 import { chunkArray } from '../utils/helper';
 import { fetchSimproPaginatedData } from '../services/simproService';
-import { transformContactDataToCreditorsWatchArray } from '../utils/transformDataHelper';
+import { transformContactDataToCreditorsWatchArray, transformInvoiceDataToCreditorsWatchArray } from '../utils/transformDataHelper';
 import ContactMappingModel from '../models/contactMappingModel';
 import { creditorsWatchPostWithRetry } from '../utils/apiUtils';
 
@@ -14,8 +14,7 @@ import { creditorsWatchPostWithRetry } from '../utils/apiUtils';
 // Controller to handle syncing contact data
 export const syncInitialSimproContactData = async (req: Request, res: Response): Promise<void> => {
     try {
-        let simproCustomerResponse = await fetchSimproPaginatedData('/customers/companies/?Archived=false', "ID,CompanyName,Email,Archived,EIN,Phone,AltPhone", "")
-        let simproCustomerResponseArr: SimproCompanyType[] = simproCustomerResponse || [];
+        let simproCustomerResponseArr: SimproCompanyType[] = await fetchSimproPaginatedData<SimproCompanyType>('/customers/companies/?Archived=false', "ID,CompanyName,Email,Archived,EIN,Phone,AltPhone", "")
 
         // Transform data to CreditorsWatch format and chunk it
         let creditorWatchContactDataArray: CreditorsWatchContactType[] = transformContactDataToCreditorsWatchArray('Simpro', simproCustomerResponseArr);
@@ -68,10 +67,24 @@ export const syncInitialSimproContactData = async (req: Request, res: Response):
 
 export const syncInitialInvoiceData = async (req: Request, res: Response): Promise<void> => {
     try {
+        let simproInvoiceResponseArr: SimproInvoiceType[] = await fetchSimproPaginatedData<SimproInvoiceType>('/invoices/?IsPaid=false', 'ID,Customer,Status,Stage,OrderNo,Total,IsPaid,DateIssued,DatePaid,DateCreated,DateModified,PaymentTerms,Period', '');
+        if (!simproInvoiceResponseArr) {
+            console.error('No invoices found to sync.');
+            res.status(200).json({ message: 'No invoices found to sync.' });
+            return;
+        }
 
+        let creditorsWatchInvoiceDataArray: CreditorsWatchInvoiceType[] = transformInvoiceDataToCreditorsWatchArray("Simpro", simproInvoiceResponseArr);
+
+
+
+
+
+
+        res.status(200).json({ message: "Synced data successfully", data: simproInvoiceResponseArr })
     } catch (error) {
         if (error instanceof AxiosError) {
-            console.error('Error syncing contact data:', error.response?.data || error.message);
+            console.error('Error syncing invoice data:', error.response?.data || error.message);
             res.status(500).json({ message: 'Error from Axios request', details: error.response?.data });
         } else {
             // Generic error handling
