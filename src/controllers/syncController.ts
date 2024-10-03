@@ -7,6 +7,9 @@ import ContactMappingModel from '../models/contactMappingModel';
 import { creditorsWatchPostWithRetry } from '../utils/apiUtils';
 import InvoiceMappingModel from '../models/invoiceMappingModel';
 import CreditNoteMappingModel from '../models/creditNotesMappingModel';
+import moment from 'moment';
+
+const defaultPercentageValueForLateFee: number = parseFloat(process.env.DEFAULT_PERCENTAGE_FOR_LATE_FEE || '0');
 
 
 // Controller to handle syncing contact data
@@ -75,8 +78,22 @@ export const syncInitialInvoiceCreditNoteData = async (req: Request, res: Respon
 
         let creditorsWatchInvoiceDataArray: CreditorsWatchInvoiceType[] = await transformInvoiceDataToCreditorsWatchArray("Simpro", simproInvoiceResponseArr);
 
-        for (const row of creditorsWatchInvoiceDataArray) {
+        for (let row of creditorsWatchInvoiceDataArray) {
             try {
+                let tempRow = { ...row };
+                const dueDate = moment(tempRow.due_date, 'YYYY-MM-DD');
+                const total_amount = row.total_amount;
+                const currentDate = moment();
+
+                if (currentDate.isAfter(dueDate)) {
+                    const daysLate = currentDate.diff(dueDate, 'days');
+                    const dailyLateFeeRate = (defaultPercentageValueForLateFee / 100) / 365;
+                    const lateFee = total_amount * dailyLateFeeRate * daysLate;
+                    const totalWithLateFee = total_amount + lateFee;
+                    tempRow.total_amount = totalWithLateFee;
+                }
+                row = { ...tempRow }
+
                 const response = await creditorsWatchPostWithRetry('/invoices', { invoice: { ...row } });
                 if (!response) {
                     console.error('Failed to sync invoice data after multiple attempts.');
