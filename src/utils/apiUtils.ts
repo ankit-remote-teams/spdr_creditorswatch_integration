@@ -9,9 +9,12 @@ export async function creditorsWatchPostWithRetry<T>(
 ): Promise<AxiosResponse | undefined> {
     for (let attempt = 0; attempt < retries; attempt++) {
         try {
+            console.log('url', url)
+            console.log('data', data)
             const response = await axiosCreditorsWatch.post(url, data);
             return response;
         } catch (error) {
+            // console.log('Error', error)
             if (attempt < retries - 1) {
                 console.warn(`Attempt ${attempt + 1} failed. Retrying...`);
                 await new Promise((res) => setTimeout(res, delay));

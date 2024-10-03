@@ -1,4 +1,4 @@
-import { CreditorsWatchContactType, CreditorsWatchInvoiceType, SimproInvoiceType } from "../types/types";
+import { CreditorsWatchContactType, CreditorsWatchCreditNoteType, CreditorsWatchInvoiceType, SimproCreditNoteType, SimproInvoiceType } from "../types/types";
 import { SimproCompanyType } from "../types/types";
 
 type SourceType = 'Simpro' | 'RemoteFlow';
@@ -46,14 +46,14 @@ export const transformInvoiceDataToCreditorsWatchArray = <T>(source: SourceType,
                 return {
                     external_id: simproInvoice.ID.toString(),
                     external_contact_id: simproInvoice.Customer.ID.toString(),
-                    status: "AUTHORISED",
+                    status: "authorised",
                     invoice_number: simproInvoice.ID.toString(),
                     currency_code: "AUD",
                     currency_rate: "1.0",
                     amount_due: simproInvoice?.Total?.BalanceDue || 0,
                     amount_paid: simproInvoice?.Total?.AmountApplied || 0,
                     total_amount: simproInvoice?.Total?.IncTax || 0,
-                    invoice_date: "ddate`",
+                    invoice_date: simproInvoice?.DateIssued,
                     due_date: simproInvoice?.PaymentTerms?.DueDate || "",
                     paid_date: simproInvoice.IsPaid ? simproInvoice.DatePaid : null,
                 }
@@ -62,7 +62,7 @@ export const transformInvoiceDataToCreditorsWatchArray = <T>(source: SourceType,
                 return {
                     external_id: "your invoice ID alpha-numeric string",
                     external_contact_id: "ABC123",
-                    status: "AUTHORISED",
+                    status: "authorised",
                     invoice_number: "INV-123456",
                     currency_code: "USD",
                     currency_rate: "1.0",
@@ -80,30 +80,33 @@ export const transformInvoiceDataToCreditorsWatchArray = <T>(source: SourceType,
 };
 
 
-export const transformCreditNoteDataToCreditorsWatchArray = (source: SourceType, users: any[]): CreditorsWatchContactType[] => {
-    return users.map(user => {
+export const transformCreditNoteDataToCreditorsWatchArray = <T>(source: SourceType, creditNotes: T[]): CreditorsWatchCreditNoteType[] => {
+    return creditNotes.map(creditNote => {
         switch (source) {
             case 'Simpro':
+                const simproCreditNotes = creditNote as SimproCreditNoteType;
                 return {
-                    external_id: user.ID.toString(),
-                    name: user.CompanyName,
-                    email: user.Email,
-                    status: user.Archived ? 'deleted' : 'active',
-                    registration_number: user.EIN,
-                    tax_number: '',
-                    phone_number: user.Phone,
-                    mobile_number: user.AltPhone
+                    amount_remaining: (simproCreditNotes.InvoiceData?.Total?.IncTax || 0) - (simproCreditNotes?.Total?.IncTax || 0),
+                    credit_note_number: simproCreditNotes?.ID?.toString(),
+                    currency_code: "AUD",
+                    currency_rate: "1.0",
+                    date: simproCreditNotes?.DateIssued,
+                    external_contact_id: simproCreditNotes?.Customer?.ID?.toString(),
+                    external_id: simproCreditNotes?.ID?.toString(),
+                    status: simproCreditNotes?.Type == "Void" ? "voided" : "authorised",
+                    total_amount: simproCreditNotes?.Total?.IncTax,
                 };
             case 'RemoteFlow':
                 return {
-                    external_id: user.otherID,
-                    name: user.businessName,
-                    email: user.contactEmail,
-                    status: user.isDeleted ? 'deleted' : 'active',
-                    registration_number: user.registrationID,
-                    tax_number: user.taxID,
-                    phone_number: user.businessPhone,
-                    mobile_number: user.personalPhone
+                    amount_remaining: 0,
+                    credit_note_number: "",
+                    currency_code: "",
+                    currency_rate: "",
+                    date: "",
+                    external_contact_id: "",
+                    external_id: "",
+                    status: "",
+                    total_amount: 0
                 };
             default:
                 throw new Error(`Unknown source type: ${source}`);

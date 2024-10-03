@@ -59,40 +59,75 @@ export type CreditorsWatchInvoiceType = {
     paid_date: string | null,
 }
 
+export type SimproAddressType = {
+    Address: string;
+    City: string;
+    State: string;
+    PostalCode: string;
+    Country: string;
+};
+
+export type SimproCustomerType = {
+    ID: number;
+    CompanyName: string;
+    GivenName?: string;
+    FamilyName?: string;
+    Phone?: string;
+    Address?: SimproAddressType;
+};
+
+export type SimproTotalType = {
+    ExTax: number;
+    Tax: number;
+    IncTax: number;
+    ReverseChargeTax?: number;
+    BalanceDue?: number;
+    AmountApplied?: number;
+};
+
+
 export type SimproInvoiceType = {
     ID: number;
-    Customer: {
-        ID: number;
-        CompanyName: string;
-        GivenName: string;
-        FamilyName: string;
-    };
+    Customer: SimproCustomerType;
     Status: {
         ID: number;
         Name: string;
     };
     Stage: string;
     OrderNo: string;
-    Total: {
-        ExTax: number;
-        IncTax: number;
-        Tax: number;
-        ReverseChargeTax: number;
-        AmountApplied: number;
-        BalanceDue: number;
-    };
+    Total: SimproTotalType;
     IsPaid: boolean;
     DateIssued: string;
     DatePaid: string;
     DateCreated: string;
-    DateModified: string;
     PaymentTerms: {
         Days: number;
         Type: string;
         DueDate: string;
     };
-    Period: {
-        StartDate: string;
-        EndDate: string;
-    };
+};
+
+
+export type CreditorsWatchCreditNoteType = {
+    amount_remaining: number;
+    credit_note_number: string;
+    currency_code: string;
+    currency_rate: string;
+    date: string;
+    external_contact_id: string;
+    external_id: string;
+    status: string;
+    total_amount: number;
+}
+
+
+export type SimproCreditNoteType = {
+    ID: number;
+    Customer: SimproCustomerType;
+    InvoiceNo: number;
+    Stage: string;
+    Total: SimproTotalType;
+    DateIssued: string,
+    InvoiceData?: SimproInvoiceType;
+    Type: string;
 };
