@@ -46,7 +46,7 @@ export const transformInvoiceDataToCreditorsWatchArray = <T>(source: SourceType,
                 return {
                     external_id: simproInvoice.ID.toString(),
                     external_contact_id: simproInvoice.Customer.ID.toString(),
-                    status: "authorised",
+                    status: simproInvoice?.IsPaid ? "paid" : simproInvoice?.Stage == "Pending" ? "draft" : "authorised",
                     invoice_number: simproInvoice.ID.toString(),
                     currency_code: "AUD",
                     currency_rate: "1.0",

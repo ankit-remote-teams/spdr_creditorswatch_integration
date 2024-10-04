@@ -17,11 +17,10 @@ const updateInvoiceData = async () => {
         let simproInvoiceResponseArr: SimproInvoiceType[] = await fetchSimproPaginatedData<SimproInvoiceType>('/invoices/', 'ID,Customer,Status,Stage,OrderNo,Total,IsPaid,DateIssued,DatePaid,DateCreated,PaymentTerms', ifModifiedSinceHeader);
         let creditorWatchContactDataArray: CreditorsWatchInvoiceType[] = transformInvoiceDataToCreditorsWatchArray('Simpro', simproInvoiceResponseArr);
 
-        let simproIdDocumentToFetchFromMapping: string[] = [];
-        simproInvoiceResponseArr.forEach(item => simproIdDocumentToFetchFromMapping.push(item.ID.toString()))
+        let simproIdToFetchFromMapping: string[] = [];
+        simproInvoiceResponseArr.forEach(item => simproIdToFetchFromMapping.push(item.ID.toString()))
 
-        const mappingData = await InvoiceMappingModel.find({ simproId: { $in: simproIdDocumentToFetchFromMapping } });
-
+        const mappingData = await InvoiceMappingModel.find({ simproId: { $in: simproIdToFetchFromMapping } });
         if (mappingData.length) {
             let simproCWIDMap: { [key: string]: string } = {};
             mappingData.forEach(item => simproCWIDMap[item.simproId] = item.creditorsWatchId)
@@ -45,7 +44,6 @@ const updateInvoiceData = async () => {
                 const dueDate = moment(tempRow.due_date, 'YYYY-MM-DD');
                 const total_amount = row.total_amount;
                 const currentDate = moment();
-
                 if (currentDate.isAfter(dueDate)) {
                     const daysLate = currentDate.diff(dueDate, 'days');
                     const dailyLateFeeRate = (defaultPercentageValueForLateFee / 100) / 365;
@@ -151,10 +149,10 @@ const updateCreditNoteData = async (simproInvoiceResponseArr: SimproInvoiceType[
 
         let creditorWatchContactDataArray: CreditorsWatchInvoiceType[] = transformInvoiceDataToCreditorsWatchArray('Simpro', simproInvoiceResponseArr);
 
-        let simproIdDocumentToFetchFromMapping: string[] = [];
-        simproInvoiceResponseArr.forEach(item => simproIdDocumentToFetchFromMapping.push(item.ID.toString()))
+        let simproIdToFetchFromMapping: string[] = [];
+        simproInvoiceResponseArr.forEach(item => simproIdToFetchFromMapping.push(item.ID.toString()))
 
-        const mappingData = await InvoiceMappingModel.find({ simproId: { $in: simproIdDocumentToFetchFromMapping } });
+        const mappingData = await InvoiceMappingModel.find({ simproId: { $in: simproIdToFetchFromMapping } });
 
         if (mappingData.length) {
             let simproCWIDMap: { [key: string]: string } = {};
@@ -242,8 +240,8 @@ const updateCreditNoteData = async (simproInvoiceResponseArr: SimproInvoiceType[
         }
     }
 }
-
-cron.schedule("* * * * *", async () => {
+console.log(moment(Date.now()).format("DD MMM YYYY HH:mm:ss"))
+cron.schedule("48 10 * * *", async () => {
     console.log(`CONTACTS SCHEDULER: Task executed at ${moment().format('YYYY-MM-DD HH:mm:ss')}`);
     await updateInvoiceData();
 });

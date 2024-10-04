@@ -11,6 +11,7 @@ const PORT: number = parseInt(process.env.PORT as string, 10) || 6001;
 // if (process.env.NODE_ENV === 'development') {
 //     const cronJobs = [
 //         './cron/createUpdateContactsDataScheduler.ts',
+//         './cron/createUpdateInvoiceCreditNoteScheduler.ts',
 //     ];
 //     cronJobs.forEach(job => {
 //         require(job);

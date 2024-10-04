@@ -75,6 +75,7 @@ export const syncInitialInvoiceCreditNoteData = async (req: Request, res: Respon
             return;
         }
 
+        simproInvoiceResponseArr = simproInvoiceResponseArr.filter(invoice => invoice.Stage === "Approved")
 
         let creditorsWatchInvoiceDataArray: CreditorsWatchInvoiceType[] = await transformInvoiceDataToCreditorsWatchArray("Simpro", simproInvoiceResponseArr);
 
@@ -86,10 +87,17 @@ export const syncInitialInvoiceCreditNoteData = async (req: Request, res: Respon
                 const currentDate = moment();
 
                 if (currentDate.isAfter(dueDate)) {
+                    console.log("Simpro Id", row.external_id)
+                    console.log('currentDate', currentDate)
+                    console.log('dueDate', dueDate)
                     const daysLate = currentDate.diff(dueDate, 'days');
+                    console.log('Days late:', daysLate);
                     const dailyLateFeeRate = (defaultPercentageValueForLateFee / 100) / 365;
+                    console.log('Daily late fee rate:', dailyLateFeeRate);
                     const lateFee = total_amount * dailyLateFeeRate * daysLate;
+                    console.log('Late fee:', lateFee);
                     const totalWithLateFee = total_amount + lateFee;
+                    console.log('Total with late fee:', totalWithLateFee);
                     tempRow.total_amount = totalWithLateFee;
                 }
                 row = { ...tempRow }
@@ -99,8 +107,6 @@ export const syncInitialInvoiceCreditNoteData = async (req: Request, res: Respon
                     console.error('Failed to sync invoice data after multiple attempts.');
                     continue;
                 }
-
-                console.log('response from creditors watch post invoice', response)
 
                 let creditorWatchInvoiceData = response?.data?.invoice;
                 if (!creditorWatchInvoiceData) {
@@ -130,7 +136,7 @@ export const syncInitialInvoiceCreditNoteData = async (req: Request, res: Respon
 
         await syncInitialCreditNoteData(simproInvoiceResponseArr)
 
-        res.status(200).json({ message: "Synced data successfully", data: simproInvoiceResponseArr })
+        res.status(200).json({ message: "Synced data successfully", })
     } catch (error) {
         if (error instanceof AxiosError) {
             console.error('Error syncing invoice data:', error.response?.data || error.message);
