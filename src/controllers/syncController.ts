@@ -8,9 +8,11 @@ import { creditorsWatchPostWithRetry } from '../utils/apiUtils';
 import InvoiceMappingModel from '../models/invoiceMappingModel';
 import CreditNoteMappingModel from '../models/creditNotesMappingModel';
 import moment from 'moment';
+import { updateInvoiceData } from '../cron/createUpdateInvoiceCreditNoteScheduler';
 
-const defaultPercentageValueForLateFee: number = parseFloat(process.env.DEFAULT_PERCENTAGE_FOR_LATE_FEE || '0');
-
+const defaultPercentageValueForLateFee: number = parseFloat(process.env.DEFAULT_LATE_FEE_PERCENTAGE_FOR_CUSTOMER_PER_YEAR || '0');
+console.log('DEFAULT_LATE_FEE_PERCENTAGE_FOR_CUSTOMER_PER_YEAR', process.env.DEFAULT_LATE_FEE_PERCENTAGE_FOR_CUSTOMER_PER_YEAR)
+console.log('defaultPercentageValueForLateFee', defaultPercentageValueForLateFee)
 
 // Controller to handle syncing contact data
 export const syncInitialSimproContactData = async (req: Request, res: Response): Promise<void> => {
@@ -29,7 +31,7 @@ export const syncInitialSimproContactData = async (req: Request, res: Response):
 
                 let creditorWatchContactData = response?.data?.contact;
                 if (!creditorWatchContactData) {
-                    console.error('Data unavailable to create mapping.');
+                    console.error('Data unavailable to create mapping for contact.');
                     continue;
                 }
 
@@ -68,7 +70,8 @@ export const syncInitialSimproContactData = async (req: Request, res: Response):
 
 export const syncInitialInvoiceCreditNoteData = async (req: Request, res: Response): Promise<void> => {
     try {
-        let simproInvoiceResponseArr: SimproInvoiceType[] = await fetchSimproPaginatedData<SimproInvoiceType>('/invoices/?IsPaid=false', 'ID,Customer,Status,Stage,OrderNo,Total,IsPaid,DateIssued,DatePaid,DateCreated,PaymentTerms', '');
+        let simproInvoiceResponseArr: SimproInvoiceType[] = await fetchSimproPaginatedData<SimproInvoiceType>('/invoices/?IsPaid=false', 'ID,Customer,Status,Stage,OrderNo,Total,IsPaid,DateIssued,DatePaid,DateCreated,PaymentTerms,LatePaymentFee', '');
+
         if (!simproInvoiceResponseArr) {
             console.error('No invoices found to sync.');
             res.status(200).json({ message: 'No invoices found to sync.' });
@@ -77,28 +80,29 @@ export const syncInitialInvoiceCreditNoteData = async (req: Request, res: Respon
 
         simproInvoiceResponseArr = simproInvoiceResponseArr.filter(invoice => invoice.Stage === "Approved")
 
+        // let simproPaymentsResponseArr : SimproPaymentsType[]
+
         let creditorsWatchInvoiceDataArray: CreditorsWatchInvoiceType[] = await transformInvoiceDataToCreditorsWatchArray("Simpro", simproInvoiceResponseArr);
 
         for (let row of creditorsWatchInvoiceDataArray) {
             try {
                 let tempRow = { ...row };
-                const dueDate = moment(tempRow.due_date, 'YYYY-MM-DD');
-                const total_amount = row.total_amount;
-                const currentDate = moment();
-
-                if (currentDate.isAfter(dueDate)) {
-                    console.log("Simpro Id", row.external_id)
-                    console.log('currentDate', currentDate)
-                    console.log('dueDate', dueDate)
-                    const daysLate = currentDate.diff(dueDate, 'days');
-                    console.log('Days late:', daysLate);
-                    const dailyLateFeeRate = (defaultPercentageValueForLateFee / 100) / 365;
-                    console.log('Daily late fee rate:', dailyLateFeeRate);
-                    const lateFee = total_amount * dailyLateFeeRate * daysLate;
-                    console.log('Late fee:', lateFee);
-                    const totalWithLateFee = total_amount + lateFee;
-                    console.log('Total with late fee:', totalWithLateFee);
-                    tempRow.total_amount = totalWithLateFee;
+                if (tempRow.LatePaymentFee) {
+                    const dueDate = moment(tempRow.due_date, 'YYYY-MM-DD');
+                    const total_amount = row.total_amount;
+                    let daysLate: number;
+                    const currentDate = moment();
+                    let dailyLateFeeRate: number;
+                    let lateFee: number;
+                    let totalWithLateFee: number;
+                    daysLate = moment(currentDate).diff(dueDate, 'days');
+                    if (daysLate > 0) {
+                        dailyLateFeeRate = defaultPercentageValueForLateFee / 365;
+                        lateFee = total_amount * ((dailyLateFeeRate * daysLate) / 100);
+                        totalWithLateFee = total_amount + lateFee;
+                        tempRow.total_amount = totalWithLateFee;
+                        tempRow.amount_due = tempRow.amount_due + lateFee;
+                    }
                 }
                 row = { ...tempRow }
 
@@ -110,7 +114,7 @@ export const syncInitialInvoiceCreditNoteData = async (req: Request, res: Respon
 
                 let creditorWatchInvoiceData = response?.data?.invoice;
                 if (!creditorWatchInvoiceData) {
-                    console.error('Data unavailable to create mapping.');
+                    console.error('Data unavailable to create mapping invoice.');
                     continue;
                 }
 
@@ -177,7 +181,7 @@ const syncInitialCreditNoteData = async (simproInvoiceArray: SimproInvoiceType[]
 
                 let creditorsWatchCreditNotesData = response?.data?.credit_note;
                 if (!creditorsWatchCreditNotesData) {
-                    console.error('Data unavailable to create mapping.');
+                    console.error('Data unavailable to create mapping credit note.');
                     continue;
                 }
 
@@ -214,5 +218,16 @@ const syncInitialCreditNoteData = async (simproInvoiceArray: SimproInvoiceType[]
             }
         }
         return []
+    }
+}
+
+
+export const updateInvoiceCreditorNoteDataToCreditorsWatch = async (req: Request, res: Response): Promise<void> => {
+    try {
+        await updateInvoiceData()
+        res.status(200).json({ message: "Updated invoice successfully", })
+    } catch (error) {
+        console.error('Unexpected error:', error);
+        res.status(500).json({ message: 'Internal Server Error' })
     }
 }

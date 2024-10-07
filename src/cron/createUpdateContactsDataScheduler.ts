@@ -6,13 +6,13 @@ import { fetchSimproPaginatedData } from '../services/simproService';
 import { CreditorsWatchContactType, MappingType, SimproCompanyType } from '../types/types';
 import { transformContactDataToCreditorsWatchArray } from '../utils/transformDataHelper';
 import { creditorsWatchPostWithRetry, creditorsWatchPutWithRetry } from '../utils/apiUtils';
-import { get25HoursAgoDate } from '../utils/helper';
+import { get24HoursAgoDate } from '../utils/helper';
 
 
 
 const updateContactsData = async () => {
     try {
-        const ifModifiedSinceHeader = get25HoursAgoDate();
+        const ifModifiedSinceHeader = get24HoursAgoDate();
         let simproCustomerResponseArr: SimproCompanyType[] = await fetchSimproPaginatedData('/customers/companies/', "ID,CompanyName,Email,Archived,EIN,Phone,AltPhone", ifModifiedSinceHeader);
         let creditorWatchContactDataArray: CreditorsWatchContactType[] = transformContactDataToCreditorsWatchArray('Simpro', simproCustomerResponseArr);
 
@@ -71,7 +71,7 @@ const updateContactsData = async () => {
 
                 let creditorWatchContactData = response?.data?.contact;
                 if (!creditorWatchContactData) {
-                    console.error('Data unavailable to create mapping.');
+                    console.error('Data unavailable to create mapping contact data.');
                     continue;
                 }
 

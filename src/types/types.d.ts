@@ -57,6 +57,7 @@ export type CreditorsWatchInvoiceType = {
     invoice_date: string,
     due_date: string,
     paid_date: string | null,
+    LatePaymentFee?: boolean,
 }
 
 export type SimproAddressType = {
@@ -105,10 +106,12 @@ export type SimproInvoiceType = {
         Type: string;
         DueDate: string;
     };
+    LatePaymentFee?: boolean;
 };
 
 
 export type CreditorsWatchCreditNoteType = {
+    id?: number;
     amount_remaining: number;
     credit_note_number: string;
     currency_code: string;
@@ -131,3 +134,27 @@ export type SimproCreditNoteType = {
     InvoiceData?: SimproInvoiceType;
     Type: string;
 };
+
+
+export type SimproPaymentType = {
+    Payment: {
+        PaymentMethod: {
+            ID: number;
+            Name: string;
+        };
+        Status: string;
+        DepositAccount: string;
+        Date: string; 
+        FinanceCharge: number;
+        CheckNo: string;
+        Details: string;
+    };
+};
+
+
+
+export type SimproCustomerPaymentsType = {
+    ID: number;
+    Payment: SimproPaymentType,
+    Invoices: SimproInvoicesType[]
+}

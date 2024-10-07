@@ -6,8 +6,8 @@ export function chunkArray<T>(array: T[], size: number): T[][] {
     return result;
 }
 
-export const get25HoursAgoDate = (): string => {
+export const get24HoursAgoDate = (): string => {
     const now = new Date();
-    const twentyFourHoursAgo = new Date(now.getTime() - 25 * 60 * 60 * 1000);
+    const twentyFourHoursAgo = new Date(now.getTime() - 24 * 60 * 60 * 1000);
     return twentyFourHoursAgo.toUTCString();
 };

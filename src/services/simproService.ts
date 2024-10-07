@@ -23,6 +23,7 @@ export const fetchSimproPaginatedData = async <T>(url: string, columns: string, 
                 };
             }
 
+            console.log(`Fetching page ${pageNum}...`);
             const response = await axiosSimPRO.get(url, requestOptions);
 
             const entity = response.data;

@@ -44,10 +44,10 @@ export const transformInvoiceDataToCreditorsWatchArray = <T>(source: SourceType,
             case 'Simpro':
                 const simproInvoice = invoice as SimproInvoiceType;
                 return {
-                    external_id: simproInvoice.ID.toString(),
-                    external_contact_id: simproInvoice.Customer.ID.toString(),
+                    external_id: simproInvoice?.ID?.toString(),
+                    external_contact_id: simproInvoice?.Customer?.ID?.toString(),
                     status: simproInvoice?.IsPaid ? "paid" : simproInvoice?.Stage == "Pending" ? "draft" : "authorised",
-                    invoice_number: simproInvoice.ID.toString(),
+                    invoice_number: simproInvoice?.ID?.toString(),
                     currency_code: "AUD",
                     currency_rate: "1.0",
                     amount_due: simproInvoice?.Total?.BalanceDue || 0,
@@ -56,6 +56,7 @@ export const transformInvoiceDataToCreditorsWatchArray = <T>(source: SourceType,
                     invoice_date: simproInvoice?.DateIssued,
                     due_date: simproInvoice?.PaymentTerms?.DueDate || "",
                     paid_date: simproInvoice.IsPaid ? simproInvoice.DatePaid : null,
+                    LatePaymentFee: simproInvoice?.LatePaymentFee?.toString() == "true" ? true : false,
                 }
             case 'RemoteFlow':
                 // Write logic as per remote flow invoice type. 
