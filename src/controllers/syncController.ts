@@ -1,6 +1,6 @@
 import { Request, Response } from 'express-serve-static-core';
 import { AxiosError } from 'axios';
-import { CreditorsWatchContactType, CreditorsWatchCreditNoteType, CreditorsWatchInvoiceType, MappingType, SimproCompanyType, SimproCreditNoteType, SimproInvoiceType } from '../types/types';
+import { CreditorsWatchContactType, CreditorsWatchCreditNoteType, CreditorsWatchInvoiceType, InvoiceItemPaymentsType, MappingType, SimproCompanyType, SimproCreditNoteType, SimproCustomerPaymentsType, SimproInvoiceType } from '../types/types';
 import { fetchSimproPaginatedData } from '../services/simproService';
 import { transformContactDataToCreditorsWatchArray, transformCreditNoteDataToCreditorsWatchArray, transformInvoiceDataToCreditorsWatchArray } from '../utils/transformDataHelper';
 import ContactMappingModel from '../models/contactMappingModel';
@@ -9,6 +9,7 @@ import InvoiceMappingModel from '../models/invoiceMappingModel';
 import CreditNoteMappingModel from '../models/creditNotesMappingModel';
 import moment from 'moment';
 import { updateInvoiceData } from '../cron/createUpdateInvoiceCreditNoteScheduler';
+import { calculateLatePaymentFeeAndBalanceDue } from '../utils/helper';
 
 const defaultPercentageValueForLateFee: number = parseFloat(process.env.DEFAULT_LATE_FEE_PERCENTAGE_FOR_CUSTOMER_PER_YEAR || '0');
 console.log('DEFAULT_LATE_FEE_PERCENTAGE_FOR_CUSTOMER_PER_YEAR', process.env.DEFAULT_LATE_FEE_PERCENTAGE_FOR_CUSTOMER_PER_YEAR)
@@ -80,28 +81,72 @@ export const syncInitialInvoiceCreditNoteData = async (req: Request, res: Respon
 
         simproInvoiceResponseArr = simproInvoiceResponseArr.filter(invoice => invoice.Stage === "Approved")
 
-        // let simproPaymentsResponseArr : SimproPaymentsType[]
+
+        const oldestInvoice = simproInvoiceResponseArr.reduce((oldest, current) => {
+            const currentDate = moment(current.DateIssued, 'YYYY-MM-DD');
+            const oldestDate = moment(oldest.DateIssued, 'YYYY-MM-DD');
+            return currentDate.isBefore(oldestDate) ? current : oldest;
+        });
+
+
+        const formattedDate = moment(oldestInvoice.DateIssued, 'YYYY-MM-DD').format('ddd, DD MMM YYYY HH:mm:ss [GMT]');
+
+        console.log("formattedDate", formattedDate)
+
+        let simproCustomerPaymentsResponse: SimproCustomerPaymentsType[] = await fetchSimproPaginatedData('/customerPayments/', 'ID,Payment,Invoices', formattedDate);
+
+        let invoicesPaymentsData: InvoiceItemPaymentsType[] = [];
+        simproCustomerPaymentsResponse.forEach(customerPayment => {
+            customerPayment.Invoices.forEach(paymentInvoiceItem => {
+                let individualInvoice = {
+                    paymentId: customerPayment?.ID,
+                    paymentDate: customerPayment?.Payment?.Date,
+                    financeCharge: customerPayment?.Payment?.FinanceCharge,
+                    paymentInvoiceId: paymentInvoiceItem?.Invoice.ID,
+                    paymentInvoiceAmount: paymentInvoiceItem?.Amount,
+                };
+                invoicesPaymentsData.push(individualInvoice);
+            });
+        });
+
+        // Sort invoicesPaymentsData by paymentDate (oldest to latest)
+        invoicesPaymentsData.sort((a, b) => {
+            const dateA = moment(a.paymentDate, 'YYYY-MM-DD');
+            const dateB = moment(b.paymentDate, 'YYYY-MM-DD');
+            return dateA.diff(dateB);
+        });
+
+        simproInvoiceResponseArr.forEach(invoiceItem => {
+            const paymentItem = invoicesPaymentsData.find(payment => payment.paymentInvoiceId === invoiceItem.ID);
+            if (paymentItem) {
+                if (invoiceItem.InvoicePaymentInfo?.length) {
+                    invoiceItem.InvoicePaymentInfo.push(paymentItem);
+                } else {
+                    invoiceItem.InvoicePaymentInfo = [paymentItem];
+                }
+            }
+        });
+
 
         let creditorsWatchInvoiceDataArray: CreditorsWatchInvoiceType[] = await transformInvoiceDataToCreditorsWatchArray("Simpro", simproInvoiceResponseArr);
+
 
         for (let row of creditorsWatchInvoiceDataArray) {
             try {
                 let tempRow = { ...row };
                 if (tempRow.LatePaymentFee) {
                     const dueDate = moment(tempRow.due_date, 'YYYY-MM-DD');
-                    const total_amount = row.total_amount;
                     let daysLate: number;
                     const currentDate = moment();
                     let dailyLateFeeRate: number;
-                    let lateFee: number;
-                    let totalWithLateFee: number;
                     daysLate = moment(currentDate).diff(dueDate, 'days');
+
                     if (daysLate > 0) {
                         dailyLateFeeRate = defaultPercentageValueForLateFee / 365;
-                        lateFee = total_amount * ((dailyLateFeeRate * daysLate) / 100);
-                        totalWithLateFee = total_amount + lateFee;
-                        tempRow.total_amount = totalWithLateFee;
-                        tempRow.amount_due = tempRow.amount_due + lateFee;
+                        let lateFee = calculateLatePaymentFeeAndBalanceDue(row)
+                        let amount_due = - (tempRow?.payments ? tempRow.payments.reduce((sub, payment) => sub - (payment.paymentInvoiceAmount + (payment?.lateFeeOnPayment || 0)), tempRow?.total_amount) : tempRow?.total_amount) + lateFee;
+                        let amount_paid = tempRow?.payments ? tempRow.payments.reduce((sum, payment) => sum + (payment.paymentInvoiceAmount + (payment?.lateFeeOnPayment || 0)), 0) : 0;
+                        tempRow = { ...tempRow, amount_due, amount_paid }
                     }
                 }
                 row = { ...tempRow }

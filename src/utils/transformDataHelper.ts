@@ -36,8 +36,6 @@ export const transformContactDataToCreditorsWatchArray = <T>(source: SourceType,
     });
 };
 
-
-
 export const transformInvoiceDataToCreditorsWatchArray = <T>(source: SourceType, invoices: T[]): CreditorsWatchInvoiceType[] => {
     return invoices.map(invoice => {
         switch (source) {
@@ -57,7 +55,11 @@ export const transformInvoiceDataToCreditorsWatchArray = <T>(source: SourceType,
                     due_date: simproInvoice?.PaymentTerms?.DueDate || "",
                     paid_date: simproInvoice.IsPaid ? simproInvoice.DatePaid : null,
                     LatePaymentFee: simproInvoice?.LatePaymentFee?.toString() == "true" ? true : false,
-                }
+                    payments: simproInvoice?.InvoicePaymentInfo?.map(item => ({
+                        paymentDate: item.paymentDate,
+                        paymentInvoiceAmount: item.paymentInvoiceAmount
+                    })),
+                };
             case 'RemoteFlow':
                 // Write logic as per remote flow invoice type. 
                 return {

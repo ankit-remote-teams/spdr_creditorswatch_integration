@@ -42,6 +42,11 @@ export interface IMapping extends Document {
     updatedAt: Date;
 }
 
+export type PaymentInfoType = {
+    paymentDate: string;
+    paymentInvoiceAmount: number;
+    lateFeeOnPayment?: number;
+};
 
 export type CreditorsWatchInvoiceType = {
     id?: number;
@@ -58,6 +63,7 @@ export type CreditorsWatchInvoiceType = {
     due_date: string,
     paid_date: string | null,
     LatePaymentFee?: boolean,
+    payments?: PaymentInfoType[],
 }
 
 export type SimproAddressType = {
@@ -107,6 +113,7 @@ export type SimproInvoiceType = {
         DueDate: string;
     };
     LatePaymentFee?: boolean;
+    InvoicePaymentInfo?: InvoiceItemPaymentsType[] | null;
 };
 
 
@@ -137,18 +144,16 @@ export type SimproCreditNoteType = {
 
 
 export type SimproPaymentType = {
-    Payment: {
-        PaymentMethod: {
-            ID: number;
-            Name: string;
-        };
-        Status: string;
-        DepositAccount: string;
-        Date: string; 
-        FinanceCharge: number;
-        CheckNo: string;
-        Details: string;
+    PaymentMethod: {
+        ID: number;
+        Name: string;
     };
+    Status: string;
+    DepositAccount: string;
+    Date: string;
+    FinanceCharge: number;
+    CheckNo: string;
+    Details: string;
 };
 
 
@@ -157,4 +162,12 @@ export type SimproCustomerPaymentsType = {
     ID: number;
     Payment: SimproPaymentType,
     Invoices: SimproInvoicesType[]
+}
+
+export type InvoiceItemPaymentsType = {
+    paymentId: number;
+    paymentDate: string;
+    financeCharge: number;
+    paymentInvoiceId: number;
+    paymentInvoiceAmount: number;
 }
