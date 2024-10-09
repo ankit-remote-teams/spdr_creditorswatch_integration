@@ -20,7 +20,7 @@ export const get24HoursAgoDate = (): string => {
 
 export const calculateLatePaymentFeeAndBalanceDue = (
     invoice: CreditorsWatchInvoiceType,
-):  number => {
+): number => {
     const dueDate = moment(invoice.due_date, 'YYYY-MM-DD');
     const total_amount = invoice.total_amount;
     let paymentsInfo: PaymentInfoType[] = invoice.payments || [];
@@ -49,5 +49,5 @@ export const calculateLatePaymentFeeAndBalanceDue = (
         }
     }
 
-    return  latePaymentFee;
+    return latePaymentFee;
 };

@@ -18,7 +18,7 @@ console.log('defaultPercentageValueForLateFee', defaultPercentageValueForLateFee
 // Controller to handle syncing contact data
 export const syncInitialSimproContactData = async (req: Request, res: Response): Promise<void> => {
     try {
-        let simproCustomerResponseArr: SimproCompanyType[] = await fetchSimproPaginatedData<SimproCompanyType>('/customers/companies/?Archived=false', "ID,CompanyName,Email,Archived,EIN,Phone,AltPhone", "")
+        let simproCustomerResponseArr: SimproCompanyType[] = await fetchSimproPaginatedData<SimproCompanyType>('/customers/companies/?Archived=false&pageSize=250', "ID,CompanyName,Email,Archived,EIN,Phone,AltPhone", "")
 
         // Transform data to CreditorsWatch format and chunk it
         let creditorWatchContactDataArray: CreditorsWatchContactType[] = transformContactDataToCreditorsWatchArray('Simpro', simproCustomerResponseArr);
@@ -71,7 +71,7 @@ export const syncInitialSimproContactData = async (req: Request, res: Response):
 
 export const syncInitialInvoiceCreditNoteData = async (req: Request, res: Response): Promise<void> => {
     try {
-        let simproInvoiceResponseArr: SimproInvoiceType[] = await fetchSimproPaginatedData<SimproInvoiceType>('/invoices/?IsPaid=false', 'ID,Customer,Status,Stage,OrderNo,Total,IsPaid,DateIssued,DatePaid,DateCreated,PaymentTerms,LatePaymentFee', '');
+        let simproInvoiceResponseArr: SimproInvoiceType[] = await fetchSimproPaginatedData<SimproInvoiceType>('/invoices/?IsPaid=false&pageSize=250', 'ID,Customer,Status,Stage,OrderNo,Total,IsPaid,DateIssued,DatePaid,DateCreated,PaymentTerms,LatePaymentFee', '');
 
         if (!simproInvoiceResponseArr) {
             console.error('No invoices found to sync.');
@@ -93,7 +93,7 @@ export const syncInitialInvoiceCreditNoteData = async (req: Request, res: Respon
 
         console.log("formattedDate", formattedDate)
 
-        let simproCustomerPaymentsResponse: SimproCustomerPaymentsType[] = await fetchSimproPaginatedData('/customerPayments/', 'ID,Payment,Invoices', formattedDate);
+        let simproCustomerPaymentsResponse: SimproCustomerPaymentsType[] = await fetchSimproPaginatedData('/customerPayments/?pageSize=250', 'ID,Payment,Invoices', formattedDate);
 
         let invoicesPaymentsData: InvoiceItemPaymentsType[] = [];
         simproCustomerPaymentsResponse.forEach(customerPayment => {
@@ -201,7 +201,7 @@ export const syncInitialInvoiceCreditNoteData = async (req: Request, res: Respon
 
 const syncInitialCreditNoteData = async (simproInvoiceArray: SimproInvoiceType[]) => {
     try {
-        let simproCreditNoteResponseArr: SimproCreditNoteType[] = await fetchSimproPaginatedData<SimproCreditNoteType>('/creditNotes/', "ID,Type,Customer,DateIssued,Stage,Total,InvoiceNo", "");
+        let simproCreditNoteResponseArr: SimproCreditNoteType[] = await fetchSimproPaginatedData<SimproCreditNoteType>('/creditNotes/?pageSize=250', "ID,Type,Customer,DateIssued,Stage,Total,InvoiceNo", "");
 
         if (!simproCreditNoteResponseArr) {
             console.error('No credit notes found to sync.');

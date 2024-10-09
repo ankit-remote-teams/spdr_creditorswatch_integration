@@ -14,7 +14,7 @@ const defaultPercentageValueForLateFee: number = parseFloat(process.env.DEFAULT_
 export const updateInvoiceData = async () => {
     try {
         const ifModifiedSinceHeader = get24HoursAgoDate();
-        let simproInvoiceResponseArr: SimproInvoiceType[] = await fetchSimproPaginatedData<SimproInvoiceType>('/invoices/', 'ID,Customer,Status,Stage,OrderNo,Total,IsPaid,DateIssued,DatePaid,DateCreated,PaymentTerms,LatePaymentFee', ifModifiedSinceHeader);
+        let simproInvoiceResponseArr: SimproInvoiceType[] = await fetchSimproPaginatedData<SimproInvoiceType>('/invoices/?pageSize=250', 'ID,Customer,Status,Stage,OrderNo,Total,IsPaid,DateIssued,DatePaid,DateCreated,PaymentTerms,LatePaymentFee', ifModifiedSinceHeader);
 
         const oldestInvoice = simproInvoiceResponseArr.reduce((oldest, current) => {
             const currentDate = moment(current.DateIssued, 'YYYY-MM-DD');
@@ -24,8 +24,7 @@ export const updateInvoiceData = async () => {
 
         const formattedDate = moment(oldestInvoice.DateIssued, 'YYYY-MM-DD').format('ddd, DD MMM YYYY HH:mm:ss [GMT]');
 
-
-        let simproCustomerPaymentsResponse: SimproCustomerPaymentsType[] = await fetchSimproPaginatedData('/customerPayments/', 'ID,Payment,Invoices', formattedDate);
+        let simproCustomerPaymentsResponse: SimproCustomerPaymentsType[] = await fetchSimproPaginatedData('/customerPayments/?pageSize=250', 'ID,Payment,Invoices', formattedDate);
 
         let invoicesPaymentsData: InvoiceItemPaymentsType[] = [];
         simproCustomerPaymentsResponse.forEach(customerPayment => {
@@ -41,7 +40,6 @@ export const updateInvoiceData = async () => {
             });
         });
 
-        // Sort invoicesPaymentsData by paymentDate (oldest to latest)
         invoicesPaymentsData.sort((a, b) => {
             const dateA = moment(a.paymentDate, 'YYYY-MM-DD');
             const dateB = moment(b.paymentDate, 'YYYY-MM-DD');
@@ -95,7 +93,6 @@ export const updateInvoiceData = async () => {
                     const currentDate = moment();
                     let dailyLateFeeRate: number;
                     daysLate = moment(currentDate).diff(dueDate, 'days');
-
                     if (daysLate > 0) {
                         dailyLateFeeRate = defaultPercentageValueForLateFee / 365;
                         let lateFee = calculateLatePaymentFeeAndBalanceDue(row)
@@ -221,7 +218,7 @@ const updateCreditNoteData = async (simproInvoiceResponseArr: SimproInvoiceType[
 
 
         let simproIdToFetchFromMapping: string[] = [];
-        simproInvoiceResponseArr.forEach(item => simproIdToFetchFromMapping.push(item.ID.toString()))
+        simproCreditNoteResponseArr.forEach(item => simproIdToFetchFromMapping.push(item.ID.toString()))
 
         const mappingData = await ContactMappingModel.find({ simproId: { $in: simproIdToFetchFromMapping } });
 
@@ -244,7 +241,6 @@ const updateCreditNoteData = async (simproInvoiceResponseArr: SimproInvoiceType[
         //Code to update exiting data.
         for (const row of dataToUpdate) {
             try {
-                console.log("Row that are updated : ", row)
                 let creditorWatchID = row.id;
                 delete row.id;
                 const response = await creditorsWatchPutWithRetry(`/credit_notes/${creditorWatchID}`, { credit_note: { ...row } });
@@ -266,7 +262,6 @@ const updateCreditNoteData = async (simproInvoiceResponseArr: SimproInvoiceType[
         //Code to update add data.
         for (const row of dataToAdd) {
             try {
-                console.log("Row that are added : ", row)
                 delete row.id;
                 const response = await creditorsWatchPostWithRetry(`/credit_notes`, { credit_note: { ...row } });
                 if (!response) {
@@ -312,8 +307,9 @@ const updateCreditNoteData = async (simproInvoiceResponseArr: SimproInvoiceType[
         }
     }
 }
-console.log(moment(Date.now()).format("DD MMM YYYY HH:mm:ss"))
-cron.schedule("28 17 * * *", async () => {
+console.log("For invoice schduler : ", moment(Date.now()).format("DD MMM YYYY HH:mm:ss"))
+
+cron.schedule("8 13 * * *", async () => {
     console.log(`INVOICE SCHEDULER: Task executed at ${moment().format('YYYY-MM-DD HH:mm:ss')}`);
     await updateInvoiceData();
 });
