@@ -13,7 +13,7 @@ import { get24HoursAgoDate } from '../utils/helper';
 const updateContactsData = async () => {
     try {
         const ifModifiedSinceHeader = get24HoursAgoDate();
-        let simproCustomerResponseArr: SimproCompanyType[] = await fetchSimproPaginatedData('/customers/companies/?pageSize=250', "ID,CompanyName,Email,Archived,EIN,Phone,AltPhone", ifModifiedSinceHeader);
+        let simproCustomerResponseArr: SimproCompanyType[] = await fetchSimproPaginatedData('/customers/companies/?pageSize=100', "ID,CompanyName,Email,Archived,EIN,Phone,AltPhone", ifModifiedSinceHeader);
         let creditorWatchContactDataArray: CreditorsWatchContactType[] = transformContactDataToCreditorsWatchArray('Simpro', simproCustomerResponseArr);
 
         let simproIdDocumentToFetchFromMapping: string[] = [];

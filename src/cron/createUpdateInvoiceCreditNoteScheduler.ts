@@ -7,7 +7,7 @@ import { CreditorsWatchCreditNoteType, CreditorsWatchInvoiceType, InvoiceItemPay
 import { transformCreditNoteDataToCreditorsWatchArray, transformInvoiceDataToCreditorsWatchArray } from '../utils/transformDataHelper';
 import { creditorsWatchPostWithRetry, creditorsWatchPutWithRetry } from '../utils/apiUtils';
 import { calculateLatePaymentFeeAndBalanceDue, get24HoursAgoDate } from '../utils/helper';
-import ContactMappingModel from '../models/contactMappingModel';
+import CreditNoteMappingModel from '../models/creditNotesMappingModel';
 
 const defaultPercentageValueForLateFee: number = parseFloat(process.env.DEFAULT_LATE_FEE_PERCENTAGE_FOR_CUSTOMER_PER_YEAR || '0');
 
@@ -212,15 +212,18 @@ const updateCreditNoteData = async (simproInvoiceResponseArr: SimproInvoiceType[
         simproCreditNoteResponseArr.forEach(item => {
             item.InvoiceData = simproInvoiceResponseArr.find(invoice => invoice.ID === item.InvoiceNo);
         })
+
         simproCreditNoteResponseArr = simproCreditNoteResponseArr.filter(item => item.InvoiceData)
 
         let creditorsWatchCreditNoteDataArray: CreditorsWatchCreditNoteType[] = transformCreditNoteDataToCreditorsWatchArray("Simpro", simproCreditNoteResponseArr);
 
+        console.log('creditorsWatchCreditNoteDataArray', creditorsWatchCreditNoteDataArray)
 
         let simproIdToFetchFromMapping: string[] = [];
         simproCreditNoteResponseArr.forEach(item => simproIdToFetchFromMapping.push(item.ID.toString()))
 
-        const mappingData = await ContactMappingModel.find({ simproId: { $in: simproIdToFetchFromMapping } });
+        const mappingData = await CreditNoteMappingModel.find({ simproId: { $in: simproIdToFetchFromMapping } });
+
 
         if (mappingData.length) {
             let simproCWIDMap: { [key: string]: string } = {};
@@ -230,6 +233,7 @@ const updateCreditNoteData = async (simproInvoiceResponseArr: SimproInvoiceType[
 
         let dataToUpdate: CreditorsWatchCreditNoteType[] = [];
         let dataToAdd: CreditorsWatchCreditNoteType[] = [];
+
         creditorsWatchCreditNoteDataArray.forEach(item => {
             if (item.id) {
                 dataToUpdate.push(item);
@@ -282,7 +286,7 @@ const updateCreditNoteData = async (simproInvoiceResponseArr: SimproInvoiceType[
                     lastSyncedAt: new Date(),
                 };
 
-                let savedMapping = await ContactMappingModel.create(newMapping);
+                let savedMapping = await CreditNoteMappingModel.create(newMapping);
                 console.log('Mapping created:', savedMapping);
 
             } catch (error) {
@@ -309,7 +313,13 @@ const updateCreditNoteData = async (simproInvoiceResponseArr: SimproInvoiceType[
 }
 console.log("For invoice schduler : ", moment(Date.now()).format("DD MMM YYYY HH:mm:ss"))
 
-cron.schedule("8 13 * * *", async () => {
+cron.schedule("0 1 * * *", async () => {
     console.log(`INVOICE SCHEDULER: Task executed at ${moment().format('YYYY-MM-DD HH:mm:ss')}`);
     await updateInvoiceData();
 });
+
+//Final shceudler
+// cron.schedule("0 1 * * *", async () => {
+//     console.log(`INVOICE SCHEDULER: Task executed at ${moment().format('YYYY-MM-DD HH:mm:ss')}`);
+//     await updateInvoiceData();
+// });

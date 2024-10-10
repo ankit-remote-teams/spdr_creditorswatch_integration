@@ -42,10 +42,17 @@ export const calculateLatePaymentFeeAndBalanceDue = (
         lastPaymentDate = payment.paymentDate;
     }
 
-    if (totalAmountForCalculation > 0 && lastPaymentDate) {
-        const daysSinceLastPayment = moment().diff(moment(lastPaymentDate, 'YYYY-MM-DD'), 'days');
-        if (daysSinceLastPayment > 0) {
-            latePaymentFee += totalAmountForCalculation * ((dailyLateFeeRate * daysSinceLastPayment) / 100);
+    if (totalAmountForCalculation > 0) {
+        if (!lastPaymentDate) {
+            const daysSinceLastPayment = moment().diff(moment(dueDate, 'YYYY-MM-DD'), 'days');
+            if (daysSinceLastPayment > 0) {
+                latePaymentFee += totalAmountForCalculation * ((dailyLateFeeRate * daysSinceLastPayment) / 100);
+            }
+        } else {
+            const daysSinceLastPayment = moment().diff(moment(lastPaymentDate, 'YYYY-MM-DD'), 'days');
+            if (daysSinceLastPayment > 0) {
+                latePaymentFee += totalAmountForCalculation * ((dailyLateFeeRate * daysSinceLastPayment) / 100);
+            }
         }
     }
 
