@@ -26,13 +26,13 @@ export const syncInitialSimproContactData = async (req: Request, res: Response):
             try {
                 const response = await creditorsWatchPostWithRetry('/contacts', { contact: { ...row } });
                 if (!response) {
-                    console.error('Failed to sync contact data after multiple attempts.');
+                    console.log('Failed to sync contact data after multiple attempts.');
                     continue;
                 }
 
                 let creditorWatchContactData = response?.data?.contact;
                 if (!creditorWatchContactData) {
-                    console.error('Data unavailable to create mapping for contact.');
+                    console.log('Data unavailable to create mapping for contact.');
                     continue;
                 }
 
@@ -46,10 +46,10 @@ export const syncInitialSimproContactData = async (req: Request, res: Response):
                 console.log('Mapping created:', savedMapping);
             } catch (error) {
                 if (error instanceof AxiosError) {
-                    console.error('Error syncing contact data:', error.response?.data || error.message);
+                    console.log('Error syncing contact data:', error.response?.data || error.message);
                     res.status(500).json({ message: 'Error from Axios request', details: error.response?.data });
                 } else {
-                    console.error('Unexpected error:', error);
+                    console.log('Unexpected error:', error);
                     res.status(500).json({ message: 'Internal Server Error' });
                 }
             }
@@ -58,11 +58,11 @@ export const syncInitialSimproContactData = async (req: Request, res: Response):
         res.status(200).json({ message: "Synced data successfully", data: creditorWatchContactDataArray })
     } catch (error) {
         if (error instanceof AxiosError) {
-            console.error('Error syncing contact data:', error.response?.data || error.message);
+            console.log('Error syncing contact data:', error.response?.data || error.message);
             res.status(500).json({ message: 'Error from Axios request', details: error.response?.data });
         } else {
             // Generic error handling
-            console.error('Unexpected error:', error);
+            console.log('Unexpected error:', error);
             res.status(500).json({ message: 'Internal Server Error' });
         }
     }
@@ -74,7 +74,7 @@ export const syncInitialInvoiceCreditNoteData = async (req: Request, res: Respon
         let simproInvoiceResponseArr: SimproInvoiceType[] = await fetchSimproPaginatedData<SimproInvoiceType>('/invoices/?IsPaid=false&pageSize=100', 'ID,Customer,Status,Stage,OrderNo,Total,IsPaid,DateIssued,DatePaid,DateCreated,PaymentTerms,LatePaymentFee', '');
 
         if (!simproInvoiceResponseArr) {
-            console.error('No invoices found to sync.');
+            console.log('No invoices found to sync.');
             res.status(200).json({ message: 'No invoices found to sync.' });
             return;
         }
@@ -152,14 +152,14 @@ export const syncInitialInvoiceCreditNoteData = async (req: Request, res: Respon
 
                 const response = await creditorsWatchPostWithRetry('/invoices', { invoice: { ...row } });
                 if (!response) {
-                    console.error('Failed to sync invoice data after multiple attempts.');
+                    console.log('Failed to sync invoice data after multiple attempts.');
                     continue;
                 }
 
                 let creditorWatchInvoiceData = response?.data?.invoice;
-                
+
                 if (!creditorWatchInvoiceData) {
-                    console.error('Data unavailable to create mapping invoice.');
+                    console.log('Data unavailable to create mapping invoice.');
                     continue;
                 }
 
@@ -174,10 +174,10 @@ export const syncInitialInvoiceCreditNoteData = async (req: Request, res: Respon
 
             } catch (error) {
                 if (error instanceof AxiosError) {
-                    console.error('Error syncing contact data:', error.response?.data || error.message);
+                    console.log('Error syncing contact data:', error.response?.data || error.message);
                     res.status(500).json({ message: 'Error from Axios request', details: error.response?.data });
                 } else {
-                    console.error('Unexpected error:', error);
+                    console.log('Unexpected error:', error);
                     res.status(500).json({ message: 'Internal Server Error' });
                 }
             }
@@ -188,11 +188,11 @@ export const syncInitialInvoiceCreditNoteData = async (req: Request, res: Respon
         res.status(200).json({ message: "Synced data successfully", })
     } catch (error) {
         if (error instanceof AxiosError) {
-            console.error('Error syncing invoice data:', error.response?.data || error.message);
+            console.log('Error syncing invoice data:', error.response?.data || error.message);
             res.status(500).json({ message: 'Error from Axios request', details: error.response?.data });
         } else {
             // Generic error handling
-            console.error('Unexpected error:', error);
+            console.log('Unexpected error:', error);
             res.status(500).json({ message: 'Internal Server Error' });
         }
     }
@@ -204,7 +204,7 @@ const syncInitialCreditNoteData = async (simproInvoiceArray: SimproInvoiceType[]
         let simproCreditNoteResponseArr: SimproCreditNoteType[] = await fetchSimproPaginatedData<SimproCreditNoteType>('/creditNotes/?pageSize=100', "ID,Type,Customer,DateIssued,Stage,Total,InvoiceNo", "");
 
         if (!simproCreditNoteResponseArr) {
-            console.error('No credit notes found to sync.');
+            console.log('No credit notes found to sync.');
             return [];
         }
 
@@ -220,13 +220,13 @@ const syncInitialCreditNoteData = async (simproInvoiceArray: SimproInvoiceType[]
             try {
                 const response = await creditorsWatchPostWithRetry('/credit_notes', { credit_note: { ...row } });
                 if (!response) {
-                    console.error('Failed to sync credit note data after multiple attempts.');
+                    console.log('Failed to sync credit note data after multiple attempts.');
                     continue;
                 }
 
                 let creditorsWatchCreditNotesData = response?.data?.credit_note;
                 if (!creditorsWatchCreditNotesData) {
-                    console.error('Data unavailable to create mapping credit note.');
+                    console.log('Data unavailable to create mapping credit note.');
                     continue;
                 }
 
@@ -240,10 +240,10 @@ const syncInitialCreditNoteData = async (simproInvoiceArray: SimproInvoiceType[]
                 console.log('Mapping created:', savedMapping);
             } catch (error) {
                 if (error instanceof AxiosError) {
-                    console.error('Error syncing credit note data:', error.response?.data || error.message);
+                    console.log('Error syncing credit note data:', error.response?.data || error.message);
 
                 } else {
-                    console.error('Unexpected error in credit note sync:', error);
+                    console.log('Unexpected error in credit note sync:', error);
                 }
             }
         }
@@ -251,13 +251,13 @@ const syncInitialCreditNoteData = async (simproInvoiceArray: SimproInvoiceType[]
 
     } catch (error) {
         if (error instanceof AxiosError) {
-            console.error('Error syncing credit note data:', error.response?.data || error.message);
+            console.log('Error syncing credit note data:', error.response?.data || error.message);
             throw {
                 message: 'Error syncing credit note data', error: error.response?.data || error.message
             }
         } else {
             // Generic error handling
-            console.error('Unexpected error:', error);
+            console.log('Unexpected error:', error);
             throw {
                 message: 'Error syncing credit note data', error: "Something went wrong while syncing credit note."
             }
@@ -272,7 +272,7 @@ export const updateInvoiceCreditorNoteDataToCreditorsWatch = async (req: Request
         await updateInvoiceData()
         res.status(200).json({ message: "Updated invoice successfully", })
     } catch (error) {
-        console.error('Unexpected error:', error);
+        console.log('Unexpected error:', error);
         res.status(500).json({ message: 'Internal Server Error' })
     }
 }

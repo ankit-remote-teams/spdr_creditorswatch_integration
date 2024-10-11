@@ -8,8 +8,6 @@ import { transformContactDataToCreditorsWatchArray } from '../utils/transformDat
 import { creditorsWatchPostWithRetry, creditorsWatchPutWithRetry } from '../utils/apiUtils';
 import { get24HoursAgoDate } from '../utils/helper';
 
-
-
 const updateContactsData = async () => {
     try {
         const ifModifiedSinceHeader = get24HoursAgoDate();
@@ -36,7 +34,6 @@ const updateContactsData = async () => {
                 dataToAdd.push(item);
             }
         })
-
         //Code to update exiting data.
         for (const row of dataToUpdate) {
             try {
@@ -44,36 +41,34 @@ const updateContactsData = async () => {
                 delete row.id;
                 const response = await creditorsWatchPutWithRetry(`/contacts/${creditorWatchID}`, { contact: { ...row } });
                 if (!response) {
-                    console.error('Failed to update contact data after multiple attempts.');
+                    console.log('Failed to update contact data after multiple attempts.');
                     continue;
                 }
             } catch (error) {
                 if (error instanceof AxiosError) {
-                    console.error('Error syncing contact data:', error.response?.data || error.message);
+                    console.log('Error syncing contact data:', error.response?.data || error.message);
                     throw { message: 'Error from Axios request', details: error.response?.data }
                 } else {
-                    console.error('Unexpected error:', error);
+                    console.log('Unexpected error:', error);
                     throw { message: 'Internal Server Error' }
                 }
             }
         }
-
         //Code to update add data.
         for (const row of dataToAdd) {
             try {
                 delete row.id;
                 const response = await creditorsWatchPostWithRetry(`/contacts`, { contact: { ...row } });
                 if (!response) {
-                    console.error('Failed to add contact data after multiple attempts.');
+                    console.log('Failed to add contact data after multiple attempts.');
                     continue;
                 }
 
                 let creditorWatchContactData = response?.data?.contact;
                 if (!creditorWatchContactData) {
-                    console.error('Data unavailable to create mapping contact data.');
+                    console.log('Data unavailable to create mapping contact data.');
                     continue;
                 }
-
 
                 let newMapping: MappingType = {
                     simproId: creditorWatchContactData.external_id,
@@ -86,28 +81,26 @@ const updateContactsData = async () => {
 
             } catch (error) {
                 if (error instanceof AxiosError) {
-                    console.error('Error syncing contact data:', error.response?.data || error.message);
+                    console.log('Error syncing contact data:', error.response?.data || error.message);
                     throw { message: 'Error from Axios request', details: error.response?.data }
                 } else {
-                    console.error('Unexpected error:', error);
+                    console.log('Unexpected error:', error);
                     throw { message: 'Internal Server Error' }
                 }
             }
         }
-
-
     } catch (error: any) {
         if (error instanceof AxiosError) {
-            console.error('Error syncing contact data:', error.response?.data || error.message);
+            console.log('Error syncing contact data:', error.response?.data || error.message);
             throw { message: error.message, data: error?.response?.data }
         } else {
-            console.error('Unexpected error:', error);
+            console.log('Unexpected error:', error);
             throw { message: error?.message }
         }
     }
 }
 
-cron.schedule("* * * * *", async () => {
+cron.schedule("0 1 * * *", async () => {
     console.log(`CONTACTS SCHEDULER: Task executed at ${moment().format('YYYY-MM-DD HH:mm:ss')}`);
     await updateContactsData();
 });

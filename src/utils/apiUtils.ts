@@ -17,7 +17,7 @@ export async function creditorsWatchPostWithRetry<T>(
                 console.warn(`Attempt ${attempt + 1} failed. Retrying...`);
                 await new Promise((res) => setTimeout(res, delay));
             } else {
-                console.error('Max retries reached in creditsWatch post. Failing request.');
+                console.log('Max retries reached in creditsWatch post. Failing request.');
                 return undefined;
             }
         }
@@ -40,7 +40,7 @@ export async function creditorsWatchPutWithRetry<T>(
                 console.warn(`Attempt ${attempt + 1} failed. Retrying...`);
                 await new Promise((res) => setTimeout(res, delay));
             } else {
-                console.error('Max retries reached in creditsWatch put. Failing request.');
+                console.log('Max retries reached in creditsWatch put. Failing request.');
                 return undefined;
             }
         }

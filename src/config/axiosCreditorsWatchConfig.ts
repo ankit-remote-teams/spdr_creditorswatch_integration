@@ -25,7 +25,7 @@ axiosCreditorsWatch.interceptors.request.use(
         return config;
     },
     (error) => {
-        console.error('Request error:', error);
+        console.log('Request error:', error);
         return Promise.reject(error);
     }
 );
@@ -35,10 +35,10 @@ axiosCreditorsWatch.interceptors.response.use(
     (response) => response,
     (error) => {
         if (error.response?.status === 401) {
-            console.error('Unauthorized, possibly invalid token.');
+            console.log('Unauthorized, possibly invalid token.');
         }
         if (error.response?.status === 429) {
-            console.error('Rate limit exceeded.');
+            console.log('Rate limit exceeded.');
         }
         return Promise.reject(error);
     }

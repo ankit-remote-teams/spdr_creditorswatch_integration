@@ -11,7 +11,8 @@ const PORT: number = parseInt(process.env.PORT as string, 10) || 6001;
 if (process.env.NODE_ENV === 'development') {
     const cronJobs = [
         // './cron/createUpdateContactsDataScheduler.ts',
-        './cron/createUpdateInvoiceCreditNoteScheduler.ts',
+        // './cron/createUpdateInvoiceCreditNoteScheduler.ts',
+        './cron/deleteDataScheduler.ts',
     ];
     cronJobs.forEach(job => {
         require(job);
@@ -27,7 +28,7 @@ app.get('/', (req: Request, res: Response) => {
 mongoose.connect(process.env.DB_URL as string).then(() => {
     console.log('MongoDB Connected...');
 }).catch((error) => {
-    console.error(error);
+    console.log(error);
 })
 
 app.listen(PORT, () => {
