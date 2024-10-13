@@ -30,11 +30,11 @@ const handleDeleteContactScheduler = async () => {
                         const customerId = parts[parts.length - 1].split('?')[0];
                         simproIdToUpdateAsDeleted.push(customerId);
                     } else {
-                        console.log('CREDITORS WATCH DELETE SCHEDULER : Unexpected AxiosError in Individual:', error);
+                        console.log('DELETE SCHEDULER : Unexpected AxiosError in Individual:', error);
                         throw { message: error }
                     }
                 } else {
-                    console.log('CREDITORS WATCH DELETE SCHEDULER : Unexpected error in Individual:', error);
+                    console.log('DELETE SCHEDULER : Unexpected error in Individual:', error);
                     throw { message: error }
                 }
             }
@@ -49,29 +49,29 @@ const handleDeleteContactScheduler = async () => {
             try {
                 const response = await creditorsWatchPutWithRetry(`/contacts/${creditorsId}`, { contact: { status: 'deleted' } })
                 if (!response) {
-                    console.log('CREDITORS WATCH DELETE SCHEDULER : Failed to update contact data after multiple attempts.');
+                    console.log('DELETE SCHEDULER : Failed to update contact data after multiple attempts.');
                     continue;
                 }
             } catch (error) {
                 if (error instanceof AxiosError) {
-                    console.log('CREDITORS WATCH DELETE SCHEDULER : Error deleting contact data:', error.response?.data || error.message);
+                    console.log('DELETE SCHEDULER : Error deleting contact data:', error.response?.data || error.message);
                     throw { message: 'Error from Axios request', details: error.response?.data }
                 } else {
-                    console.log('CREDITORS WATCH DELETE SCHEDULER : Unexpected error:', error);
+                    console.log('DELETE SCHEDULER : Unexpected error:', error);
                     throw { message: 'Internal Server Error' }
                 }
             }
 
         }
 
-        console.log("CREDITORS WATCH DELETE SCHEDULER : Completed")
+        console.log("DELETE SCHEDULER : Completed")
 
     } catch (error) {
         if (error instanceof AxiosError) {
-            console.log('CREDITORS WATCH DELETE SCHEDULER : Error deleting contact data:', error.response?.data || error.message);
+            console.log('DELETE SCHEDULER : Error deleting contact data:', error.response?.data || error.message);
             throw { message: error.message, data: error?.response?.data }
         } else {
-            console.log('CREDITORS WATCH DELETE SCHEDULER : Unexpected error:', error);
+            console.log('DELETE SCHEDULER : Unexpected error:', error);
             throw { message: error }
         }
     }
@@ -219,10 +219,10 @@ const handleDeleteCreditNoteScheduler = async () => {
 }
 
 
-console.log('CREDITORS WATCH DELETE SCHEDULER : Delete contact scheduler time', moment().format('YYYY-MM-DD HH:mm:ss'))
+console.log('DELETE SCHEDULER : Delete contact scheduler time', moment().format('YYYY-MM-DD HH:mm:ss'))
 
 cron.schedule("38 10 * * *", async () => {
-    console.log(`CREDITORS WATCH DELETE SCHEDULER : Task executed at ${moment().format('YYYY-MM-DD HH:mm:ss')}`);
+    console.log(`DELETE SCHEDULER : Task executed at ${moment().format('YYYY-MM-DD HH:mm:ss')}`);
     await handleDeleteContactScheduler();
     await handleDeleteInvoiceScheduler();
     await handleDeleteCreditNoteScheduler();
