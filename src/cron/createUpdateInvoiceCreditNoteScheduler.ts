@@ -14,7 +14,7 @@ const defaultPercentageValueForLateFee: number = parseFloat(process.env.DEFAULT_
 export const updateInvoiceData = async () => {
     try {
         const ifModifiedSinceHeader = get24HoursAgoDate();
-        let simproInvoiceResponseArr: SimproInvoiceType[] = await fetchSimproPaginatedData<SimproInvoiceType>('/invoices/?pageSize=250', 'ID,Customer,Status,Stage,OrderNo,Total,IsPaid,DateIssued,DatePaid,DateCreated,PaymentTerms,LatePaymentFee', ifModifiedSinceHeader);
+        let simproInvoiceResponseArr: SimproInvoiceType[] = await fetchSimproPaginatedData<SimproInvoiceType>('/invoices/?pageSize=100', 'ID,Customer,Status,Stage,OrderNo,Total,IsPaid,DateIssued,DatePaid,DateCreated,PaymentTerms,LatePaymentFee', ifModifiedSinceHeader);
 
         const oldestInvoice = simproInvoiceResponseArr.reduce((oldest, current) => {
             const currentDate = moment(current.DateIssued, 'YYYY-MM-DD');
@@ -24,7 +24,7 @@ export const updateInvoiceData = async () => {
 
         const formattedDate = moment(oldestInvoice.DateIssued, 'YYYY-MM-DD').format('ddd, DD MMM YYYY HH:mm:ss [GMT]');
 
-        let simproCustomerPaymentsResponse: SimproCustomerPaymentsType[] = await fetchSimproPaginatedData('/customerPayments/?pageSize=250', 'ID,Payment,Invoices', formattedDate);
+        let simproCustomerPaymentsResponse: SimproCustomerPaymentsType[] = await fetchSimproPaginatedData('/customerPayments/?pageSize=100', 'ID,Payment,Invoices', formattedDate);
 
         let invoicesPaymentsData: InvoiceItemPaymentsType[] = [];
         simproCustomerPaymentsResponse.forEach(customerPayment => {
@@ -112,17 +112,17 @@ export const updateInvoiceData = async () => {
                 const response = await creditorsWatchPutWithRetry(`/invoices/${creditorWatchID}`, { invoice: { ...row } });
 
                 if (!response) {
-                    console.log('Failed to update invoice data after multiple attempts.');
+                    console.log('INVOICE SCHEDULER : Failed to update invoice data after multiple attempts.');
                     continue;
                 }
 
 
             } catch (error) {
                 if (error instanceof AxiosError) {
-                    console.log('Error syncing invoice data:', error.response?.data || error.message);
+                    console.log('INVOICE SCHEDULER : Error syncing invoice data:', error.response?.data || error.message);
                     throw { message: 'Error from Axios request', details: error.response?.data }
                 } else {
-                    console.log('Unexpected error:', error);
+                    console.log('INVOICE SCHEDULER : Unexpected error:', error);
                     throw { message: 'Internal Server Error' }
                 }
             }
@@ -155,13 +155,13 @@ export const updateInvoiceData = async () => {
 
                 const response = await creditorsWatchPostWithRetry(`/invoices`, { invoice: { ...row } });
                 if (!response) {
-                    console.log('Failed to add invoice data after multiple attempts.');
+                    console.log('INVOICE SCHEDULER : Failed to add invoice data after multiple attempts.');
                     continue;
                 }
 
                 let creditorWatchContactData = response?.data?.invoice;
                 if (!creditorWatchContactData) {
-                    console.log('Data unavailable to create mapping invoice.');
+                    console.log('INVOICE SCHEDULER : Data unavailable to create mapping invoice.');
                     continue;
                 }
 
@@ -173,14 +173,14 @@ export const updateInvoiceData = async () => {
                 };
 
                 let savedMapping = await InvoiceMappingModel.create(newMapping);
-                console.log('Mapping created:', savedMapping);
+                console.log('INVOICE SCHEDULER : Mapping created:', savedMapping);
 
             } catch (error) {
                 if (error instanceof AxiosError) {
-                    console.log('Error syncing invoice data:', error.response?.data || error.message);
+                    console.log('INVOICE SCHEDULER : Error syncing invoice data:', error.response?.data || error.message);
                     throw { message: 'Error from Axios request', details: error.response?.data }
                 } else {
-                    console.log('Unexpected error:', error);
+                    console.log('INVOICE SCHEDULER : Unexpected error:', error);
                     throw { message: 'Internal Server Error' }
                 }
             }
@@ -191,10 +191,10 @@ export const updateInvoiceData = async () => {
 
     } catch (error: any) {
         if (error instanceof AxiosError) {
-            console.log('Error syncing invoice data:', error.response?.data || error.message);
+            console.log('INVOICE SCHEDULER : Error syncing invoice data:', error.response?.data || error.message);
             throw { message: error.message, data: error?.response?.data }
         } else {
-            console.log('Unexpected error:', error);
+            console.log('INVOICE SCHEDULER : Unexpected error:', error);
             throw { message: error?.message }
         }
     }
@@ -206,7 +206,7 @@ const updateCreditNoteData = async (simproInvoiceResponseArr: SimproInvoiceType[
         let simproCreditNoteResponseArr: SimproCreditNoteType[] = await fetchSimproPaginatedData<SimproCreditNoteType>('/creditNotes/', 'ID,Type,Customer,DateIssued,Stage,Total,InvoiceNo', ifModifiedSinceHeader);
 
         if (!simproCreditNoteResponseArr) {
-            console.log('No credit notes found to sync.');
+            console.log('INVOICE SCHEDULER : No credit notes found to sync.');
             return [];
         }
 
@@ -218,7 +218,7 @@ const updateCreditNoteData = async (simproInvoiceResponseArr: SimproInvoiceType[
 
         let creditorsWatchCreditNoteDataArray: CreditorsWatchCreditNoteType[] = transformCreditNoteDataToCreditorsWatchArray("Simpro", simproCreditNoteResponseArr);
 
-        console.log('creditorsWatchCreditNoteDataArray', creditorsWatchCreditNoteDataArray)
+        console.log('INVOICE SCHEDULER : creditorsWatchCreditNoteDataArray', creditorsWatchCreditNoteDataArray)
 
         let simproIdToFetchFromMapping: string[] = [];
         simproCreditNoteResponseArr.forEach(item => simproIdToFetchFromMapping.push(item.ID.toString()))
@@ -250,15 +250,15 @@ const updateCreditNoteData = async (simproInvoiceResponseArr: SimproInvoiceType[
                 delete row.id;
                 const response = await creditorsWatchPutWithRetry(`/credit_notes/${creditorWatchID}`, { credit_note: { ...row } });
                 if (!response) {
-                    console.log('Failed to update credit note data after multiple attempts.');
+                    console.log('INVOICE SCHEDULER : Failed to update credit note data after multiple attempts.');
                     continue;
                 }
             } catch (error) {
                 if (error instanceof AxiosError) {
-                    console.log('Error syncing credit note data:', error.response?.data || error.message);
+                    console.log('INVOICE SCHEDULER : Error syncing credit note data:', error.response?.data || error.message);
                     throw { message: 'Error from Axios request', details: error.response?.data }
                 } else {
-                    console.log('Unexpected error:', error);
+                    console.log('INVOICE SCHEDULER : Unexpected error:', error);
                     throw { message: 'Internal Server Error' }
                 }
             }
@@ -270,13 +270,13 @@ const updateCreditNoteData = async (simproInvoiceResponseArr: SimproInvoiceType[
                 delete row.id;
                 const response = await creditorsWatchPostWithRetry(`/credit_notes`, { credit_note: { ...row } });
                 if (!response) {
-                    console.log('Failed to add credit note data after multiple attempts.');
+                    console.log('INVOICE SCHEDULER : Failed to add credit note data after multiple attempts.');
                     continue;
                 }
 
                 let creditorWatchContactData = response?.data?.credit_note;
                 if (!creditorWatchContactData) {
-                    console.log('Data unavailable to create mapping credit note.');
+                    console.log('INVOICE SCHEDULER : Data unavailable to create mapping credit note.');
                     continue;
                 }
 
@@ -288,14 +288,14 @@ const updateCreditNoteData = async (simproInvoiceResponseArr: SimproInvoiceType[
                 };
 
                 let savedMapping = await CreditNoteMappingModel.create(newMapping);
-                console.log('Mapping created:', savedMapping);
+                console.log('INVOICE SCHEDULER : Mapping created:', savedMapping);
 
             } catch (error) {
                 if (error instanceof AxiosError) {
-                    console.log('Error syncing credit note data:', error.response?.data || error.message);
+                    console.log('INVOICE SCHEDULER : Error syncing credit note data:', error.response?.data || error.message);
                     throw { message: 'Error from Axios request', details: error.response?.data }
                 } else {
-                    console.log('Unexpected error:', error);
+                    console.log('INVOICE SCHEDULER : Unexpected error:', error);
                     throw { message: 'Internal Server Error' }
                 }
             }
@@ -304,10 +304,10 @@ const updateCreditNoteData = async (simproInvoiceResponseArr: SimproInvoiceType[
 
     } catch (error: any) {
         if (error instanceof AxiosError) {
-            console.log('Error syncing creditnote data:', error.response?.data || error.message);
+            console.log('INVOICE SCHEDULER : Error syncing creditnote data:', error.response?.data || error.message);
             throw { message: error.message, data: error?.response?.data }
         } else {
-            console.log('Unexpected error:', error);
+            console.log('INVOICE SCHEDULER : Unexpected error:', error);
             throw { message: error?.message }
         }
     }

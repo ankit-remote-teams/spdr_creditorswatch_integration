@@ -41,15 +41,15 @@ const updateContactsData = async () => {
                 delete row.id;
                 const response = await creditorsWatchPutWithRetry(`/contacts/${creditorWatchID}`, { contact: { ...row } });
                 if (!response) {
-                    console.log('Failed to update contact data after multiple attempts.');
+                    console.log('CONTACT SCHEDULER : Failed to update contact data after multiple attempts.');
                     continue;
                 }
             } catch (error) {
                 if (error instanceof AxiosError) {
-                    console.log('Error syncing contact data:', error.response?.data || error.message);
+                    console.log('CONTACT SCHEDULER : Error syncing contact data:', error.response?.data || error.message);
                     throw { message: 'Error from Axios request', details: error.response?.data }
                 } else {
-                    console.log('Unexpected error:', error);
+                    console.log('CONTACT SCHEDULER : Unexpected error:', error);
                     throw { message: 'Internal Server Error' }
                 }
             }
@@ -60,13 +60,13 @@ const updateContactsData = async () => {
                 delete row.id;
                 const response = await creditorsWatchPostWithRetry(`/contacts`, { contact: { ...row } });
                 if (!response) {
-                    console.log('Failed to add contact data after multiple attempts.');
+                    console.log('CONTACT SCHEDULER : Failed to add contact data after multiple attempts.');
                     continue;
                 }
 
                 let creditorWatchContactData = response?.data?.contact;
                 if (!creditorWatchContactData) {
-                    console.log('Data unavailable to create mapping contact data.');
+                    console.log('CONTACT SCHEDULER : Data unavailable to create mapping contact data.');
                     continue;
                 }
 
@@ -77,24 +77,24 @@ const updateContactsData = async () => {
                 };
 
                 let savedMapping = await ContactMappingModel.create(newMapping);
-                console.log('Mapping created:', savedMapping);
+                console.log('CONTACT SCHEDULER : Mapping created:', savedMapping);
 
             } catch (error) {
                 if (error instanceof AxiosError) {
-                    console.log('Error syncing contact data:', error.response?.data || error.message);
+                    console.log('CONTACT SCHEDULER : Error syncing contact data:', error.response?.data || error.message);
                     throw { message: 'Error from Axios request', details: error.response?.data }
                 } else {
-                    console.log('Unexpected error:', error);
+                    console.log('CONTACT SCHEDULER : Unexpected error:', error);
                     throw { message: 'Internal Server Error' }
                 }
             }
         }
     } catch (error: any) {
         if (error instanceof AxiosError) {
-            console.log('Error syncing contact data:', error.response?.data || error.message);
+            console.log('CONTACT SCHEDULER : Error syncing contact data:', error.response?.data || error.message);
             throw { message: error.message, data: error?.response?.data }
         } else {
-            console.log('Unexpected error:', error);
+            console.log('CONTACT SCHEDULER : Unexpected error:', error);
             throw { message: error?.message }
         }
     }
