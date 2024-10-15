@@ -1,4 +1,4 @@
-import axios, { AxiosError, AxiosResponse } from 'axios'; // Import axios types
+import { AxiosResponse } from 'axios'; 
 import axiosCreditorsWatch from '../config/axiosCreditorsWatchConfig';
 
 export async function creditorsWatchPostWithRetry<T>(

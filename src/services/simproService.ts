@@ -1,6 +1,5 @@
 import { AxiosError } from "axios";
 import axiosSimPRO from "../config/axiosSimProConfig";
-import { SimproCompanyType } from "../types/types";
 
 export const fetchSimproPaginatedData = async <T>(url: string, columns: string, ifModifiedSinceHeader?: string): Promise<T[]> => {
     try {

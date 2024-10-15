@@ -1,4 +1,4 @@
-import axios, { AxiosRequestConfig, AxiosResponse, AxiosHeaders, AxiosInstance } from 'axios';
+import axios, { AxiosInstance } from 'axios';
 
 
 const ORGANISATION_ID = process.env.CREDITORS_WATHC_API_ORGANISATION_ID;

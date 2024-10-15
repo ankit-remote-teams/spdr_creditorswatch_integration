@@ -57,8 +57,6 @@ export const updateInvoiceData = async () => {
             }
         });
 
-
-
         let creditorWatchInvoiceDataArray: CreditorsWatchInvoiceType[] = transformInvoiceDataToCreditorsWatchArray('Simpro', simproInvoiceResponseArr);
 
         let simproIdToFetchFromMapping: string[] = [];
@@ -218,13 +216,10 @@ const updateCreditNoteData = async (simproInvoiceResponseArr: SimproInvoiceType[
 
         let creditorsWatchCreditNoteDataArray: CreditorsWatchCreditNoteType[] = transformCreditNoteDataToCreditorsWatchArray("Simpro", simproCreditNoteResponseArr);
 
-        console.log('INVOICE SCHEDULER : creditorsWatchCreditNoteDataArray', creditorsWatchCreditNoteDataArray)
-
         let simproIdToFetchFromMapping: string[] = [];
         simproCreditNoteResponseArr.forEach(item => simproIdToFetchFromMapping.push(item.ID.toString()))
 
         const mappingData = await CreditNoteMappingModel.find({ simproId: { $in: simproIdToFetchFromMapping } });
-
 
         if (mappingData.length) {
             let simproCWIDMap: { [key: string]: string } = {};
