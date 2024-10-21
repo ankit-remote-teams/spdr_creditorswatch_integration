@@ -6,11 +6,11 @@ import { fetchSimproPaginatedData } from '../services/simproService';
 import { CreditorsWatchContactType, MappingType, SimproCompanyType } from '../types/types';
 import { transformContactDataToCreditorsWatchArray } from '../utils/transformDataHelper';
 import { creditorsWatchPostWithRetry, creditorsWatchPutWithRetry } from '../utils/apiUtils';
-import { get24HoursAgoDate } from '../utils/helper';
+import { get48HoursAgoDate } from '../utils/helper';
 
 const updateContactsData = async () => {
     try {
-        const ifModifiedSinceHeader = get24HoursAgoDate();
+        const ifModifiedSinceHeader = get48HoursAgoDate();
         let simproCustomerResponseArr: SimproCompanyType[] = await fetchSimproPaginatedData('/customers/companies/?pageSize=100', "ID,CompanyName,Email,Archived,EIN,Phone,AltPhone", ifModifiedSinceHeader);
         let creditorWatchContactDataArray: CreditorsWatchContactType[] = transformContactDataToCreditorsWatchArray('Simpro', simproCustomerResponseArr);
 

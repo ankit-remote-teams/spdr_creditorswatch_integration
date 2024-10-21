@@ -72,7 +72,7 @@ export const transformInvoiceDataToCreditorsWatchArray = <T>(source: SourceType,
                     amount_due: 123.45,
                     amount_paid: 0,
                     total_amount: 123.45,
-                    invoice_date: "ddate`",
+                    invoice_date: "date`",
                     due_date: "YYYY-MM-DD",
                     paid_date: null,
                 }
@@ -89,15 +89,15 @@ export const transformCreditNoteDataToCreditorsWatchArray = <T>(source: SourceTy
             case 'Simpro':
                 const simproCreditNotes = creditNote as SimproCreditNoteType;
                 return {
-                    amount_remaining: (simproCreditNotes.InvoiceData?.Total?.IncTax || 0) - (simproCreditNotes?.Total?.IncTax || 0),
+                    amount_remaining: 0,
                     credit_note_number: simproCreditNotes?.ID?.toString(),
                     currency_code: "AUD",
                     currency_rate: "1.0",
                     date: simproCreditNotes?.DateIssued,
                     external_contact_id: simproCreditNotes?.Customer?.ID?.toString(),
                     external_id: simproCreditNotes?.ID?.toString(),
-                    status: simproCreditNotes?.Type == "Void" ? "voided" : "authorised",
-                    total_amount: simproCreditNotes?.Total?.IncTax,
+                    status: simproCreditNotes?.Type == "Void" ? "voided" : simproCreditNotes?.InvoiceData?.IsPaid ? "paid" : "authorised",
+                    total_amount: (simproCreditNotes?.Total?.IncTax || 0),
                 };
             case 'RemoteFlow':
                 return {

@@ -31,7 +31,7 @@ export const fetchSimproPaginatedData = async <T>(url: string, columns: string, 
                 break;
             }
 
-            allEntity.push(...entity);
+            allEntity = allEntity.concat(entity);
 
             totalPages = parseInt(response.headers['result-pages'], 10) || 1;
             pageNum++;

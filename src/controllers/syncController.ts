@@ -72,7 +72,7 @@ export const syncInitialSimproContactData = async (req: Request, res: Response):
 
 export const syncInitialInvoiceCreditNoteData = async (req: Request, res: Response): Promise<void> => {
     try {
-        let simproInvoiceResponseArr: SimproInvoiceType[] = await fetchSimproPaginatedData<SimproInvoiceType>('/invoices/?IsPaid=false&pageSize=100', 'ID,Customer,Status,Stage,OrderNo,Total,IsPaid,DateIssued,DatePaid,DateCreated,PaymentTerms,LatePaymentFee', '');
+        let simproInvoiceResponseArr: SimproInvoiceType[] = await fetchSimproPaginatedData<SimproInvoiceType>('/invoices/?IsPaid=false&pageSize=100', 'ID,Customer,Status,Stage,Total,IsPaid,DateIssued,DatePaid,DateCreated,PaymentTerms,LatePaymentFee,Type', '');
 
         if (!simproInvoiceResponseArr) {
             console.log('SYNC CONTROLLER : No invoices found to sync.');
@@ -80,7 +80,7 @@ export const syncInitialInvoiceCreditNoteData = async (req: Request, res: Respon
             return;
         }
 
-        simproInvoiceResponseArr = simproInvoiceResponseArr.filter(invoice => invoice.Stage === "Approved")
+        simproInvoiceResponseArr = simproInvoiceResponseArr.filter(invoice => invoice.Stage === "Approved" && invoice.Type != 'RequestForClaim')
 
         const oldestInvoice = simproInvoiceResponseArr.reduce((oldest, current) => {
             const currentDate = moment(current.DateIssued, 'YYYY-MM-DD');
@@ -113,12 +113,12 @@ export const syncInitialInvoiceCreditNoteData = async (req: Request, res: Respon
         });
 
         simproInvoiceResponseArr.forEach(invoiceItem => {
-            const paymentItem = invoicesPaymentsData.find(payment => payment.paymentInvoiceId === invoiceItem.ID);
-            if (paymentItem) {
+            const paymentItems = invoicesPaymentsData.filter(payment => payment.paymentInvoiceId === invoiceItem.ID);
+            if (paymentItems.length > 0) {
                 if (invoiceItem.InvoicePaymentInfo?.length) {
-                    invoiceItem.InvoicePaymentInfo.push(paymentItem);
+                    invoiceItem.InvoicePaymentInfo.push(...paymentItems);
                 } else {
-                    invoiceItem.InvoicePaymentInfo = [paymentItem];
+                    invoiceItem.InvoicePaymentInfo = [...paymentItems];
                 }
             }
         });
@@ -158,7 +158,6 @@ export const syncInitialInvoiceCreditNoteData = async (req: Request, res: Respon
                 }
 
                 let creditorWatchInvoiceData = response?.data?.invoice;
-
                 if (!creditorWatchInvoiceData) {
                     console.log('SYNC CONTROLLER : Data unavailable to create mapping invoice.');
                     continue;

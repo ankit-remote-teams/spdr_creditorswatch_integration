@@ -12,14 +12,14 @@ const defaultPercentageValueForLateFee: number = parseFloat(process.env.DEFAULT_
 
 export const handleLateFeeUpdate = async () => {
     try {
-        let simproInvoiceResponseArr: SimproInvoiceType[] = await fetchSimproPaginatedData<SimproInvoiceType>('/invoices/?IsPaid=false&pageSize=100', 'ID,Customer,Status,Stage,OrderNo,Total,IsPaid,DateIssued,DatePaid,DateCreated,PaymentTerms,LatePaymentFee', '');
+        let simproInvoiceResponseArr: SimproInvoiceType[] = await fetchSimproPaginatedData<SimproInvoiceType>('/invoices/?IsPaid=false&pageSize=100', 'ID,Customer,Status,Stage,Total,IsPaid,DateIssued,DatePaid,DateCreated,PaymentTerms,LatePaymentFee,Type', '');
 
         if (!simproInvoiceResponseArr) {
             console.log('LATE FEE SCHEDULER : No invoices found to update late fee hours.');
             throw { message: 'No invoices found to update late fee hours.' }
         }
 
-        simproInvoiceResponseArr = simproInvoiceResponseArr.filter(invoice => invoice.Stage === "Approved")
+        simproInvoiceResponseArr = simproInvoiceResponseArr.filter(invoice => invoice.Stage === "Approved" && invoice.Type != 'RequestForClaim')
 
         const oldestInvoice = simproInvoiceResponseArr.reduce((oldest, current) => {
             const currentDate = moment(current.DateIssued, 'YYYY-MM-DD');
@@ -53,12 +53,12 @@ export const handleLateFeeUpdate = async () => {
 
 
         simproInvoiceResponseArr.forEach(invoiceItem => {
-            const paymentItem = invoicesPaymentsData.find(payment => payment.paymentInvoiceId === invoiceItem.ID);
-            if (paymentItem) {
+            const paymentItems = invoicesPaymentsData.filter(payment => payment.paymentInvoiceId === invoiceItem.ID);
+            if (paymentItems.length > 0) {
                 if (invoiceItem.InvoicePaymentInfo?.length) {
-                    invoiceItem.InvoicePaymentInfo.push(paymentItem);
+                    invoiceItem.InvoicePaymentInfo.push(...paymentItems);
                 } else {
-                    invoiceItem.InvoicePaymentInfo = [paymentItem];
+                    invoiceItem.InvoicePaymentInfo = [...paymentItems];
                 }
             }
         });
@@ -140,7 +140,7 @@ export const handleLateFeeUpdate = async () => {
                     if (daysLate > 0) {
                         dailyLateFeeRate = defaultPercentageValueForLateFee / 365;
                         let lateFee = calculateLatePaymentFeeAndBalanceDue(row)
-                        let amount_due = - (tempRow?.payments ? tempRow.payments.reduce((sub, payment) => sub - (payment.paymentInvoiceAmount + (payment?.lateFeeOnPayment || 0)), tempRow?.total_amount) : tempRow?.total_amount) + lateFee;
+                        let amount_due = (tempRow?.payments ? tempRow.payments.reduce((sub, payment) => sub - (payment.paymentInvoiceAmount + (payment?.lateFeeOnPayment || 0)), tempRow?.total_amount) : tempRow?.total_amount) + lateFee;
                         let amount_paid = tempRow?.payments ? tempRow.payments.reduce((sum, payment) => sum + (payment.paymentInvoiceAmount + (payment?.lateFeeOnPayment || 0)), 0) : 0;
                         tempRow = { ...tempRow, amount_due, amount_paid }
                     }

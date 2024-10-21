@@ -101,7 +101,7 @@ export type SimproInvoiceType = {
         Name: string;
     };
     Stage: string;
-    OrderNo: string;
+    Type: string;
     Total: SimproTotalType;
     IsPaid: boolean;
     DateIssued: string;

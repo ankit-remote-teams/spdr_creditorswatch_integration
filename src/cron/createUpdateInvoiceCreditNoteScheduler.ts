@@ -6,25 +6,34 @@ import { fetchSimproPaginatedData } from '../services/simproService';
 import { CreditorsWatchCreditNoteType, CreditorsWatchInvoiceType, InvoiceItemPaymentsType, MappingType, SimproCreditNoteType, SimproCustomerPaymentsType, SimproInvoiceType } from '../types/types';
 import { transformCreditNoteDataToCreditorsWatchArray, transformInvoiceDataToCreditorsWatchArray } from '../utils/transformDataHelper';
 import { creditorsWatchPostWithRetry, creditorsWatchPutWithRetry } from '../utils/apiUtils';
-import { calculateLatePaymentFeeAndBalanceDue, get24HoursAgoDate } from '../utils/helper';
+import { calculateLatePaymentFeeAndBalanceDue, get48HoursAgoDate } from '../utils/helper';
 import CreditNoteMappingModel from '../models/creditNotesMappingModel';
+import { simproCustomerPaymentData, simproInvoiceData } from './data';
 
 const defaultPercentageValueForLateFee: number = parseFloat(process.env.DEFAULT_LATE_FEE_PERCENTAGE_FOR_CUSTOMER_PER_YEAR || '0');
 
 export const updateInvoiceData = async () => {
     try {
-        const ifModifiedSinceHeader = get24HoursAgoDate();
-        let simproInvoiceResponseArr: SimproInvoiceType[] = await fetchSimproPaginatedData<SimproInvoiceType>('/invoices/?pageSize=100', 'ID,Customer,Status,Stage,OrderNo,Total,IsPaid,DateIssued,DatePaid,DateCreated,PaymentTerms,LatePaymentFee', ifModifiedSinceHeader);
+        //Comment start 
+        const ifModifiedSinceHeader = get48HoursAgoDate();
+        let simproInvoiceResponseArr: SimproInvoiceType[] = await fetchSimproPaginatedData<SimproInvoiceType>('/invoices/?pageSize=100', 'ID,Customer,Status,Stage,Total,IsPaid,DateIssued,DatePaid,DateCreated,PaymentTerms,LatePaymentFee,Type', ifModifiedSinceHeader);
+        simproInvoiceResponseArr = simproInvoiceResponseArr.filter(invoice => invoice.Stage === "Approved" && invoice.Type != 'RequestForClaim')
 
         const oldestInvoice = simproInvoiceResponseArr.reduce((oldest, current) => {
-            const currentDate = moment(current.DateIssued, 'YYYY-MM-DD');
-            const oldestDate = moment(oldest.DateIssued, 'YYYY-MM-DD');
+            const currentDate = moment(current.DateCreated, 'YYYY-MM-DD');
+            const oldestDate = moment(oldest.DateCreated, 'YYYY-MM-DD');
             return currentDate.isBefore(oldestDate) ? current : oldest;
         });
 
-        const formattedDate = moment(oldestInvoice.DateIssued, 'YYYY-MM-DD').format('ddd, DD MMM YYYY HH:mm:ss [GMT]');
+        const formattedDate = moment(oldestInvoice.DateCreated, 'YYYY-MM-DD').format('ddd, DD MMM YYYY HH:mm:ss [GMT]');
 
         let simproCustomerPaymentsResponse: SimproCustomerPaymentsType[] = await fetchSimproPaginatedData('/customerPayments/?pageSize=100', 'ID,Payment,Invoices', formattedDate);
+
+        // Comment ends
+
+        // let simproInvoiceResponseArr: SimproInvoiceType[] = simproInvoiceData;
+        // let simproCustomerPaymentsResponse: SimproCustomerPaymentsType[] = simproCustomerPaymentData;
+
 
         let invoicesPaymentsData: InvoiceItemPaymentsType[] = [];
         simproCustomerPaymentsResponse.forEach(customerPayment => {
@@ -47,12 +56,12 @@ export const updateInvoiceData = async () => {
         });
 
         simproInvoiceResponseArr.forEach(invoiceItem => {
-            const paymentItem = invoicesPaymentsData.find(payment => payment.paymentInvoiceId === invoiceItem.ID);
-            if (paymentItem) {
+            const paymentItems = invoicesPaymentsData.filter(payment => payment.paymentInvoiceId === invoiceItem.ID);
+            if (paymentItems.length > 0) {
                 if (invoiceItem.InvoicePaymentInfo?.length) {
-                    invoiceItem.InvoicePaymentInfo.push(paymentItem);
+                    invoiceItem.InvoicePaymentInfo.push(...paymentItems);
                 } else {
-                    invoiceItem.InvoicePaymentInfo = [paymentItem];
+                    invoiceItem.InvoicePaymentInfo = [...paymentItems];
                 }
             }
         });
@@ -85,6 +94,7 @@ export const updateInvoiceData = async () => {
         for (let row of dataToUpdate) {
             try {
                 let tempRow = { ...row };
+                // console.log("Temp row before: ", tempRow)
                 if (tempRow.LatePaymentFee) {
                     const dueDate = moment(tempRow.due_date, 'YYYY-MM-DD');
                     let daysLate: number;
@@ -95,11 +105,12 @@ export const updateInvoiceData = async () => {
                     if (daysLate > 0) {
                         dailyLateFeeRate = defaultPercentageValueForLateFee / 365;
                         let lateFee = calculateLatePaymentFeeAndBalanceDue(row)
-                        let amount_due = - (tempRow?.payments ? tempRow.payments.reduce((sub, payment) => sub - (payment.paymentInvoiceAmount + (payment?.lateFeeOnPayment || 0)), tempRow?.total_amount) : tempRow?.total_amount) + lateFee;
+                        let amount_due = (tempRow?.payments ? tempRow.payments.reduce((sub, payment) => sub - (payment.paymentInvoiceAmount + (payment?.lateFeeOnPayment || 0)), tempRow?.total_amount) : tempRow?.total_amount) + lateFee;
                         let amount_paid = tempRow?.payments ? tempRow.payments.reduce((sum, payment) => sum + (payment.paymentInvoiceAmount + (payment?.lateFeeOnPayment || 0)), 0) : 0;
                         tempRow = { ...tempRow, amount_due, amount_paid }
                     }
                 }
+                console.log('Updated row', tempRow)
                 row = { ...tempRow }
 
                 let creditorWatchID = row.id;
@@ -140,7 +151,7 @@ export const updateInvoiceData = async () => {
                     if (daysLate > 0) {
                         dailyLateFeeRate = defaultPercentageValueForLateFee / 365;
                         let lateFee = calculateLatePaymentFeeAndBalanceDue(row)
-                        let amount_due = - (tempRow?.payments ? tempRow.payments.reduce((sub, payment) => sub - (payment.paymentInvoiceAmount + (payment?.lateFeeOnPayment || 0)), tempRow?.total_amount) : tempRow?.total_amount) + lateFee;
+                        let amount_due = (tempRow?.payments ? tempRow.payments.reduce((sub, payment) => sub - (payment.paymentInvoiceAmount + (payment?.lateFeeOnPayment || 0)), tempRow?.total_amount) : tempRow?.total_amount) + lateFee;
                         let amount_paid = tempRow?.payments ? tempRow.payments.reduce((sum, payment) => sum + (payment.paymentInvoiceAmount + (payment?.lateFeeOnPayment || 0)), 0) : 0;
                         tempRow = { ...tempRow, amount_due, amount_paid }
                     }
@@ -183,8 +194,8 @@ export const updateInvoiceData = async () => {
                 }
             }
         }
-
-        await updateCreditNoteData(simproInvoiceResponseArr);
+        console.log("INVOICE SCHEDULER  : Invoice synced starting creditNote sync");
+        // await updateCreditNoteData(simproInvoiceResponseArr);
 
 
     } catch (error: any) {
@@ -200,7 +211,7 @@ export const updateInvoiceData = async () => {
 
 const updateCreditNoteData = async (simproInvoiceResponseArr: SimproInvoiceType[]) => {
     try {
-        const ifModifiedSinceHeader = get24HoursAgoDate();
+        const ifModifiedSinceHeader = get48HoursAgoDate();
         let simproCreditNoteResponseArr: SimproCreditNoteType[] = await fetchSimproPaginatedData<SimproCreditNoteType>('/creditNotes/', 'ID,Type,Customer,DateIssued,Stage,Total,InvoiceNo', ifModifiedSinceHeader);
 
         if (!simproCreditNoteResponseArr) {
