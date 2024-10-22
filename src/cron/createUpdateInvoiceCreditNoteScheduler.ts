@@ -195,7 +195,7 @@ export const updateInvoiceData = async () => {
             }
         }
         console.log("INVOICE SCHEDULER  : Invoice synced starting creditNote sync");
-        // await updateCreditNoteData(simproInvoiceResponseArr);
+        await updateCreditNoteData(simproInvoiceResponseArr);
 
 
     } catch (error: any) {
