@@ -1,8 +1,8 @@
 import express, { Request, Response } from 'express';
 import dotenv from 'dotenv';
-import syncRoutes from './routes/syncRoutes';
 import mongoose from 'mongoose';
 dotenv.config({ path: `.env.${process.env.NODE_ENV}` });
+import syncRoutes from './routes/syncRoutes';
 const app = express();
 
 const PORT: number = parseInt(process.env.PORT as string, 10) || 6001;
