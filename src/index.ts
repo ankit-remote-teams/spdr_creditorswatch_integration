@@ -19,7 +19,6 @@ const PORT: number = parseInt(process.env.PORT as string, 10) || 6001;
 //     });
 // }
 
-console.log('Process.env', process.env)
 
 app.use('/api', syncRoutes);
 
