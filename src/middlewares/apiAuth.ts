@@ -1,6 +1,9 @@
 import { Request, Response, NextFunction } from 'express';
 
 const apiKey = process.env.AUTH_API_KEY || "";
+
+console.log('apiKey', apiKey);
+console.log('proveces auth pai ', process.env.AUTH_API_KEY)
 const VALID_API_KEYS: string[] = [apiKey];
 
 // Middleware function to authenticate API key
