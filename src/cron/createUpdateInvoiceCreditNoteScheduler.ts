@@ -8,7 +8,7 @@ import { transformCreditNoteDataToCreditorsWatchArray, transformInvoiceDataToCre
 import { creditorsWatchPostWithRetry, creditorsWatchPutWithRetry } from '../utils/apiUtils';
 import { calculateLatePaymentFeeAndBalanceDue, get48HoursAgoDate } from '../utils/helper';
 import CreditNoteMappingModel from '../models/creditNotesMappingModel';
-import { simproCustomerPaymentData, simproInvoiceData } from './data';
+import { simproCustomerPaymentData, simproInvoiceData, simproCreditNoteData } from './data';
 
 const defaultPercentageValueForLateFee: number = parseFloat(process.env.DEFAULT_LATE_FEE_PERCENTAGE_FOR_CUSTOMER_PER_YEAR || '0');
 
@@ -94,7 +94,6 @@ export const updateInvoiceData = async () => {
         for (let row of dataToUpdate) {
             try {
                 let tempRow = { ...row };
-                // console.log("Temp row before: ", tempRow)
                 if (tempRow.LatePaymentFee) {
                     const dueDate = moment(tempRow.due_date, 'YYYY-MM-DD');
                     let daysLate: number;
@@ -103,10 +102,32 @@ export const updateInvoiceData = async () => {
 
                     daysLate = moment(currentDate).diff(dueDate, 'days');
                     if (daysLate > 0) {
-                        dailyLateFeeRate = defaultPercentageValueForLateFee / 365;
+                        let amount_due;
                         let lateFee = calculateLatePaymentFeeAndBalanceDue(row)
-                        let amount_due = (tempRow?.payments ? tempRow.payments.reduce((sub, payment) => sub - (payment.paymentInvoiceAmount + (payment?.lateFeeOnPayment || 0)), tempRow?.total_amount) : tempRow?.total_amount) + lateFee;
-                        let amount_paid = tempRow?.payments ? tempRow.payments.reduce((sum, payment) => sum + (payment.paymentInvoiceAmount + (payment?.lateFeeOnPayment || 0)), 0) : 0;
+                        if (tempRow?.payments) {
+                            amount_due = tempRow.payments.reduce((sub, payment) => {
+                                const paymentAmount = payment.paymentInvoiceAmount || 0;
+                                const paymentLateFee = payment?.lateFeeOnPayment || 0;
+                                const currentSub = sub - (paymentAmount + paymentLateFee);
+                                return currentSub;
+                            }, tempRow?.total_amount);
+                        } else {
+                            amount_due = tempRow?.total_amount;
+                        }
+                        // Add the calculated late fee
+                        amount_due += lateFee;
+                        // Calculate amount paid
+                        let amount_paid;
+                        if (tempRow?.payments) {
+                            amount_paid = tempRow.payments.reduce((sum, payment) => {
+                                const paymentAmount = payment.paymentInvoiceAmount || 0;
+                                const paymentLateFee = payment?.lateFeeOnPayment || 0;
+                                const currentSum = sum + (paymentAmount + paymentLateFee);
+                                return currentSum;
+                            }, 0);
+                        } else {
+                            amount_paid = 0;
+                        }
                         tempRow = { ...tempRow, amount_due, amount_paid }
                     }
                 }
@@ -218,6 +239,8 @@ const updateCreditNoteData = async (simproInvoiceResponseArr: SimproInvoiceType[
             console.log('INVOICE SCHEDULER : No credit notes found to sync.');
             return [];
         }
+
+        // let simproCreditNoteResponseArr: SimproCreditNoteType[] = simproCreditNoteData;
 
         simproCreditNoteResponseArr.forEach(item => {
             item.InvoiceData = simproInvoiceResponseArr.find(invoice => invoice.ID === item.InvoiceNo);
