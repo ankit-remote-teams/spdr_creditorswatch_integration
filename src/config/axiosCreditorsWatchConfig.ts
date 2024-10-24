@@ -1,7 +1,7 @@
 import axios, { AxiosInstance } from 'axios';
 
 
-const ORGANISATION_ID = process.env.CREDITORS_WATHC_API_ORGANISATION_ID;
+const ORGANISATION_ID = process.env.CREDITORS_WATCH_API_ORGANISATION_ID;
 const AUTH_TOKEN = process.env.CREDITORS_WATCH_API_TOKEN;
 const USER_EMAIL = process.env.CREDITORS_WATCH_API_EMAIL;
 
