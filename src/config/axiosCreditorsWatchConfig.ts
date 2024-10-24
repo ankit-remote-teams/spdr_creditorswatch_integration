@@ -5,7 +5,7 @@ const ORGANISATION_ID = process.env.CREDITORS_WATCH_API_ORGANISATION_ID;
 const AUTH_TOKEN = process.env.CREDITORS_WATCH_API_TOKEN;
 const USER_EMAIL = process.env.CREDITORS_WATCH_API_EMAIL;
 
-const BASE_URL = `https://apistage.creditorwatchcollect.com.au/organisations/${ORGANISATION_ID}`;
+const BASE_URL = `${process.env.CREDITORS_WATCH_BASE_URL}/organisations/${ORGANISATION_ID}`;
 
 // Create the Axios instance
 const axiosCreditorsWatch: AxiosInstance = axios.create({
