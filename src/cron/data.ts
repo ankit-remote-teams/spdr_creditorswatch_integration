@@ -34,77 +34,44 @@ export const simproInvoiceData: SimproInvoiceType[] = [
     //     },
     //     Type: "ProgressInvoice"
     // },
-    // {
-    //     ID: 72769,
-    //     Customer: {
-    //         ID: 1601,
-    //         CompanyName: "Elite New Homes ",
-    //         GivenName: "",
-    //         FamilyName: ""
-    //     },
-    //     Status: {
-    //         ID: 21,
-    //         Name: "Invoices : 91+ days overdue"
-    //     },
-    //     IsPaid: false,
-    //     Stage: "Approved",
-    //     Type: "ProgressInvoice",
-    //     Total: {
-    //         ExTax: 18404.18,
-    //         IncTax: 20244.59,
-    //         Tax: 1840.41,
-    //         ReverseChargeTax: 0,
-    //         AmountApplied: 20244.59,
-    //         BalanceDue: 0,
-    //     },
-    //     DateIssued: "2024-02-29",
-    //     DatePaid: "",
-    //     DateCreated: "2024-02-29T09:58:17+11:00",
-    //     LatePaymentFee: true,
-    //     PaymentTerms: {
-    //         Days: 14,
-    //         Type: "Invoice",
-    //         DueDate: "2024-03-14"
-    //     },
-    // },
-    // {
-    //     ID: 81902,
-    //     Customer: {
-    //         ID: 2492,
-    //         CompanyName: "Enable Group Pty Ltd ",
-    //         GivenName: "",
-    //         FamilyName: ""
-    //     },
-    //     Status: {
-    //         ID: 19,
-    //         Name: "Invoices : 31-60 days overdue"
-    //     },
-    //     Stage: "Approved",
-    //     Type: "ProgressInvoice",
-    //     Total: {
-    //         ExTax: 31274.67,
-    //         IncTax: 34402.14,
-    //         Tax: 3127.47,
-    //         ReverseChargeTax: 0,
-    //         AmountApplied: 14402.14,
-    //         BalanceDue: 20000
-    //     },
-    //     IsPaid: false,
-    //     DateIssued: "2024-08-31",
-    //     DatePaid: "",
-    //     DateCreated: "2024-08-30T05:27:20+10:00",
-    //     LatePaymentFee: true,
-    //     PaymentTerms: {
-    //         Days: 14,
-    //         Type: "Invoice",
-    //         DueDate: "2024-09-14"
-    //     }
-    // },
     {
-        ID: 81907,
+        ID: 72769,
         Customer: {
-            ID: 2183,
-            CompanyName: "Mann Construction & Development Pty Ltd T/As Morewell Homes",
+            ID: 1601,
+            CompanyName: "Elite New Homes ",
+            GivenName: "",
+            FamilyName: ""
+        },
+        Status: {
+            ID: 21,
+            Name: "Invoices : 91+ days overdue"
+        },
+        Stage: "Approved",
+        Total: {
+            ExTax: 18404.18,
+            IncTax: 20244.59,
+            Tax: 1840.41,
+            ReverseChargeTax: 0,
+            AmountApplied: 20244.59,
+            BalanceDue: 0
+        },
+        IsPaid: false,
+        DateIssued: "2024-02-29",
+        DatePaid: "",
+        DateCreated: "2024-02-29T09:58:17+11:00",
+        LatePaymentFee: true,
+        PaymentTerms: {
+            Days: 14,
+            Type: "Invoice",
+            DueDate: "2024-03-14"
+        },
+        Type: "ProgressInvoice"
+    },
+    {
+        ID: 81902,
+        Customer: {
+            ID: 2492,
+            CompanyName: "Enable Group Pty Ltd ",
             GivenName: "",
             FamilyName: ""
         },
@@ -113,92 +80,125 @@ export const simproInvoiceData: SimproInvoiceType[] = [
             Name: "Invoices : 31-60 days overdue"
         },
         Stage: "Approved",
-        Type: "ProgressInvoice",
         Total: {
-            ExTax: 602,
-            IncTax: 662.2,
-            Tax: 60.2,
+            ExTax: 31274.67,
+            IncTax: 34402.14,
+            Tax: 3127.47,
             ReverseChargeTax: 0,
-            AmountApplied: 275,
-            BalanceDue: 387.2
+            AmountApplied: 34152.28,
+            BalanceDue: 249.86
+        },
+        IsPaid: false,
+        DateIssued: "2024-08-31",
+        DatePaid: "",
+        DateCreated: "2024-08-30T05:27:20+10:00",
+        LatePaymentFee: true,
+        PaymentTerms: {
+            Days: 14,
+            Type: "Invoice",
+            DueDate: "2024-09-14"
+        },
+        Type: "ProgressInvoice"
+    },
+    {
+        ID: 81907,
+        Customer: {
+          ID: 2183,
+          CompanyName: "Mann Construction & Development Pty Ltd T/As Morewell Homes",
+          GivenName: "",
+          FamilyName: ""
+        },
+        Status: {
+          ID: 22,
+          Name: "Invoices : Fully-paid"
+        },
+        Stage: "Approved",
+        Total: {
+          ExTax: 602,
+          IncTax: 662.2,
+          Tax: 60.2,
+          ReverseChargeTax: 0,
+          AmountApplied: 662.2,
+          BalanceDue: 0
         },
         IsPaid: false,
         DateIssued: "2024-08-30",
         DatePaid: "",
         DateCreated: "2024-08-30T05:37:19+10:00",
+        LatePaymentFee: false,
+        PaymentTerms: {
+          Days: 14,
+          Type: "Invoice",
+          DueDate: "2024-09-13"
+        },
+        Type: "ProgressInvoice"
+      },
+    {
+        ID: 71669,
+        Customer: {
+            ID: 508,
+            CompanyName: "Ridgewater Property Group T/As Ridgewater Homes",
+            GivenName: "",
+            FamilyName: ""
+        },
+        Status: {
+            ID: 21,
+            Name: "Invoices : 91+ days overdue"
+        },
+        Stage: "Approved",
+        Total: {
+            ExTax: 9793.8,
+            IncTax: 10773.18,
+            Tax: 979.38,
+            ReverseChargeTax: 0,
+            AmountApplied: 8573.18,
+            BalanceDue: 2200
+        },
+        IsPaid: false,
+        DateIssued: "2024-01-31",
+        DatePaid: "",
+        DateCreated: "2024-01-31T12:23:11+11:00",
         LatePaymentFee: true,
         PaymentTerms: {
-            Days: 14,
-            Type: "Invoice",
-            DueDate: "2024-09-13"
-        }
+            Days: 30,
+            Type: "Month",
+            DueDate: "2024-03-01"
+        },
+        Type: "ProgressInvoice"
     },
-    // {
-    //     ID: 71669,
-    //     Customer: {
-    //         ID: 508,
-    //         CompanyName: "Ridgewater Property Group T/As Ridgewater Homes",
-    //         GivenName: "",
-    //         FamilyName: ""
-    //     },
-    //     Status: {
-    //         ID: 21,
-    //         Name: "Invoices : 91+ days overdue"
-    //     },
-    //     Stage: "Approved",
-    //     Total: {
-    //         ExTax: 9793.8,
-    //         IncTax: 10773.18,
-    //         Tax: 979.38,
-    //         ReverseChargeTax: 0,
-    //         AmountApplied: 8573.18,
-    //         BalanceDue: 2200
-    //     },
-    //     IsPaid: false,
-    //     DateIssued: "2024-01-31",
-    //     DatePaid: "",
-    //     DateCreated: "2024-01-31T12:23:11+11:00",
-    //     LatePaymentFee: true,
-    //     PaymentTerms: {
-    //         Days: 30,
-    //         Type: "Month",
-    //         DueDate: "2024-03-01"
-    //     },
-    //     Type: "ProgressInvoice"
-    // },
-    // {
-    //     ID: 74122,
-    //     Customer: {
-    //         ID: 508,
-    //         CompanyName: "Ridgewater Property Group T/As Ridgewater Homes",
-    //         GivenName: "",
-    //         FamilyName: ""
-    //     },
-    //     Status: {
-    //         ID: 21,
-    //         Name: "Invoices : 91+ days overdue"
-    //     },
-    //     Stage: "Approved",
-    //     Total: {
-    //         ExTax: 400,
-    //         IncTax: 440,
-    //         Tax: 40,
-    //         ReverseChargeTax: 0,
-    //         AmountApplied: 254.63,
-    //         BalanceDue: 185.37
-    //     },
-    //     IsPaid: false,
-    //     DateIssued: "2024-04-05",
-    //     DatePaid: "",
-    //     DateCreated: "2024-04-05T10:11:43+11:00",
-    //     LatePaymentFee: true,
-    //     PaymentTerms: {
-    //         Days: 30,
-    //         Type: "Month",
-    //         DueDate: "2024-05-30"
-    //     },
-    //     Type: "ProgressInvoice"
-    // },
+    {
+        ID: 74122,
+        Customer: {
+            ID: 508,
+            CompanyName: "Ridgewater Property Group T/As Ridgewater Homes",
+            GivenName: "",
+            FamilyName: ""
+        },
+        Status: {
+            ID: 21,
+            Name: "Invoices : 91+ days overdue"
+        },
+        Stage: "Approved",
+        Total: {
+            ExTax: 400,
+            IncTax: 440,
+            Tax: 40,
+            ReverseChargeTax: 0,
+            AmountApplied: 254.63,
+            BalanceDue: 185.37
+        },
+        IsPaid: false,
+        DateIssued: "2024-04-05",
+        DatePaid: "",
+        DateCreated: "2024-04-05T10:11:43+11:00",
+        LatePaymentFee: true,
+        PaymentTerms: {
+            Days: 30,
+            Type: "Month",
+            DueDate: "2024-05-30"
+        },
+        Type: "ProgressInvoice"
+    },
     // {
     //     ID: 68902,
     //     Customer: {

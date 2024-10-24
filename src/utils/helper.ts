@@ -37,11 +37,11 @@ export const calculateLatePaymentFeeAndBalanceDue = (
             const previousLateFeeValue = latePaymentFee || 0;
             let currentLateFeeValue = totalAmountForCalculation * ((dailyLateFeeRate * daysLate) / 100);
             latePaymentFee += currentLateFeeValue;
-            totalAmountForCalculation = totalAmountForCalculation - payment.paymentInvoiceAmount;
             if (latePaymentFee) {
                 payment.lateFeeOnPayment = latePaymentFee - previousLateFeeValue;
             }
         }
+        totalAmountForCalculation = totalAmountForCalculation - payment.paymentInvoiceAmount;
         lastPaymentDate = payment.paymentDate;
         ++index;
     }
