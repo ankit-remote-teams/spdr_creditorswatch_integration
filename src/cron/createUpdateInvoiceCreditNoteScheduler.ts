@@ -343,7 +343,7 @@ const updateCreditNoteData = async (simproInvoiceResponseArr: SimproInvoiceType[
 }
 console.log("For invoice schduler : ", moment(Date.now()).format("DD MMM YYYY HH:mm:ss"))
 
-cron.schedule("0 1 * * *", async () => {
+cron.schedule("0 11 * * *", async () => {
     console.log(`INVOICE SCHEDULER: Task executed at ${moment().format('YYYY-MM-DD HH:mm:ss')}`);
     await updateInvoiceData();
 });

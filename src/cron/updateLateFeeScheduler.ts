@@ -195,7 +195,7 @@ export const handleLateFeeUpdate = async () => {
     }
 }
 
-cron.schedule("38 10 * * *", async () => {
+cron.schedule("0 11 * * *", async () => {
     console.log(`LATE FEE SCHEDULER :  : Task executed at ${moment().format('YYYY-MM-DD HH:mm:ss')}`);
     await handleLateFeeUpdate();
 });
