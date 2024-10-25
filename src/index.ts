@@ -10,10 +10,10 @@ const PORT: number = parseInt(process.env.PORT as string, 10) || 6001;
 
 if (process.env.NODE_ENV === 'production') {
     const cronJobs = [
-        './cron/createUpdateContactsDataScheduler.ts',
-        './cron/createUpdateInvoiceCreditNoteScheduler.ts',
-        './cron/deleteDataScheduler.ts',
-        './cron/updateLateFeeScheduler.ts',
+        './cron/createUpdateContactsDataScheduler',
+        './cron/createUpdateInvoiceCreditNoteScheduler',
+        './cron/deleteDataScheduler',
+        './cron/updateLateFeeScheduler',
     ];
     cronJobs.forEach(job => {
         require(job);
