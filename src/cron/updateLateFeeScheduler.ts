@@ -7,6 +7,7 @@ import { creditorsWatchPostWithRetry, creditorsWatchPutWithRetry } from '../util
 const cron = require('node-cron');
 import InvoiceMappingModel from '../models/invoiceMappingModel';
 import { AxiosError } from 'axios';
+import { ses } from '../config/awsConfig';
 
 const defaultPercentageValueForLateFee: number = parseFloat(process.env.DEFAULT_LATE_FEE_PERCENTAGE_FOR_CUSTOMER_PER_YEAR || '0');
 
@@ -196,6 +197,51 @@ export const handleLateFeeUpdate = async () => {
 }
 
 cron.schedule("0 11 * * *", async () => {
-    console.log(`LATE FEE SCHEDULER :  : Task executed at ${moment().format('YYYY-MM-DD HH:mm:ss')}`);
-    await handleLateFeeUpdate();
+    try {
+        console.log(`LATE FEE SCHEDULER :  : Task executed at ${moment().format('YYYY-MM-DD HH:mm:ss')}`);
+        await handleLateFeeUpdate();
+    } catch (err: any) {
+        const recipients: string[] = process.env.EMAIL_RECIPIENTS
+            ? process.env.EMAIL_RECIPIENTS.split(',')
+            : [];
+
+        const sendemail = `
+        <html>
+            <body>
+                <h1>Error found in update late fee scheduler</h1>
+                <p>Log: </p>
+                <p>${JSON.stringify(err)}</p>
+            </body>
+        </html>
+    `;
+
+        const params = {
+            Destination: {
+                ToAddresses: recipients,
+            },
+            Message: {
+                Body: {
+                    Html: {
+                        Charset: 'UTF-8',
+                        Data: sendemail,
+                    },
+                },
+                Subject: {
+                    Charset: 'UTF-8',
+                    Data: 'Error in Update late fee scheduler',
+                },
+            },
+            Source: process.env.SES_SENDER_EMAIL as string,
+            ConfigurationSetName: 'promanager-config',
+        };
+
+        try {
+            const data = await ses.sendEmail(params).promise();
+            console.log("Email successfully sent")
+        } catch (err) {
+            console.error('Error sending email:', err);
+            console.log("Failed to send email")
+        }
+
+    }
 });

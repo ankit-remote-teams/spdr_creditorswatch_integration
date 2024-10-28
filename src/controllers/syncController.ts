@@ -11,6 +11,7 @@ import moment from 'moment';
 import { updateInvoiceData } from '../cron/createUpdateInvoiceCreditNoteScheduler';
 import { calculateLatePaymentFeeAndBalanceDue } from '../utils/helper';
 import { handleLateFeeUpdate } from '../cron/updateLateFeeScheduler';
+import { ses } from '../config/awsConfig';
 
 const defaultPercentageValueForLateFee: number = parseFloat(process.env.DEFAULT_LATE_FEE_PERCENTAGE_FOR_CUSTOMER_PER_YEAR || '0');
 console.log('SYNC CONTROLLER :SYNC CONTROLLER :  DEFAULT_LATE_FEE_PERCENTAGE_FOR_CUSTOMER_PER_YEAR', process.env.DEFAULT_LATE_FEE_PERCENTAGE_FOR_CUSTOMER_PER_YEAR)
@@ -273,6 +274,46 @@ export const updateInvoiceCreditorNoteDataToCreditorsWatch = async (req: Request
         res.status(200).json({ message: "Updated invoice successfully", })
     } catch (error) {
         console.log('SYNC CONTROLLER : Unexpected error:', error);
+        const recipients: string[] = process.env.EMAIL_RECIPIENTS
+            ? process.env.EMAIL_RECIPIENTS.split(',')
+            : [];
+
+        const sendemail = `
+        <html>
+            <body>
+                <h1>Error found in update invoice creditnote data manual call</h1>
+                <p>Log: </p>
+                <p>${JSON.stringify(error)}</p>
+            </body>
+        </html>
+    `;
+
+        const params = {
+            Destination: {
+                ToAddresses: recipients,
+            },
+            Message: {
+                Body: {
+                    Html: {
+                        Charset: 'UTF-8',
+                        Data: sendemail,
+                    },
+                },
+                Subject: {
+                    Charset: 'UTF-8',
+                    Data: 'Error in update invoice creditnote data manual call',
+                },
+            },
+            Source: process.env.SES_SENDER_EMAIL as string,
+            ConfigurationSetName: 'promanager-config',
+        };
+
+        try {
+            const data = await ses.sendEmail(params).promise();
+            console.log("Email successfully sent")
+        } catch (err) {
+            console.log("Error sending email:", err);
+        }
         res.status(500).json({ message: 'Internal Server Error' })
     }
 }
@@ -284,6 +325,47 @@ export const updateInvoiceLateFee = async (req: Request, res: Response): Promise
         res.status(200).json({ message: "Updated invoice successfully", })
     } catch (error) {
         console.log('SYNC CONTROLLER : Unexpected error:', error);
+        const recipients: string[] = process.env.EMAIL_RECIPIENTS
+            ? process.env.EMAIL_RECIPIENTS.split(',')
+            : [];
+
+        const sendemail = `
+        <html>
+            <body>
+                <h1>Error found in update late fee manual call</h1>
+                <p>Log: </p>
+                <p>${JSON.stringify(error)}</p>
+            </body>
+        </html>
+    `;
+
+        const params = {
+            Destination: {
+                ToAddresses: recipients,
+            },
+            Message: {
+                Body: {
+                    Html: {
+                        Charset: 'UTF-8',
+                        Data: sendemail,
+                    },
+                },
+                Subject: {
+                    Charset: 'UTF-8',
+                    Data: 'Error in update late fee manual call',
+                },
+            },
+            Source: process.env.SES_SENDER_EMAIL as string,
+            ConfigurationSetName: 'promanager-config',
+        };
+
+        try {
+            const data = await ses.sendEmail(params).promise();
+            console.log("Email successfully sent")
+        } catch (err) {
+            console.log("Error sending email:", err);
+        }
+
         res.status(500).json({ message: 'Internal Server Error' })
     }
 }

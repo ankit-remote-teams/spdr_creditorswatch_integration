@@ -6,4 +6,4 @@ AWS.config.update({
     secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,
 });
 
-export const ses = new AWS.SES();
+export const ses = new AWS.SES({ apiVersion: '2010-12-01' });

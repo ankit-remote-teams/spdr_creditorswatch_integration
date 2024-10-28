@@ -7,6 +7,7 @@ import { CreditorsWatchContactType, MappingType, SimproCompanyType } from '../ty
 import { transformContactDataToCreditorsWatchArray } from '../utils/transformDataHelper';
 import { creditorsWatchPostWithRetry, creditorsWatchPutWithRetry } from '../utils/apiUtils';
 import { get48HoursAgoDate } from '../utils/helper';
+import { ses } from '../config/awsConfig';
 
 const updateContactsData = async () => {
     try {
@@ -101,6 +102,51 @@ const updateContactsData = async () => {
 }
 
 cron.schedule("0 11 * * *", async () => {
-    console.log(`CONTACTS SCHEDULER: Task executed at ${moment().format('YYYY-MM-DD HH:mm:ss')}`);
-    await updateContactsData();
+    try {
+        console.log(`CONTACTS SCHEDULER: Task executed at ${moment().format('YYYY-MM-DD HH:mm:ss')}`);
+        await updateContactsData();
+    } catch (err: any) {
+        const recipients: string[] = process.env.EMAIL_RECIPIENTS
+            ? process.env.EMAIL_RECIPIENTS.split(',')
+            : [];
+
+        const sendemail = `
+        <html>
+            <body>
+                <h1>Error found in update contact data scheduler</h1>
+                <p>Log: </p>
+                <p>${JSON.stringify(err)}</p>
+            </body>
+        </html>
+    `;
+
+        const params = {
+            Destination: {
+                ToAddresses: recipients,
+            },
+            Message: {
+                Body: {
+                    Html: {
+                        Charset: 'UTF-8',
+                        Data: sendemail,
+                    },
+                },
+                Subject: {
+                    Charset: 'UTF-8',
+                    Data: 'Error in updaste contact data scheduler',
+                },
+            },
+            Source: process.env.SES_SENDER_EMAIL as string,
+            ConfigurationSetName: 'promanager-config',
+        };
+
+        try {
+            const data = await ses.sendEmail(params).promise();
+            console.log("Email successfully sent")
+        } catch (err) {
+            console.error('Error sending email:', err);
+            console.log("Failed to send email")
+        }
+    }
+
 });

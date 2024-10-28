@@ -9,6 +9,8 @@ import { creditorsWatchPostWithRetry, creditorsWatchPutWithRetry } from '../util
 import { calculateLatePaymentFeeAndBalanceDue, get48HoursAgoDate } from '../utils/helper';
 import CreditNoteMappingModel from '../models/creditNotesMappingModel';
 import { simproCustomerPaymentData, simproInvoiceData, simproCreditNoteData } from './data';
+import { ses } from '../config/awsConfig'
+
 
 const defaultPercentageValueForLateFee: number = parseFloat(process.env.DEFAULT_LATE_FEE_PERCENTAGE_FOR_CUSTOMER_PER_YEAR || '0');
 
@@ -344,6 +346,50 @@ const updateCreditNoteData = async (simproInvoiceResponseArr: SimproInvoiceType[
 console.log("For invoice schduler : ", moment(Date.now()).format("DD MMM YYYY HH:mm:ss"))
 
 cron.schedule("0 11 * * *", async () => {
-    console.log(`INVOICE SCHEDULER: Task executed at ${moment().format('YYYY-MM-DD HH:mm:ss')}`);
-    await updateInvoiceData();
+    try {
+        console.log(`INVOICE SCHEDULER: Task executed at ${moment().format('YYYY-MM-DD HH:mm:ss')}`);
+        await updateInvoiceData();
+    } catch (err: any) {
+        const recipients: string[] = process.env.EMAIL_RECIPIENTS
+            ? process.env.EMAIL_RECIPIENTS.split(',')
+            : [];
+
+        const sendemail = `
+        <html>
+            <body>
+                <h1>Error found in update invoice creditnote scheduler</h1>
+                <p>Log: </p>
+                <p>${JSON.stringify(err)}</p>
+            </body>
+        </html>
+    `;
+
+        const params = {
+            Destination: {
+                ToAddresses: recipients,
+            },
+            Message: {
+                Body: {
+                    Html: {
+                        Charset: 'UTF-8',
+                        Data: sendemail,
+                    },
+                },
+                Subject: {
+                    Charset: 'UTF-8',
+                    Data: 'Error in update invoice creditnote scheduler',
+                },
+            },
+            Source: process.env.SES_SENDER_EMAIL as string,
+            ConfigurationSetName: 'promanager-config',
+        };
+
+        try {
+            const data = await ses.sendEmail(params).promise();
+            console.log("Email successfully sent")
+        } catch (err) {
+            console.error('Error sending email:', err);
+            console.log("Failed to send email")
+        }
+    }
 });

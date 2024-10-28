@@ -7,6 +7,7 @@ import { creditorsWatchPutWithRetry } from "../utils/apiUtils";
 import InvoiceMappingModel from '../models/invoiceMappingModel';
 import ContactMappingModel from '../models/contactMappingModel';
 import CreditNoteMappingModel from "../models/creditNotesMappingModel";
+import { ses } from '../config/awsConfig'
 
 const handleDeleteContactScheduler = async () => {
     try {
@@ -222,8 +223,52 @@ const handleDeleteCreditNoteScheduler = async () => {
 console.log('DELETE SCHEDULER : Delete contact scheduler time', moment().format('YYYY-MM-DD HH:mm:ss'))
 
 cron.schedule("0 11 * * *", async () => {
-    console.log(`DELETE SCHEDULER : Task executed at ${moment().format('YYYY-MM-DD HH:mm:ss')}`);
-    await handleDeleteContactScheduler();
-    await handleDeleteInvoiceScheduler();
-    await handleDeleteCreditNoteScheduler();
+    try {
+        console.log(`DELETE SCHEDULER : Task executed at ${moment().format('YYYY-MM-DD HH:mm:ss')}`);
+        await handleDeleteContactScheduler();
+        await handleDeleteInvoiceScheduler();
+        await handleDeleteCreditNoteScheduler();
+    } catch (err: any) {
+        const recipients: string[] = process.env.EMAIL_RECIPIENTS
+            ? process.env.EMAIL_RECIPIENTS.split(',')
+            : [];
+
+        const sendemail = `
+        <html>
+            <body>
+                <h1>Error found in data delete scheduler</h1>
+                <p>Log: </p>
+                <p>${JSON.stringify(err)}</p>
+            </body>
+        </html>
+    `;
+
+        const params = {
+            Destination: {
+                ToAddresses: recipients,
+            },
+            Message: {
+                Body: {
+                    Html: {
+                        Charset: 'UTF-8',
+                        Data: sendemail,
+                    },
+                },
+                Subject: {
+                    Charset: 'UTF-8',
+                    Data: 'Error in data delete scheduler',
+                },
+            },
+            Source: process.env.SES_SENDER_EMAIL as string,
+            ConfigurationSetName: 'promanager-config',
+        };
+
+        try {
+            const data = await ses.sendEmail(params).promise();
+            console.log("Email successfully sent")
+        } catch (err) {
+            console.error('Error sending email:', err);
+            console.log("Failed to send email")
+        }
+    }
 });
