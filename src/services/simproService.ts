@@ -45,7 +45,7 @@ export const fetchSimproPaginatedData = async <T>(url: string, columns: string, 
             throw { message: 'Error from Axios request', details: error.response?.data };
         } else {
             console.log('Error fetching paginated data:', error);
-            throw new Error('Failed to fetch data');
+            throw error;
         }
     }
 };

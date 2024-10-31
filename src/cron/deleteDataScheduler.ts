@@ -24,19 +24,20 @@ const handleDeleteContactScheduler = async () => {
                     }
                 }
             } catch (error) {
+                console.log("Error in delete contact scheduler: ", error)
                 if (error instanceof AxiosError) {
                     if (error?.response?.data?.errors[0]?.message == "Company customer not found.") {
                         let url: string = error?.request?.path;
-                        const parts = url.split('/');
-                        const customerId = parts[parts.length - 1].split('?')[0];
+                        const parts = url?.split('/');
+                        const customerId = parts[parts.length - 1]?.split('?')[0];
                         simproIdToUpdateAsDeleted.push(customerId);
                     } else {
                         console.log('DELETE SCHEDULER : Unexpected AxiosError in Individual:', error);
-                        throw { message: error }
+                        throw error;
                     }
                 } else {
                     console.log('DELETE SCHEDULER : Unexpected error in Individual:', error);
-                    throw { message: error }
+                    throw error;
                 }
             }
 
@@ -54,12 +55,13 @@ const handleDeleteContactScheduler = async () => {
                     continue;
                 }
             } catch (error) {
+                console.log("DELETE SCHEDULER : Failed to update delete data catch 2", error)
                 if (error instanceof AxiosError) {
                     console.log('DELETE SCHEDULER : Error deleting contact data:', error.response?.data || error.message);
                     throw { message: 'Error from Axios request', details: error.response?.data }
                 } else {
                     console.log('DELETE SCHEDULER : Unexpected error:', error);
-                    throw { message: 'Internal Server Error' }
+                    throw error;
                 }
             }
 
@@ -73,7 +75,7 @@ const handleDeleteContactScheduler = async () => {
             throw { message: error.message, data: error?.response?.data }
         } else {
             console.log('DELETE SCHEDULER : Unexpected error:', error);
-            throw { message: error }
+            throw error;
         }
     }
 }
@@ -97,15 +99,15 @@ const handleDeleteInvoiceScheduler = async () => {
                     if (error?.response?.data?.errors[0]?.message == "Invoice(s) not found.") {
                         let url: string = error?.request?.path;
                         const parts = url.split('/');
-                        const invoiceId = parts[parts.length - 1].split('?')[0];
+                        const invoiceId = parts[parts.length - 1]?.split('?')[0];
                         simproIdToUpdateAsDeleted.push(invoiceId);
                     } else {
                         console.log('DELETE SCHEDULER : Unexpected AxiosError in Individual:', error);
-                        throw { message: error }
+                        throw error;
                     }
                 } else {
                     console.log('DELETE SCHEDULER : Unexpected error in Individual:', error);
-                    throw { message: error }
+                    throw error;
                 }
             }
 
@@ -128,7 +130,7 @@ const handleDeleteInvoiceScheduler = async () => {
                     throw { message: 'Error from Axios request', details: error.response?.data }
                 } else {
                     console.log('DELETE SCHEDULER : Unexpected error:', error);
-                    throw { message: 'Internal Server Error' }
+                    throw error;
                 }
             }
 
@@ -142,7 +144,7 @@ const handleDeleteInvoiceScheduler = async () => {
             throw { message: error.message, data: error?.response?.data }
         } else {
             console.log('DELETE SCHEDULER : Unexpected error:', error);
-            throw { message: error }
+            throw error;
         }
     }
 }
@@ -168,16 +170,16 @@ const handleDeleteCreditNoteScheduler = async () => {
                     const creditNoteNotFoundRegex = /Credit\s*Note\s*#?\d*\s*not\s*found/i;
                     if (creditNoteNotFoundRegex.test(errorMessage)) {
                         let url: string = error?.request?.path;
-                        const parts = url.split('/');
-                        const creditNoteId = parts[parts.length - 1].split('?')[0];
+                        const parts = url?.split('/');
+                        const creditNoteId = parts[parts.length - 1]?.split('?')[0];
                         simproIdToUpdateAsDeleted.push(creditNoteId);
                     } else {
                         console.log('DELETE SCHEDULER : Unexpected AxiosError in Individual:', error);
-                        throw { message: error }
+                        throw error;
                     }
                 } else {
                     console.log('DELETE SCHEDULER : Unexpected error in Individual:', error);
-                    throw { message: error }
+                    throw error;
                 }
             }
 
@@ -200,7 +202,7 @@ const handleDeleteCreditNoteScheduler = async () => {
                     throw { message: 'Error from Axios request', details: error.response?.data }
                 } else {
                     console.log('DELETE SCHEDULER : Unexpected error:', error);
-                    throw { message: 'Internal Server Error' }
+                    throw error;
                 }
             }
 
@@ -214,7 +216,7 @@ const handleDeleteCreditNoteScheduler = async () => {
             throw { message: error.message, data: error?.response?.data }
         } else {
             console.log('DELETE SCHEDULER : Unexpected error:', error);
-            throw { message: error }
+            throw error;
         }
     }
 }
@@ -230,7 +232,7 @@ cron.schedule("0 11 * * *", async () => {
         await handleDeleteCreditNoteScheduler();
     } catch (err: any) {
         const recipients: string[] = process.env.EMAIL_RECIPIENTS
-            ? process.env.EMAIL_RECIPIENTS.split(',')
+            ? process.env.EMAIL_RECIPIENTS?.split(',')
             : [];
 
         const sendemail = `

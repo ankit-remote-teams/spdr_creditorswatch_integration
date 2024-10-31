@@ -133,7 +133,7 @@ export const updateInvoiceData = async () => {
                         tempRow = { ...tempRow, amount_due, amount_paid }
                     }
                 }
-                console.log('Updated row', tempRow)
+                // console.log('Updated row', tempRow)
                 row = { ...tempRow }
 
                 let creditorWatchID = row.id;
@@ -150,12 +150,13 @@ export const updateInvoiceData = async () => {
 
 
             } catch (error) {
+                console.log("Update invoice data failed", error)
                 if (error instanceof AxiosError) {
                     console.log('INVOICE SCHEDULER : Error syncing invoice data:', error.response?.data || error.message);
                     throw { message: 'Error from Axios request', details: error.response?.data }
                 } else {
                     console.log('INVOICE SCHEDULER : Unexpected error:', error);
-                    throw { message: 'Internal Server Error' }
+                    throw error;
                 }
             }
         }
@@ -208,12 +209,13 @@ export const updateInvoiceData = async () => {
                 console.log('INVOICE SCHEDULER : Mapping created:', savedMapping);
 
             } catch (error) {
+                console.log("Update error invoice data: ", error);
                 if (error instanceof AxiosError) {
                     console.log('INVOICE SCHEDULER : Error syncing invoice data:', error.response?.data || error.message);
                     throw { message: 'Error from Axios request', details: error.response?.data }
                 } else {
                     console.log('INVOICE SCHEDULER : Unexpected error:', error);
-                    throw { message: 'Internal Server Error' }
+                    throw error;
                 }
             }
         }
@@ -222,12 +224,13 @@ export const updateInvoiceData = async () => {
 
 
     } catch (error: any) {
+        console.log("Error in invoice scheduler: ", error);
         if (error instanceof AxiosError) {
             console.log('INVOICE SCHEDULER : Error syncing invoice data:', error.response?.data || error.message);
             throw { message: error.message, data: error?.response?.data }
         } else {
             console.log('INVOICE SCHEDULER : Unexpected error:', error);
-            throw { message: error?.message }
+            throw error;
         }
     }
 }
@@ -285,12 +288,13 @@ const updateCreditNoteData = async (simproInvoiceResponseArr: SimproInvoiceType[
                     continue;
                 }
             } catch (error) {
+                console.log("Error in update credit note data:", error)
                 if (error instanceof AxiosError) {
                     console.log('INVOICE SCHEDULER : Error syncing credit note data:', error.response?.data || error.message);
                     throw { message: 'Error from Axios request', details: error.response?.data }
                 } else {
                     console.log('INVOICE SCHEDULER : Unexpected error:', error);
-                    throw { message: 'Internal Server Error' }
+                    throw error;
                 }
             }
         }
@@ -322,24 +326,26 @@ const updateCreditNoteData = async (simproInvoiceResponseArr: SimproInvoiceType[
                 console.log('INVOICE SCHEDULER : Mapping created:', savedMapping);
 
             } catch (error) {
+                console.log("Error creating credit note in update credit note data", error);
                 if (error instanceof AxiosError) {
                     console.log('INVOICE SCHEDULER : Error syncing credit note data:', error.response?.data || error.message);
                     throw { message: 'Error from Axios request', details: error.response?.data }
                 } else {
                     console.log('INVOICE SCHEDULER : Unexpected error:', error);
-                    throw { message: 'Internal Server Error' }
+                    throw error;
                 }
             }
         }
 
 
     } catch (error: any) {
+        console.log("Error in update credit note data in catch 2",error)
         if (error instanceof AxiosError) {
             console.log('INVOICE SCHEDULER : Error syncing creditnote data:', error.response?.data || error.message);
             throw { message: error.message, data: error?.response?.data }
         } else {
             console.log('INVOICE SCHEDULER : Unexpected error:', error);
-            throw { message: error?.message }
+            throw error;
         }
     }
 }
@@ -351,7 +357,7 @@ cron.schedule("0 11 * * *", async () => {
         await updateInvoiceData();
     } catch (err: any) {
         const recipients: string[] = process.env.EMAIL_RECIPIENTS
-            ? process.env.EMAIL_RECIPIENTS.split(',')
+            ? process.env.EMAIL_RECIPIENTS?.split(',')
             : [];
 
         const sendemail = `

@@ -251,6 +251,7 @@ const syncInitialCreditNoteData = async (simproInvoiceArray: SimproInvoiceType[]
 
 
     } catch (error) {
+        console.log("Error in sync controller in initial credit note data:", error);
         if (error instanceof AxiosError) {
             console.log('SYNC CONTROLLER : Error syncing credit note data:', error.response?.data || error.message);
             throw {
@@ -259,11 +260,8 @@ const syncInitialCreditNoteData = async (simproInvoiceArray: SimproInvoiceType[]
         } else {
             // Generic error handling
             console.log('SYNC CONTROLLER : Unexpected error:', error);
-            throw {
-                message: 'Error syncing credit note data', error: "Something went wrong while syncing credit note."
-            }
+            throw error;
         }
-        return []
     }
 }
 
@@ -275,7 +273,7 @@ export const updateInvoiceCreditorNoteDataToCreditorsWatch = async (req: Request
     } catch (error) {
         console.log('SYNC CONTROLLER : Unexpected error:', error);
         const recipients: string[] = process.env.EMAIL_RECIPIENTS
-            ? process.env.EMAIL_RECIPIENTS.split(',')
+            ? process.env.EMAIL_RECIPIENTS?.split(',')
             : [];
 
         const sendemail = `
@@ -326,7 +324,7 @@ export const updateInvoiceLateFee = async (req: Request, res: Response): Promise
     } catch (error) {
         console.log('SYNC CONTROLLER : Unexpected error:', error);
         const recipients: string[] = process.env.EMAIL_RECIPIENTS
-            ? process.env.EMAIL_RECIPIENTS.split(',')
+            ? process.env.EMAIL_RECIPIENTS?.split(',')
             : [];
 
         const sendemail = `

@@ -122,7 +122,7 @@ export const handleLateFeeUpdate = async () => {
                     throw { message: 'Error from Axios request', details: error.response?.data }
                 } else {
                     console.log('LATE FEE SCHEDULER : Unexpected error:', error);
-                    throw { message: 'Internal Server Error' }
+                    throw error;
                 }
             }
         }
@@ -179,7 +179,7 @@ export const handleLateFeeUpdate = async () => {
                     throw { message: 'Error from Axios request', details: error.response?.data }
                 } else {
                     console.log('LATE FEE SCHEDULER : : Unexpected error:', error);
-                    throw { message: 'Internal Server Error' }
+                    throw error;
                 }
             }
         }
@@ -191,7 +191,7 @@ export const handleLateFeeUpdate = async () => {
         } else {
             // Generic error handling
             console.log('LATE FEE SCHEDULER : Unexpected error:', error);
-            throw { message: 'Internal Server Error' }
+            throw error;
         }
     }
 }
@@ -202,7 +202,7 @@ cron.schedule("0 11 * * *", async () => {
         await handleLateFeeUpdate();
     } catch (err: any) {
         const recipients: string[] = process.env.EMAIL_RECIPIENTS
-            ? process.env.EMAIL_RECIPIENTS.split(',')
+            ? process.env.EMAIL_RECIPIENTS?.split(',')
             : [];
 
         const sendemail = `

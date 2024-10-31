@@ -46,12 +46,13 @@ const updateContactsData = async () => {
                     continue;
                 }
             } catch (error) {
+                console.log("Error in updating contact data", error);
                 if (error instanceof AxiosError) {
                     console.log('CONTACT SCHEDULER : Error syncing contact data:', error.response?.data || error.message);
                     throw { message: 'Error from Axios request', details: error.response?.data }
                 } else {
                     console.log('CONTACT SCHEDULER : Unexpected error:', error);
-                    throw { message: 'Internal Server Error' }
+                    throw error;
                 }
             }
         }
@@ -81,22 +82,24 @@ const updateContactsData = async () => {
                 console.log('CONTACT SCHEDULER : Mapping created:', savedMapping);
 
             } catch (error) {
+                console.log("Error in update contact data", error);
                 if (error instanceof AxiosError) {
                     console.log('CONTACT SCHEDULER : Error syncing contact data:', error.response?.data || error.message);
                     throw { message: 'Error from Axios request', details: error.response?.data }
                 } else {
                     console.log('CONTACT SCHEDULER : Unexpected error:', error);
-                    throw { message: 'Internal Server Error' }
+                    throw error;
                 }
             }
         }
     } catch (error: any) {
+        console.log("Error in update contacts data in 2nd catch", error,)
         if (error instanceof AxiosError) {
             console.log('CONTACT SCHEDULER : Error syncing contact data:', error.response?.data || error.message);
             throw { message: error.message, data: error?.response?.data }
         } else {
             console.log('CONTACT SCHEDULER : Unexpected error:', error);
-            throw { message: error?.message }
+            throw error;
         }
     }
 }
@@ -107,7 +110,7 @@ cron.schedule("0 11 * * *", async () => {
         await updateContactsData();
     } catch (err: any) {
         const recipients: string[] = process.env.EMAIL_RECIPIENTS
-            ? process.env.EMAIL_RECIPIENTS.split(',')
+            ? process.env.EMAIL_RECIPIENTS?.split(',')
             : [];
 
         const sendemail = `
