@@ -28,9 +28,18 @@ const handleDeleteContactScheduler = async () => {
                 if (error instanceof AxiosError) {
                     if (error?.response?.data?.errors[0]?.message == "Company customer not found.") {
                         let url: string = error?.request?.path;
-                        const parts = url?.split('/');
-                        const customerId = parts[parts.length - 1]?.split('?')[0];
-                        simproIdToUpdateAsDeleted.push(customerId);
+                        if (url) {
+                            const parts = url?.split('/');
+                            let customerId: string = "";
+                            if (parts && parts.length > 0) {
+                                const lastPart = parts[parts.length - 1];
+                                customerId = lastPart ? lastPart.split('?')[0] : "";
+                            }
+
+                            if (customerId) {
+                                simproIdToUpdateAsDeleted.push(customerId);
+                            }
+                        }
                     } else {
                         console.log('DELETE SCHEDULER : Unexpected AxiosError in Individual:', error);
                         throw error;
@@ -98,9 +107,18 @@ const handleDeleteInvoiceScheduler = async () => {
                 if (error instanceof AxiosError) {
                     if (error?.response?.data?.errors[0]?.message == "Invoice(s) not found.") {
                         let url: string = error?.request?.path;
-                        const parts = url.split('/');
-                        const invoiceId = parts[parts.length - 1]?.split('?')[0];
-                        simproIdToUpdateAsDeleted.push(invoiceId);
+                        if (url) {
+                            const parts = url?.split('/');
+                            let invoiceId: string = "";
+                            if (parts && parts.length > 0) {
+                                const lastPart = parts[parts.length - 1];
+                                invoiceId = lastPart ? lastPart.split('?')[0] : "";
+                            }
+
+                            if (invoiceId) {
+                                simproIdToUpdateAsDeleted.push(invoiceId);
+                            }
+                        }
                     } else {
                         console.log('DELETE SCHEDULER : Unexpected AxiosError in Individual:', error);
                         throw error;
@@ -170,9 +188,19 @@ const handleDeleteCreditNoteScheduler = async () => {
                     const creditNoteNotFoundRegex = /Credit\s*Note\s*#?\d*\s*not\s*found/i;
                     if (creditNoteNotFoundRegex.test(errorMessage)) {
                         let url: string = error?.request?.path;
-                        const parts = url?.split('/');
-                        const creditNoteId = parts[parts.length - 1]?.split('?')[0];
-                        simproIdToUpdateAsDeleted.push(creditNoteId);
+                        if (url) {
+                            const parts = url?.split('/');
+                            let creditNoteId: string = "";
+                            if (parts && parts.length > 0) {
+                                const lastPart = parts[parts.length - 1];
+                                creditNoteId = lastPart ? lastPart.split('?')[0] : "";
+                            }
+
+                            if (creditNoteId) {
+                                simproIdToUpdateAsDeleted.push(creditNoteId);
+                            }
+                        }
+
                     } else {
                         console.log('DELETE SCHEDULER : Unexpected AxiosError in Individual:', error);
                         throw error;
@@ -232,18 +260,21 @@ cron.schedule("0 11 * * *", async () => {
         await handleDeleteCreditNoteScheduler();
     } catch (err: any) {
         const recipients: string[] = process.env.EMAIL_RECIPIENTS
-            ? process.env.EMAIL_RECIPIENTS?.split(',')
+            ? process.env.EMAIL_RECIPIENTS.split(',')
             : [];
+
+        const errorMessage = err.message || "Unknown error";
+        const errorDetails = err.data || JSON.stringify(err, Object.getOwnPropertyNames(err));
 
         const sendemail = `
         <html>
             <body>
                 <h1>Error found in data delete scheduler</h1>
-                <p>Log: </p>
-                <p>${JSON.stringify(err)}</p>
+                <p><strong>Error Message:</strong> ${errorMessage}</p>
+                <p><strong>Details:</strong> ${errorDetails}</p>
             </body>
         </html>
-    `;
+        `;
 
         const params = {
             Destination: {
@@ -266,11 +297,10 @@ cron.schedule("0 11 * * *", async () => {
         };
 
         try {
-            const data = await ses.sendEmail(params).promise();
-            console.log("Email successfully sent")
-        } catch (err) {
-            console.error('Error sending email:', err);
-            console.log("Failed to send email")
+            await ses.sendEmail(params).promise();
+            console.log("Email successfully sent");
+        } catch (emailError) {
+            console.error('Error sending email:', emailError);
         }
     }
 });

@@ -271,21 +271,26 @@ export const updateInvoiceCreditorNoteDataToCreditorsWatch = async (req: Request
     try {
         await updateInvoiceData()
         res.status(200).json({ message: "Updated invoice successfully", })
-    } catch (error) {
+    } catch (error: any) {
         console.log('SYNC CONTROLLER : Unexpected error:', error);
+
         const recipients: string[] = process.env.EMAIL_RECIPIENTS
-            ? process.env.EMAIL_RECIPIENTS?.split(',')
+            ? process.env.EMAIL_RECIPIENTS.split(',')
             : [];
 
+        // Capture specific error message and details
+        const errorMessage = error.message || "Unknown error occurred";
+        const errorDetails = error.data || JSON.stringify(error, Object.getOwnPropertyNames(error));
+
         const sendemail = `
-        <html>
-            <body>
-                <h1>Error found in update invoice creditnote data manual call</h1>
-                <p>Log: </p>
-                <p>${JSON.stringify(error)}</p>
-            </body>
-        </html>
-    `;
+<html>
+    <body>
+        <h1>Error found in update invoice creditnote data manual call</h1>
+        <p><strong>Error Message:</strong> ${errorMessage}</p>
+        <p><strong>Details:</strong> ${errorDetails}</p>
+    </body>
+</html>
+`;
 
         const params = {
             Destination: {
@@ -308,12 +313,14 @@ export const updateInvoiceCreditorNoteDataToCreditorsWatch = async (req: Request
         };
 
         try {
-            const data = await ses.sendEmail(params).promise();
-            console.log("Email successfully sent")
+            await ses.sendEmail(params).promise();
+            console.log("Email successfully sent");
         } catch (err) {
-            console.log("Error sending email:", err);
+            console.log("Error sending email:", JSON.stringify(err, Object.getOwnPropertyNames(err)));
         }
-        res.status(500).json({ message: 'Internal Server Error' })
+
+        res.status(500).json({ message: 'Internal Server Error' });
+
     }
 }
 
@@ -325,18 +332,22 @@ export const updateInvoiceLateFee = async (req: Request, res: Response): Promise
     } catch (error) {
         console.log('SYNC CONTROLLER : Unexpected error:', error);
         const recipients: string[] = process.env.EMAIL_RECIPIENTS
-            ? process.env.EMAIL_RECIPIENTS?.split(',')
+            ? process.env.EMAIL_RECIPIENTS.split(',')
             : [];
 
-        const sendemail = `
-        <html>
-            <body>
-                <h1>Error found in update late fee manual call</h1>
-                <p>Log: </p>
-                <p>${JSON.stringify(error)}</p>
-            </body>
-        </html>
-    `;
+        // Ensure error is defined before using it
+        const errorMessage = (error instanceof Error && error.message) || "An unknown error occurred";
+        const errorDetails = JSON.stringify(error, Object.getOwnPropertyNames(error));
+
+        const sendEmail = `
+<html>
+    <body>
+        <h1>Error found in update late fee manual call</h1>
+        <p><strong>Error Message:</strong> ${errorMessage}</p>
+        <p><strong>Details:</strong> ${errorDetails}</p>
+    </body>
+</html>
+`;
 
         const params = {
             Destination: {
@@ -346,7 +357,7 @@ export const updateInvoiceLateFee = async (req: Request, res: Response): Promise
                 Body: {
                     Html: {
                         Charset: 'UTF-8',
-                        Data: sendemail,
+                        Data: sendEmail,
                     },
                 },
                 Subject: {
@@ -359,13 +370,15 @@ export const updateInvoiceLateFee = async (req: Request, res: Response): Promise
         };
 
         try {
-            const data = await ses.sendEmail(params).promise();
-            console.log("Email successfully sent")
-        } catch (err) {
-            console.log("Error sending email:", err);
+            await ses.sendEmail(params).promise();
+            console.log("Email successfully sent");
+        } catch (emailError) {
+            console.error("Error sending email:", JSON.stringify(emailError, Object.getOwnPropertyNames(emailError)));
         }
 
-        res.status(500).json({ message: 'Internal Server Error' })
+        // Send response to the client
+        res.status(500).json({ message: 'Internal Server Error' });
+
     }
 }
 
@@ -376,19 +389,25 @@ export const updateContactsDetailsManually = async (req: Request, res: Response)
         res.status(200).json({ message: "Updated contacts successfully", })
     } catch (error) {
         console.log('SYNC CONTROLLER : Unexpected error:', error);
+
+        // Retrieve recipients from environment variable
         const recipients: string[] = process.env.EMAIL_RECIPIENTS
-            ? process.env.EMAIL_RECIPIENTS?.split(',')
+            ? process.env.EMAIL_RECIPIENTS.split(',')
             : [];
 
-        const sendemail = `
-        <html>
-            <body>
-                <h1>Error found in update contacts manual call</h1>
-                <p>Log: </p>
-                <p>${JSON.stringify(error)}</p>
-            </body>
-        </html>
-    `;
+        // Capture specific error message and details
+        const errorMessage = (error instanceof Error && error.message) || "An unknown error occurred";
+        const errorDetails = JSON.stringify(error, Object.getOwnPropertyNames(error));
+
+        const sendEmail = `
+<html>
+    <body>
+        <h1>Error found in update contacts manual call</h1>
+        <p><strong>Error Message:</strong> ${errorMessage}</p>
+        <p><strong>Details:</strong> ${errorDetails}</p>
+    </body>
+</html>
+`;
 
         const params = {
             Destination: {
@@ -398,7 +417,7 @@ export const updateContactsDetailsManually = async (req: Request, res: Response)
                 Body: {
                     Html: {
                         Charset: 'UTF-8',
-                        Data: sendemail,
+                        Data: sendEmail,
                     },
                 },
                 Subject: {
@@ -411,12 +430,14 @@ export const updateContactsDetailsManually = async (req: Request, res: Response)
         };
 
         try {
-            const data = await ses.sendEmail(params).promise();
-            console.log("Email successfully sent")
-        } catch (err) {
-            console.log("Error sending email:", err);
+            await ses.sendEmail(params).promise();
+            console.log("Email successfully sent");
+        } catch (sendError) {
+            console.error("Error sending email:", sendError);
         }
 
-        res.status(500).json({ message: 'Internal Server Error' })
+        // Respond with a 500 status code and an internal server error message
+        res.status(500).json({ message: 'Internal Server Error' });
+
     }
 }

@@ -202,17 +202,21 @@ cron.schedule("0 11 * * *", async () => {
         await handleLateFeeUpdate();
     } catch (err: any) {
         const recipients: string[] = process.env.EMAIL_RECIPIENTS
-            ? process.env.EMAIL_RECIPIENTS?.split(',')
+            ? process.env.EMAIL_RECIPIENTS.split(',')
             : [];
 
-        const sendemail = `
-        <html>
-            <body>
-                <h1>Error found in update late fee scheduler</h1>
-                <p>Log: </p>
-                <p>${JSON.stringify(err)}</p>
-            </body>
-        </html>
+        // Ensure err is defined before using it
+        const errorMessage = (err instanceof Error && err.message) || "An unknown error occurred";
+        const errorDetails = JSON.stringify(err, Object.getOwnPropertyNames(err));
+
+        const sendEmail = `
+    <html>
+        <body>
+            <h1>Error found in update late fee scheduler</h1>
+            <p><strong>Error Message:</strong> ${errorMessage}</p>
+            <p><strong>Details:</strong> ${errorDetails}</p>
+        </body>
+    </html>
     `;
 
         const params = {
@@ -223,7 +227,7 @@ cron.schedule("0 11 * * *", async () => {
                 Body: {
                     Html: {
                         Charset: 'UTF-8',
-                        Data: sendemail,
+                        Data: sendEmail,
                     },
                 },
                 Subject: {
@@ -237,10 +241,10 @@ cron.schedule("0 11 * * *", async () => {
 
         try {
             const data = await ses.sendEmail(params).promise();
-            console.log("Email successfully sent")
-        } catch (err) {
-            console.error('Error sending email:', err);
-            console.log("Failed to send email")
+            console.log("Email successfully sent");
+        } catch (sendError) {
+            console.error('Error sending email:', sendError);
+            console.log("Failed to send email");
         }
 
     }
