@@ -9,7 +9,7 @@ import { creditorsWatchPostWithRetry, creditorsWatchPutWithRetry } from '../util
 import { get48HoursAgoDate } from '../utils/helper';
 import { ses } from '../config/awsConfig';
 
-const updateContactsData = async () => {
+export const updateContactsData = async () => {
     try {
         const ifModifiedSinceHeader = get48HoursAgoDate();
         let simproCustomerResponseArr: SimproCompanyType[] = await fetchSimproPaginatedData('/customers/companies/?pageSize=100', "ID,CompanyName,Email,Archived,EIN,Phone,AltPhone", ifModifiedSinceHeader);

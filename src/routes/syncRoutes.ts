@@ -1,5 +1,5 @@
 import express from 'express';
-import { syncInitialSimproContactData, syncInitialInvoiceCreditNoteData, updateInvoiceCreditorNoteDataToCreditorsWatch, updateInvoiceLateFee } from '../controllers/syncController';
+import { syncInitialSimproContactData, syncInitialInvoiceCreditNoteData, updateInvoiceCreditorNoteDataToCreditorsWatch, updateInvoiceLateFee, updateContactsDetailsManually } from '../controllers/syncController';
 const router = express.Router();
 import { apiKeyAuth } from '../middlewares/apiAuth';
 
@@ -11,5 +11,6 @@ router.get('/sync-initial-contact-data', apiKeyAuth, syncInitialSimproContactDat
 router.get('/sync-initial-invoice-creditnote-data', apiKeyAuth, syncInitialInvoiceCreditNoteData);
 router.put('/update-invoice-credit-note-data-to-creditors-watch', apiKeyAuth, updateInvoiceCreditorNoteDataToCreditorsWatch);
 router.put('/update-late-fee-for-invoice', apiKeyAuth, updateInvoiceLateFee);
+router.put('/update-contact-data-to-invoice', apiKeyAuth, updateContactsDetailsManually)
 
 export default router;
