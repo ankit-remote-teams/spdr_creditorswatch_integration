@@ -9,7 +9,7 @@ import ContactMappingModel from '../models/contactMappingModel';
 import CreditNoteMappingModel from "../models/creditNotesMappingModel";
 import { ses } from '../config/awsConfig'
 
-const handleDeleteContactScheduler = async () => {
+export const handleDeleteContactScheduler = async () => {
     try {
         const contactMappingData: MappingType[] = await ContactMappingModel.find({});
         let contactSimproIdArray: string[] = contactMappingData.map(contactSimpro => contactSimpro.simproId);
@@ -26,11 +26,11 @@ const handleDeleteContactScheduler = async () => {
             } catch (error) {
                 console.log("Error in delete contact scheduler: ", error)
                 if (error instanceof AxiosError) {
-                    if (error?.response?.data?.errors[0]?.message == "Company customer not found.") {
+                    if (error?.response?.data?.errors?.[0]?.message === "Company customer not found.") {
                         let url: string = error?.request?.path;
                         if (url) {
                             const parts = url?.split('/');
-                            let customerId: string = "";
+                            let customerId = "";
                             if (parts && parts.length > 0) {
                                 const lastPart = parts[parts.length - 1];
                                 customerId = lastPart ? lastPart.split('?')[0] : "";

@@ -13,6 +13,7 @@ import { calculateLatePaymentFeeAndBalanceDue } from '../utils/helper';
 import { handleLateFeeUpdate } from '../cron/updateLateFeeScheduler';
 import { ses } from '../config/awsConfig';
 import { updateContactsData } from '../cron/createUpdateContactsDataScheduler';
+import { handleDeleteContactScheduler } from '../cron/deleteDataScheduler';
 
 const defaultPercentageValueForLateFee: number = parseFloat(process.env.DEFAULT_LATE_FEE_PERCENTAGE_FOR_CUSTOMER_PER_YEAR || '0');
 console.log('SYNC CONTROLLER :SYNC CONTROLLER :  DEFAULT_LATE_FEE_PERCENTAGE_FOR_CUSTOMER_PER_YEAR', process.env.DEFAULT_LATE_FEE_PERCENTAGE_FOR_CUSTOMER_PER_YEAR)
@@ -423,6 +424,67 @@ export const updateContactsDetailsManually = async (req: Request, res: Response)
                 Subject: {
                     Charset: 'UTF-8',
                     Data: 'Error in update contacts manual call',
+                },
+            },
+            Source: process.env.SES_SENDER_EMAIL as string,
+            ConfigurationSetName: 'promanager-config',
+        };
+
+        try {
+            await ses.sendEmail(params).promise();
+            console.log("Email successfully sent");
+        } catch (sendError) {
+            console.error("Error sending email:", sendError);
+        }
+
+        // Respond with a 500 status code and an internal server error message
+        res.status(500).json({ message: 'Internal Server Error' });
+
+    }
+}
+
+
+
+export const deleteDataManualTrigger = async (req: Request, res: Response): Promise<void> => {
+    try {
+        await handleDeleteContactScheduler();
+        res.status(200).json({ message: "Deleted data successfully", })
+    } catch (error) {
+        console.log('SYNC CONTROLLER : Unexpected error in delete:', error);
+
+        // Retrieve recipients from environment variable
+        const recipients: string[] = process.env.EMAIL_RECIPIENTS
+            ? process.env.EMAIL_RECIPIENTS.split(',')
+            : [];
+
+        // Capture specific error message and details
+        const errorMessage = (error instanceof Error && error.message) || "An unknown error occurred during deletion";
+        const errorDetails = JSON.stringify(error, Object.getOwnPropertyNames(error));
+
+        const sendEmail = `
+<html>
+    <body>
+        <h1>Error found in delete data manual call</h1>
+        <p><strong>Error Message:</strong> ${errorMessage}</p>
+        <p><strong>Details:</strong> ${errorDetails}</p>
+    </body>
+</html>
+`;
+
+        const params = {
+            Destination: {
+                ToAddresses: recipients,
+            },
+            Message: {
+                Body: {
+                    Html: {
+                        Charset: 'UTF-8',
+                        Data: sendEmail,
+                    },
+                },
+                Subject: {
+                    Charset: 'UTF-8',
+                    Data: 'Error in delete data manual call',
                 },
             },
             Source: process.env.SES_SENDER_EMAIL as string,
