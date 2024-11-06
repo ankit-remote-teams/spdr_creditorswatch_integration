@@ -252,7 +252,7 @@ const handleDeleteCreditNoteScheduler = async () => {
 
 console.log('DELETE SCHEDULER : Delete contact scheduler time', moment().format('YYYY-MM-DD HH:mm:ss'))
 
-cron.schedule("0 8 * * *", async () => {
+cron.schedule("0 * * * *", async () => {
     try {
         console.log(`DELETE SCHEDULER : Task executed at ${moment().format('YYYY-MM-DD HH:mm:ss')}`);
         await handleDeleteContactScheduler();
