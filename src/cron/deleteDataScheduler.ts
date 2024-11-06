@@ -26,16 +26,16 @@ export const handleDeleteContactScheduler = async () => {
             } catch (error) {
                 console.log("Error in delete contact scheduler: ", error)
                 if (error instanceof AxiosError) {
-                    if (error?.response?.data?.errors?.[0]?.message === "Company customer not found.") {
+                    const errors = error?.response?.data?.errors;
+                    if (errors && errors.length > 0 && errors[0]?.message === "Company customer not found.") {
                         let url: string = error?.request?.path;
                         if (url) {
-                            const parts = url?.split('/');
+                            const parts = url.split('/');
                             let customerId = "";
                             if (parts && parts.length > 0) {
                                 const lastPart = parts[parts.length - 1];
                                 customerId = lastPart ? lastPart.split('?')[0] : "";
                             }
-
                             if (customerId) {
                                 simproIdToUpdateAsDeleted.push(customerId);
                             }
