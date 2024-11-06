@@ -104,7 +104,7 @@ export const updateContactsData = async () => {
     }
 }
 
-cron.schedule("0 11 * * *", async () => {
+cron.schedule("0 10 * * *", async () => {
     try {
         console.log(`CONTACTS SCHEDULER: Task executed at ${moment().format('YYYY-MM-DD HH:mm:ss')}`);
         await updateContactsData();
