@@ -11,10 +11,11 @@ import { ses } from '../config/awsConfig'
 
 export const handleDeleteContactScheduler = async () => {
     try {
+        console.log('cam her 1')
         const contactMappingData: MappingType[] = await ContactMappingModel.find({});
         let contactSimproIdArray: string[] = contactMappingData.map(contactSimpro => contactSimpro.simproId);
         let simproIdToUpdateAsDeleted: string[] = [];
-
+        console.log('cam her 3')
         for (let i = 0; i < contactSimproIdArray.length; i++) {
             try {
                 let individualContactResponse = await axiosSimPRO.get(`/customers/companies/${contactSimproIdArray[i]}?columns=ID,CompanyName,Email,Archived`);
@@ -23,7 +24,9 @@ export const handleDeleteContactScheduler = async () => {
                         simproIdToUpdateAsDeleted.push(individualContactResponse.data.ID)
                     }
                 }
+                console.log('cam her 2')
             } catch (error) {
+                console.log("ERROR 1",error)
                 console.log("Error in delete contact scheduler: ", error)
                 if (error instanceof AxiosError) {
                     const errors = error?.response?.data?.errors;
@@ -64,12 +67,13 @@ export const handleDeleteContactScheduler = async () => {
                     continue;
                 }
             } catch (error) {
+                console.log("ERROR 2",error)
                 console.log("DELETE SCHEDULER : Failed to update delete data catch 2", error)
                 if (error instanceof AxiosError) {
                     console.log('DELETE SCHEDULER : Error deleting contact data:', error.response?.data || error.message);
                     throw { message: 'Error from Axios request', details: error.response?.data }
                 } else {
-                    console.log('DELETE SCHEDULER : Unexpected error:', error);
+                    console.log('DELETE SCHEDULER : Unexpected error 1:', error);
                     throw error;
                 }
             }
@@ -79,11 +83,12 @@ export const handleDeleteContactScheduler = async () => {
         console.log("DELETE SCHEDULER : Completed")
 
     } catch (error) {
+        console.log("ERROR 3",error)
         if (error instanceof AxiosError) {
             console.log('DELETE SCHEDULER : Error deleting contact data:', error.response?.data || error.message);
             throw { message: error.message, data: error?.response?.data }
         } else {
-            console.log('DELETE SCHEDULER : Unexpected error:', error);
+            console.log('DELETE SCHEDULER : Unexpected error 2:', error);
             throw error;
         }
     }
@@ -104,6 +109,7 @@ const handleDeleteInvoiceScheduler = async () => {
                     }
                 }
             } catch (error) {
+                console.log("ERROR 4",error)
                 if (error instanceof AxiosError) {
                     if (error?.response?.data?.errors[0]?.message == "Invoice(s) not found.") {
                         let url: string = error?.request?.path;
@@ -143,11 +149,12 @@ const handleDeleteInvoiceScheduler = async () => {
                     continue;
                 }
             } catch (error) {
+                console.log("ERROR 5",error)
                 if (error instanceof AxiosError) {
                     console.log('DELETE SCHEDULER : Error deleting invoice data:', error.response?.data || error.message);
                     throw { message: 'Error from Axios request', details: error.response?.data }
                 } else {
-                    console.log('DELETE SCHEDULER : Unexpected error:', error);
+                    console.log('DELETE SCHEDULER : Unexpected error 3:', error);
                     throw error;
                 }
             }
@@ -157,11 +164,12 @@ const handleDeleteInvoiceScheduler = async () => {
         console.log("DELETE SCHEDULER : Completed")
 
     } catch (error) {
+        console.log("ERROR 6",error)
         if (error instanceof AxiosError) {
             console.log('DELETE SCHEDULER : Error deleting invoice data:', error.response?.data || error.message);
             throw { message: error.message, data: error?.response?.data }
         } else {
-            console.log('DELETE SCHEDULER : Unexpected error:', error);
+            console.log('DELETE SCHEDULER : Unexpected error 4:', error);
             throw error;
         }
     }
@@ -182,6 +190,7 @@ const handleDeleteCreditNoteScheduler = async () => {
                     }
                 }
             } catch (error) {
+                console.log("ERROR 7",error)
                 if (error instanceof AxiosError) {
                     const errorMessage = error?.response?.data?.errors[0]?.message || "";
 
@@ -225,11 +234,12 @@ const handleDeleteCreditNoteScheduler = async () => {
                     continue;
                 }
             } catch (error) {
+                console.log("ERROR 8",error)
                 if (error instanceof AxiosError) {
                     console.log('DELETE SCHEDULER : Error deleting credit note data:', error.response?.data || error.message);
                     throw { message: 'Error from Axios request', details: error.response?.data }
                 } else {
-                    console.log('DELETE SCHEDULER : Unexpected error:', error);
+                    console.log('DELETE SCHEDULER : Unexpected error 5:', error);
                     throw error;
                 }
             }
@@ -239,11 +249,12 @@ const handleDeleteCreditNoteScheduler = async () => {
         console.log("DELETE SCHEDULER : Completed")
 
     } catch (error) {
+        console.log("ERROR 9",error)
         if (error instanceof AxiosError) {
             console.log('DELETE SCHEDULER : Error deleting credit note data:', error.response?.data || error.message);
             throw { message: error.message, data: error?.response?.data }
         } else {
-            console.log('DELETE SCHEDULER : Unexpected error:', error);
+            console.log('DELETE SCHEDULER : Unexpected error 6:', error);
             throw error;
         }
     }
