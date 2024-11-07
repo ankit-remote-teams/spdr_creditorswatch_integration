@@ -13,7 +13,7 @@ import { calculateLatePaymentFeeAndBalanceDue } from '../utils/helper';
 import { handleLateFeeUpdate } from '../cron/updateLateFeeScheduler';
 import { ses } from '../config/awsConfig';
 import { updateContactsData } from '../cron/createUpdateContactsDataScheduler';
-import { handleDeleteContactScheduler } from '../cron/deleteDataScheduler';
+import { handleDeleteContactScheduler, handleDeleteCreditNoteScheduler, handleDeleteInvoiceScheduler } from '../cron/deleteDataScheduler';
 
 const defaultPercentageValueForLateFee: number = parseFloat(process.env.DEFAULT_LATE_FEE_PERCENTAGE_FOR_CUSTOMER_PER_YEAR || '0');
 console.log('SYNC CONTROLLER :SYNC CONTROLLER :  DEFAULT_LATE_FEE_PERCENTAGE_FOR_CUSTOMER_PER_YEAR', process.env.DEFAULT_LATE_FEE_PERCENTAGE_FOR_CUSTOMER_PER_YEAR)
@@ -448,6 +448,8 @@ export const updateContactsDetailsManually = async (req: Request, res: Response)
 export const deleteDataManualTrigger = async (req: Request, res: Response): Promise<void> => {
     try {
         await handleDeleteContactScheduler();
+        await handleDeleteInvoiceScheduler()
+        await handleDeleteCreditNoteScheduler();
         res.status(200).json({ message: "Deleted data successfully", })
     } catch (error) {
         console.log('SYNC CONTROLLER : Unexpected error in delete:', error);

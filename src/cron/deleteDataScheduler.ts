@@ -26,7 +26,7 @@ export const handleDeleteContactScheduler = async () => {
                 }
                 console.log('cam her 2')
             } catch (error) {
-                console.log("ERROR 1",error)
+                console.log("ERROR 1", error)
                 console.log("Error in delete contact scheduler: ", error)
                 if (error instanceof AxiosError) {
                     const errors = error?.response?.data?.errors;
@@ -67,7 +67,7 @@ export const handleDeleteContactScheduler = async () => {
                     continue;
                 }
             } catch (error) {
-                console.log("ERROR 2",error)
+                console.log("ERROR 2", error)
                 console.log("DELETE SCHEDULER : Failed to update delete data catch 2", error)
                 if (error instanceof AxiosError) {
                     console.log('DELETE SCHEDULER : Error deleting contact data:', error.response?.data || error.message);
@@ -83,7 +83,7 @@ export const handleDeleteContactScheduler = async () => {
         console.log("DELETE SCHEDULER : Completed")
 
     } catch (error) {
-        console.log("ERROR 3",error)
+        console.log("ERROR 3", error)
         if (error instanceof AxiosError) {
             console.log('DELETE SCHEDULER : Error deleting contact data:', error.response?.data || error.message);
             throw { message: error.message, data: error?.response?.data }
@@ -94,7 +94,7 @@ export const handleDeleteContactScheduler = async () => {
     }
 }
 
-const handleDeleteInvoiceScheduler = async () => {
+export const handleDeleteInvoiceScheduler = async () => {
     try {
         const invoiceMappingData: MappingType[] = await InvoiceMappingModel.find({});
         let invoiceSimproIdArray: string[] = invoiceMappingData.map(invoiceSimpro => invoiceSimpro.simproId);
@@ -109,9 +109,32 @@ const handleDeleteInvoiceScheduler = async () => {
                     }
                 }
             } catch (error) {
-                console.log("ERROR 4",error)
                 if (error instanceof AxiosError) {
-                    if (error?.response?.data?.errors[0]?.message == "Invoice(s) not found.") {
+                    console.log("ERROR 4", error?.response?.data)
+                    if (error?.response?.data?.error == "Invalid resource URI. The correct URI is specified in _href.") {
+                        try {
+                            const fullHref = error.response.data._href;
+        
+                            // Remove the base URL and company path if they exist in _href, leaving just the relative path.
+                            const relevantPath = fullHref.replace(/^\/api\/v1\.0\/companies\/2\//, '');
+                            let retainageId = relevantPath.split('/')[relevantPath.split('/').length - 1];
+                    
+                            // Make the request with the corrected path
+                            const responseRetainage = await axiosSimPRO.get(relevantPath);
+                            if(!responseRetainage.data){
+                                simproIdToUpdateAsDeleted.push(retainageId);
+                            }
+                        }
+                        catch (error) {
+                            if (error instanceof AxiosError) {
+                                console.log('DELETE SCHEDULER : Error fetching retainage :', error.response?.data || error.message);
+                                throw { message: error.message, data: error?.response?.data }
+                            } else {
+                                console.log('DELETE SCHEDULER : Unexpected error fetch retainage:', error);
+                                throw error;
+                            }
+                        }
+                    } else if (error?.response?.data?.errors[0]?.message == "Invoice(s) not found.") {
                         let url: string = error?.request?.path;
                         if (url) {
                             const parts = url?.split('/');
@@ -149,7 +172,7 @@ const handleDeleteInvoiceScheduler = async () => {
                     continue;
                 }
             } catch (error) {
-                console.log("ERROR 5",error)
+                console.log("ERROR 5", error)
                 if (error instanceof AxiosError) {
                     console.log('DELETE SCHEDULER : Error deleting invoice data:', error.response?.data || error.message);
                     throw { message: 'Error from Axios request', details: error.response?.data }
@@ -164,7 +187,7 @@ const handleDeleteInvoiceScheduler = async () => {
         console.log("DELETE SCHEDULER : Completed")
 
     } catch (error) {
-        console.log("ERROR 6",error)
+        console.log("ERROR 6", error)
         if (error instanceof AxiosError) {
             console.log('DELETE SCHEDULER : Error deleting invoice data:', error.response?.data || error.message);
             throw { message: error.message, data: error?.response?.data }
@@ -175,7 +198,7 @@ const handleDeleteInvoiceScheduler = async () => {
     }
 }
 
-const handleDeleteCreditNoteScheduler = async () => {
+export const handleDeleteCreditNoteScheduler = async () => {
     try {
         const creditNoteMappingData: MappingType[] = await CreditNoteMappingModel.find({});
         let creditNoteSimproIdArray: string[] = creditNoteMappingData.map(creditNoteSimpro => creditNoteSimpro.simproId);
@@ -190,7 +213,7 @@ const handleDeleteCreditNoteScheduler = async () => {
                     }
                 }
             } catch (error) {
-                console.log("ERROR 7",error)
+                console.log("ERROR 7", error)
                 if (error instanceof AxiosError) {
                     const errorMessage = error?.response?.data?.errors[0]?.message || "";
 
@@ -234,7 +257,7 @@ const handleDeleteCreditNoteScheduler = async () => {
                     continue;
                 }
             } catch (error) {
-                console.log("ERROR 8",error)
+                console.log("ERROR 8", error)
                 if (error instanceof AxiosError) {
                     console.log('DELETE SCHEDULER : Error deleting credit note data:', error.response?.data || error.message);
                     throw { message: 'Error from Axios request', details: error.response?.data }
@@ -249,7 +272,7 @@ const handleDeleteCreditNoteScheduler = async () => {
         console.log("DELETE SCHEDULER : Completed")
 
     } catch (error) {
-        console.log("ERROR 9",error)
+        console.log("ERROR 9", error)
         if (error instanceof AxiosError) {
             console.log('DELETE SCHEDULER : Error deleting credit note data:', error.response?.data || error.message);
             throw { message: error.message, data: error?.response?.data }
