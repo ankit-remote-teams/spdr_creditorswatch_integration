@@ -1,24 +1,25 @@
 {
   "compilerOptions": {
-    /* Language and Environment */
-    "target": "es2016",
-    /* Modules */
-    "module": "commonjs",
-    "rootDir": "./src", // Ensure root directory is correct
-    "outDir": "./dist", // Output directory for compiled files
-    "esModuleInterop": true,
+    "target": "es2016",                  
+    "module": "commonjs",                  
+    "rootDir": "./src",                  
+    "outDir": "./dist",                 
+    /* Strict Type-Checking Options */
+    "strict": true,                        
+    "noImplicitAny": true,               
+    "strictNullChecks": true,            
     "forceConsistentCasingInFileNames": true,
-    /* Type Checking */
-    "strict": true,
-    "noImplicitAny": true,
-    "strictNullChecks": true,
-    "skipLibCheck": true
+    "skipLibCheck": true,                 
+
+    /* Module Resolution Options */
+    "esModuleInterop": true,           
+    /* Type Declarations */
+    "types": ["node"],
+    "typeRoots": ["node_modules/@types", "src/types"],
+
+    /* Additional Checks */
+    "allowSyntheticDefaultImports": true  
   },
-  "include": [
-    "src/**/*.ts"
-  ], // Ensure only .ts files are included
-  "exclude": [
-    "dist",
-    "node_modules"
-  ] // Exclude 'dist' and 'node_modules'
+  "include": ["src/**/*.ts"],              
+  "exclude": ["dist", "node_modules"]      
 }
