@@ -1,4 +1,4 @@
-import { SimproCreditNoteType, SimproCustomerPaymentsType, SimproInvoiceType } from "../types/types";
+import { SimproCreditNoteType, SimproCustomerPaymentsType, SimproInvoiceType }  from "../types/simpro.types"
 
 export const simproInvoiceData: SimproInvoiceType[] = [
     // {

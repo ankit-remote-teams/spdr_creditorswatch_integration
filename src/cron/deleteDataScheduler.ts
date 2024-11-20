@@ -2,7 +2,7 @@ const cron = require('node-cron');
 import { AxiosError } from "axios";
 import moment from "moment";
 import axiosSimPRO from "../config/axiosSimProConfig";
-import { MappingType } from "../types/types";
+import { MappingType } from "../types/creditorswatch.types";
 import { creditorsWatchPutWithRetry } from "../utils/apiUtils";
 import InvoiceMappingModel from '../models/invoiceMappingModel';
 import ContactMappingModel from '../models/contactMappingModel';

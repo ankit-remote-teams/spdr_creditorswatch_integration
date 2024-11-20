@@ -1,5 +1,5 @@
 import moment from "moment";
-import { CreditorsWatchInvoiceType, PaymentInfoType } from "../types/types";
+import { CreditorsWatchInvoiceType, PaymentInfoType } from "../types/creditorswatch.types";
 
 const defaultPercentageValueForLateFee: number = parseFloat(process.env.DEFAULT_LATE_FEE_PERCENTAGE_FOR_CUSTOMER_PER_YEAR || '0');
 
@@ -70,3 +70,13 @@ export const calculateLatePaymentFeeAndBalanceDue = (
 
     return latePaymentFee;
 };
+
+
+export const splitIntoChunks = <T>(array: T[], chunkSize: number): T[][] => {
+    const chunks: T[][] = [];
+    for (let i = 0; i < array.length; i += chunkSize) {
+        chunks.push(array.slice(i, i + chunkSize));
+    }
+    return chunks;
+};
+

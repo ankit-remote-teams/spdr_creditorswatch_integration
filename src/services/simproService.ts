@@ -11,7 +11,6 @@ export const fetchSimproPaginatedData = async <T>(url: string, columns: string, 
             const requestOptions: any = {
                 params: {
                     page: pageNum,
-                    search: 'any',
                     columns: columns,
                 }
             };

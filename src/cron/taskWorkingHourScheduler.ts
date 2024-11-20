@@ -108,7 +108,6 @@ const updateRowsFromDatabase = async (): Promise<void> => {
     try {
         const sheetInfo = await smartsheet.sheets.getSheet({ id: sheetId });
         const columns = sheetInfo.columns;
-        console.log("Columns: ", columns)
 
         const rows = sheetInfo.rows;
         let rowsToUpdate: any[] = [];

@@ -3,8 +3,9 @@ import { AxiosError } from 'axios';
 import InvoiceMappingModel from '../models/invoiceMappingModel';
 import moment from 'moment';
 import { fetchSimproPaginatedData } from '../services/simproService';
-import { CreditorsWatchCreditNoteType, CreditorsWatchInvoiceType, InvoiceItemPaymentsType, MappingType, SimproCreditNoteType, SimproCustomerPaymentsType, SimproInvoiceType } from '../types/types';
+import { CreditorsWatchCreditNoteType, CreditorsWatchInvoiceType, InvoiceItemPaymentsType, MappingType, } from '../types/creditorswatch.types';
 import { transformCreditNoteDataToCreditorsWatchArray, transformInvoiceDataToCreditorsWatchArray } from '../utils/transformDataHelper';
+import { SimproCreditNoteType, SimproCustomerPaymentsType, SimproInvoiceType } from '../types/simpro.types';
 import { creditorsWatchPostWithRetry, creditorsWatchPutWithRetry } from '../utils/apiUtils';
 import { calculateLatePaymentFeeAndBalanceDue, get48HoursAgoDate } from '../utils/helper';
 import CreditNoteMappingModel from '../models/creditNotesMappingModel';
@@ -32,10 +33,6 @@ export const updateInvoiceData = async () => {
         let simproCustomerPaymentsResponse: SimproCustomerPaymentsType[] = await fetchSimproPaginatedData('/customerPayments/?pageSize=100', 'ID,Payment,Invoices', formattedDate);
 
         // Comment ends
-
-        // let simproInvoiceResponseArr: SimproInvoiceType[] = simproInvoiceData;
-        // let simproCustomerPaymentsResponse: SimproCustomerPaymentsType[] = simproCustomerPaymentData;
-
 
         let invoicesPaymentsData: InvoiceItemPaymentsType[] = [];
         simproCustomerPaymentsResponse.forEach(customerPayment => {

@@ -1,5 +1,5 @@
 import moment from 'moment';
-import { CreditorsWatchInvoiceType, InvoiceItemPaymentsType, MappingType, SimproCustomerPaymentsType, SimproInvoiceType } from '../types/types';
+import { CreditorsWatchInvoiceType, InvoiceItemPaymentsType, MappingType, } from '../types/creditorswatch.types';
 import { fetchSimproPaginatedData } from '../services/simproService';
 import { transformInvoiceDataToCreditorsWatchArray } from '../utils/transformDataHelper';
 import { calculateLatePaymentFeeAndBalanceDue } from '../utils/helper';
@@ -8,6 +8,7 @@ const cron = require('node-cron');
 import InvoiceMappingModel from '../models/invoiceMappingModel';
 import { AxiosError } from 'axios';
 import { ses } from '../config/awsConfig';
+import { SimproCustomerPaymentsType, SimproInvoiceType } from '../types/simpro.types';
 
 const defaultPercentageValueForLateFee: number = parseFloat(process.env.DEFAULT_LATE_FEE_PERCENTAGE_FOR_CUSTOMER_PER_YEAR || '0');
 

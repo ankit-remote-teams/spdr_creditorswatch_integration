@@ -1,5 +1,5 @@
-import { CreditorsWatchContactType, CreditorsWatchCreditNoteType, CreditorsWatchInvoiceType, SimproCreditNoteType, SimproInvoiceType } from "../types/types";
-import { SimproCompanyType } from "../types/types";
+import { CreditorsWatchContactType, CreditorsWatchCreditNoteType, CreditorsWatchInvoiceType,  } from "../types/creditorswatch.types";
+import { SimproCompanyType,SimproCreditNoteType, SimproInvoiceType } from "../types/simpro.types";
 
 type SourceType = 'Simpro' | 'RemoteFlow';
 

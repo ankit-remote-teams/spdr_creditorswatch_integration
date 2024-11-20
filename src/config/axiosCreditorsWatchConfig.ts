@@ -7,6 +7,8 @@ const USER_EMAIL = process.env.CREDITORS_WATCH_API_EMAIL;
 
 const BASE_URL = `${process.env.CREDITORS_WATCH_BASE_URL}/organisations/${ORGANISATION_ID}`;
 
+console.log("BAse URL for CreditorsWatch API: " + BASE_URL);
+
 // Create the Axios instance
 const axiosCreditorsWatch: AxiosInstance = axios.create({
     baseURL: BASE_URL,
