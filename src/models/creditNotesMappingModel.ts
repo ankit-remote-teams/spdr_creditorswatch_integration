@@ -1,5 +1,5 @@
 import { Schema, model } from 'mongoose';
-import { IMapping } from '../types/types';
+import { IMapping } from '../types/creditorswatch.types';
 
 
 // Define the Mongoose schema
