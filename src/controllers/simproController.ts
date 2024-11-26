@@ -5,6 +5,8 @@ import moment from 'moment';
 import { SimproCustomerType, SimproScheduleType } from '../types/simpro.types';
 import axiosSimPRO from '../config/axiosSimProConfig';
 import { addJobCardDataToSmartsheet } from './smartSheetController';
+const jobCardReportSheetId = process.env.JOB_CARD_SHEET_ID ? process.env.JOB_CARD_SHEET_ID : "";
+const jobCardV2SheetId = process.env.JOB_CARD_SHEET_V2_ID ? process.env.JOB_CARD_SHEET_V2_ID : "";
 
 
 export const fetchScheduleDataForExistingScheduleIds = async (scheduleIds: number[]) => {
@@ -45,7 +47,7 @@ export const fetchScheduleDataForExistingScheduleIds = async (scheduleIds: numbe
 
         for (let i = 0; i < scheduleIds.length; i++) {
             try {
-                console.log('Fetch schedules ', i, 'of ', scheduleIds.length, "schdules")
+                // console.log('Fetch schedules ', i, 'of ', scheduleIds.length, "schdules")
                 let individualScheduleResponse = await axiosSimPRO(`/schedules/${scheduleIds[i]}?columns=ID,Type,Reference,Staff,Date,Blocks,Notes`)
                 scheduleDataFromSimpro.push(individualScheduleResponse.data)
             } catch (err) {
@@ -90,7 +92,7 @@ export const fetchScheduleDataForExistingScheduleIds = async (scheduleIds: numbe
             let costCenterIdForSchedule = schedule?.Reference?.split('-')[1];
             if (jobIdForSchedule) {
                 try {
-                    console.log("Fetching job for schdule " + jobIdForSchedule + ' at index', i, " of ", scheduleDataFromSimpro.length)
+                    // console.log("Fetching job for schdule " + jobIdForSchedule + ' at index', i, " of ", scheduleDataFromSimpro.length)
                     const jobDataForSchedule = await axiosSimPRO.get(`/jobs/${jobIdForSchedule}?columns=ID,Type,Site,SiteContact,DateIssued,Status,Total,Customer,Name,ProjectManager,CustomFields`);
                     schedule.Job = jobDataForSchedule?.data;
 
@@ -107,7 +109,7 @@ export const fetchScheduleDataForExistingScheduleIds = async (scheduleIds: numbe
 
             if (costCenterIdForSchedule) {
                 try {
-                    console.log("Fetching cost centre for schdule " + jobIdForSchedule + ' at index', i, " of ", scheduleDataFromSimpro.length)
+                    // console.log("Fetching cost centre for schdule " + jobIdForSchedule + ' at index', i, " of ", scheduleDataFromSimpro.length)
                     const costCenterDataForSchedule = await axiosSimPRO.get(`/jobCostCenters/?ID=${costCenterIdForSchedule}&columns=ID,Name`);
                     schedule.CostCenter = costCenterDataForSchedule?.data;
                 } catch (error) {
@@ -169,7 +171,7 @@ export const fetchScheduleData = async () => {
                 let costCenterIdForSchedule = schedule?.Reference?.split('-')[1];
                 if (jobIdForSchedule) {
                     try {
-                        console.log("Fetching job for schdule " + jobIdForSchedule + ' at index', i, " of ", fetchedSimproSchedulesData.length)
+                        // console.log("Fetching job for schdule " + jobIdForSchedule + ' at index', i, " of ", fetchedSimproSchedulesData.length)
                         const jobDataForSchedule = await axiosSimPRO.get(`/jobs/${jobIdForSchedule}?columns=ID,Type,Site,SiteContact,DateIssued,Status,Total,Customer,Name,ProjectManager,CustomFields`);
                         schedule.Job = jobDataForSchedule?.data;
 
@@ -217,11 +219,17 @@ export const getJobCardReport = async (req: Request, res: Response) => {
         let fetchedSimproSchedulesData: SimproScheduleType[] = await fetchScheduleData();
         console.log("fetch completed for new data")
 
-        console.log("Adding new records to smartsheet")
-        let responseFromSmartsheet = await addJobCardDataToSmartsheet(fetchedSimproSchedulesData);
+        console.log("Adding new records to smartsheet through manual api trigger for sheet v1")
+        let responseOneFromSmartsheet = await addJobCardDataToSmartsheet(fetchedSimproSchedulesData, jobCardReportSheetId);
+
+
+        console.log("Adding new records to smartsheet through manual api trigger for sheet v2")
+        let responseTwoFromSmartsheet = await addJobCardDataToSmartsheet(fetchedSimproSchedulesData, jobCardV2SheetId);
+
+
         console.log("Completed: Adding new records to smartsheet")
 
-        if (responseFromSmartsheet?.status) {
+        if (responseOneFromSmartsheet?.status && responseTwoFromSmartsheet?.status) {
             res.status(200).json({ fetchedSimproSchedulesData });
         } else {
             throw {
@@ -247,3 +255,13 @@ export const getJobCardReport = async (req: Request, res: Response) => {
 };
 
 
+export const fetchOnGoingQuotesData = async () => {
+    try {
+        const url = `/quotes/?Status=OnGoing&columns=ID,Customer,DateIssued,Total,Status`;
+        const ongoingQuotesData = await fetchSimproPaginatedData(url, "ID,Customer,DateIssued,Total,Status");
+        return ongoingQuotesData;
+    } catch (err) {
+        console.log("Error in fetchOnGoingQuotesData:", err);
+        throw { message: `Internal Server Error in fetching on-going quotes data : ${JSON.stringify(err)}` }
+    }
+}

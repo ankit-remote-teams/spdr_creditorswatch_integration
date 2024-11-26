@@ -13,7 +13,7 @@ console.log("TASK HOUR SHEET : smartSheetAccessToken", smartSheetAccessToken);
 
 // Function to get column id for column name
 const getColumnIdForColumnName = async (columnName: string): Promise<number> => {
-    console.log("TASK HOUR SHEET : Column name: " + columnName);
+    // console.log("TASK HOUR SHEET : Column name: " + columnName);
     try {
         const columns = await smartsheet.sheets.getColumns({ sheetId: sheetId });
         const rowIDColumn = columns.data.find((column: SmartsheetColumnType) => column.title === columnName);

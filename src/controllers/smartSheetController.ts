@@ -17,10 +17,8 @@ const smartSheetAccessToken: string | undefined = process.env.SMARTSHEET_ACCESS_
 const smartsheet = SmartsheetClient.createClient({ accessToken: smartSheetAccessToken });
 const jobTrackerSheetId = process.env.TASK_TRACKER_SHEET_ID ? process.env.TASK_TRACKER_SHEET_ID : "";
 const jobCardReportSheetId = process.env.JOB_CARD_SHEET_ID ? process.env.JOB_CARD_SHEET_ID : "";
-// const jobCardReportSheetId = 2238064088797060; // Old jobcard resport sheet id
-// const jobCardReportSheetId = 5761564527251332;
 
-console.log('jobCardReportSheetId', jobCardReportSheetId)
+
 
 // Define interfaces for Smartsheet events and cells
 interface ISmartsheetEvent {
@@ -34,7 +32,7 @@ export const handleSmartSheetWebhook = async (req: Request, res: Response): Prom
     try {
         console.log("Smartsheet Controller: Smartsheet get webhook called");
         const result = await smartsheet.sheets.getSheet({ id: jobTrackerSheetId });
-        console.log('columns', result.columns);
+        // console.log('columns', result.columns);
         res.status(200).send("Hello from Smartsheet route");
     } catch (err) {
         console.error("Smartsheet Controller: Error in Smartsheet webhook:", err);
@@ -106,7 +104,7 @@ export const handleTotalHourWebhookEvent = async (event: ISmartsheetEvent): Prom
 
 // Function to get column ID for a column name
 const getColumnIdForColumnName = async (columnName: string, sheetId: string): Promise<number> => {
-    console.log('Get column id for column name', columnName);
+    // console.log('Get column id for column name', columnName);
     try {
         const columns = await smartsheet.sheets.getColumns({ sheetId });
 
@@ -267,16 +265,16 @@ const convertSimproScheduleDataToSmartsheetFormat = (rows: SimproScheduleType[],
 
 
 
-export const addJobCardDataToSmartsheet = async (rows: SimproScheduleType[]) => {
+export const addJobCardDataToSmartsheet = async (rows: SimproScheduleType[], smartsheetId: string) => {
     try {
-        const sheetInfo = await smartsheet.sheets.getSheet({ id: jobCardReportSheetId });
+        const sheetInfo = await smartsheet.sheets.getSheet({ id: smartsheetId });
         const columns = sheetInfo.columns;
         let rowsToAdd: SimproScheduleType[] = [];
         let rowsToUpdate: SimproScheduleType[] = [];
 
         let fetchedScheduleIDs = rows.map(row => row.ID);
 
-        let scheduleIdColumnId = await getColumnIdForColumnName("ScheduleID", jobCardReportSheetId.toString());
+        let scheduleIdColumnId = await getColumnIdForColumnName("ScheduleID", smartsheetId);
         const existingRows = sheetInfo.rows;
 
         let existingScheduleIdsInSheet: number[] = existingRows
@@ -308,7 +306,7 @@ export const addJobCardDataToSmartsheet = async (rows: SimproScheduleType[]) => 
         })
 
         if (rowsToAdd.length) {
-            const rowsToAddToSmartSheet = convertSimproScheduleDataToSmartsheetFormat(rowsToAdd, columns);
+            const rowsToAddToSmartSheet = convertSimproScheduleDataToSmartsheetFormat(rowsToAdd, columns,);
             if (rowsToAddToSmartSheet.length > 0) {
                 console.log('Adding the rows to sheet', rowsToAddToSmartSheet.length)
                 const chunks = splitIntoChunks(rowsToAddToSmartSheet, 100);
@@ -316,7 +314,7 @@ export const addJobCardDataToSmartsheet = async (rows: SimproScheduleType[]) => 
                 for (const chunk of chunks) {
                     try {
                         await smartsheet.sheets.addRows({
-                            sheetId: jobCardReportSheetId,
+                            sheetId: smartsheetId,
                             body: chunk,
                         });
 
@@ -330,7 +328,7 @@ export const addJobCardDataToSmartsheet = async (rows: SimproScheduleType[]) => 
         }
 
         if (rowsToUpdate.length) {
-            await updateExistingRecordsInJobCardSheet(rowsToUpdate, scheduleIdsNotPartOfSimproResponse)
+            await updateExistingRecordsInJobCardSheet(rowsToUpdate, scheduleIdsNotPartOfSimproResponse, smartsheetId)
         }
 
 
@@ -344,12 +342,12 @@ export const addJobCardDataToSmartsheet = async (rows: SimproScheduleType[]) => 
     }
 }
 
-const addDeleteCommentInChunks = async (rowIds: number[]) => {
+const addDeleteCommentInChunks = async (rowIds: number[], smartsheetId: string) => {
     try {
         // console.log("Row IDs to update with comments: ", rowIds);
 
         // Get column ID for the 'ScheduleComment' column
-        const columnIdForScheduleComment = await getColumnIdForColumnName('ScheduleComment', jobCardReportSheetId.toString());
+        const columnIdForScheduleComment = await getColumnIdForColumnName('ScheduleComment', smartsheetId);
         console.log('Column ID for ScheduleComment:', columnIdForScheduleComment);
 
         // Split the rows into manageable chunks
@@ -364,7 +362,7 @@ const addDeleteCommentInChunks = async (rowIds: number[]) => {
 
             // Batch update rows
             await smartsheet.sheets.updateRow({
-                sheetId: jobCardReportSheetId,
+                sheetId: smartsheetId,
                 body: rowsToUpdate,
             });
 
@@ -381,7 +379,7 @@ const addDeleteCommentInChunks = async (rowIds: number[]) => {
     }
 };
 
-const updateTheSimproSchedulesData = async (updatedSimproData: SimproScheduleType[], columns: SmartsheetColumnType[], existingScheduleIdsData: ExistingScheduleType[]) => {
+const updateTheSimproSchedulesData = async (updatedSimproData: SimproScheduleType[], columns: SmartsheetColumnType[], existingScheduleIdsData: ExistingScheduleType[], smartsheetId: string) => {
     try {
         let simproIdRowIdMap: { [key: string]: string } = {};
 
@@ -418,7 +416,7 @@ const updateTheSimproSchedulesData = async (updatedSimproData: SimproScheduleTyp
             }
 
             await smartsheet.sheets.updateRow({
-                sheetId: jobCardReportSheetId,
+                sheetId: smartsheetId,
                 body: chunk
             })
 
@@ -433,10 +431,10 @@ const updateTheSimproSchedulesData = async (updatedSimproData: SimproScheduleTyp
     }
 }
 
-export const updateExistingRecordsInJobCardSheet = async (rowsToUpdate: SimproScheduleType[], scheduleIdsNotPartOfSimproResponse: number[]) => {
+export const updateExistingRecordsInJobCardSheet = async (rowsToUpdate: SimproScheduleType[], scheduleIdsNotPartOfSimproResponse: number[], smartsheetId: string) => {
     try {
-        const sheetInfo = await smartsheet.sheets.getSheet({ id: jobCardReportSheetId });
-        let scheduleIdColumnId = await getColumnIdForColumnName("ScheduleID", jobCardReportSheetId.toString());
+        const sheetInfo = await smartsheet.sheets.getSheet({ id: smartsheetId });
+        let scheduleIdColumnId = await getColumnIdForColumnName("ScheduleID", smartsheetId.toString());
 
         const existingRows = sheetInfo.rows || [];
         const columns = sheetInfo.columns || [];
@@ -466,12 +464,12 @@ export const updateExistingRecordsInJobCardSheet = async (rowsToUpdate: SimproSc
         // Delete rows in chunks if there are any rows to delete
         if (rowsToMarkDeleted.length) {
             console.log("Marking ", rowsToMarkDeleted.length, " rows as deleted")
-            await addDeleteCommentInChunks(rowsToMarkDeleted.map(row => Number(row.rowId)));
+            await addDeleteCommentInChunks(rowsToMarkDeleted.map(row => Number(row.rowId)), smartsheetId);
         }
 
         if (updatedSimproData.length) {
             console.log("Update the ", updatedSimproData.length, "row fetched from simpro")
-            await updateTheSimproSchedulesData(updatedSimproData, columns, existingScheduleIdsData);
+            await updateTheSimproSchedulesData(updatedSimproData, columns, existingScheduleIdsData, smartsheetId);
         }
 
     } catch (err) {

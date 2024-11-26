@@ -5,7 +5,8 @@ import moment from "moment";
 import { SimproScheduleType } from "../types/simpro.types";
 import { fetchScheduleData } from "../controllers/simproController";
 import { addJobCardDataToSmartsheet } from "../controllers/smartSheetController";
-
+const jobCardReportSheetId = process.env.JOB_CARD_SHEET_ID ? process.env.JOB_CARD_SHEET_ID : "";
+const jobCardV2SheetId = process.env.JOB_CARD_SHEET_V2_ID ? process.env.JOB_CARD_SHEET_V2_ID : "";
 console.log(`JOBCARD SCHEDULER : Server time ${moment().format('YYYY-MM-DD HH:mm:ss')}`);
 
 
@@ -17,8 +18,14 @@ cron.schedule("0 */2 * * *", async () => {
             let fetchedSimproSchedulesData: SimproScheduleType[] = await fetchScheduleData();
             console.log(" JOBCARD SCHEDULER : fetch completed for new data")
 
-            console.log(" JOBCARD SCHEDULER : Adding new records to smartsheet")
-            let responseFromSmartsheet = await addJobCardDataToSmartsheet(fetchedSimproSchedulesData);
+            console.log(" JOBCARD SCHEDULER : Adding new records to smartsheet for sheet version 1 ")
+            await addJobCardDataToSmartsheet(fetchedSimproSchedulesData, jobCardReportSheetId);
+            console.log(" JOBCARD SCHEDULER : Completed: Adding new records to smartsheet for sheet version 1 : COMPLETED ")
+
+            console.log(" JOBCARD SCHEDULER : Adding new records to smartsheet for sheet version 2 ")
+            await addJobCardDataToSmartsheet(fetchedSimproSchedulesData, jobCardV2SheetId);
+            console.log(" JOBCARD SCHEDULER : Completed: Adding new records to smartsheet for sheet version 2 : COMPLETED ")
+
             console.log(" JOBCARD SCHEDULER : Completed: Adding new records to smartsheet")
         } catch (err) {
             if (err instanceof AxiosError) {
@@ -32,48 +39,5 @@ cron.schedule("0 */2 * * *", async () => {
 
     } catch (err: any) {
         console.log('Error in job card scheduler. Error: ' + JSON.stringify(err));
-        // const recipients: string[] = process.env.EMAIL_RECIPIENTS
-        //     ? process.env.EMAIL_RECIPIENTS.split(',')
-        //     : [];
-
-        // const errorMessage = err.message || "Unknown error";
-        // const errorDetails = err.data || JSON.stringify(err, Object.getOwnPropertyNames(err));
-
-        // const sendemail = `
-        // <html>
-        //     <body>
-        //         <h1>Error found in data delete scheduler</h1>
-        //         <p><strong>Error Message:</strong> ${errorMessage}</p>
-        //         <p><strong>Details:</strong> ${errorDetails}</p>
-        //     </body>
-        // </html>
-        // `;
-
-        // const params = {
-        //     Destination: {
-        //         ToAddresses: recipients,
-        //     },
-        //     Message: {
-        //         Body: {
-        //             Html: {
-        //                 Charset: 'UTF-8',
-        //                 Data: sendemail,
-        //             },
-        //         },
-        //         Subject: {
-        //             Charset: 'UTF-8',
-        //             Data: 'Error in data delete scheduler',
-        //         },
-        //     },
-        //     Source: process.env.SES_SENDER_EMAIL as string,
-        //     ConfigurationSetName: 'promanager-config',
-        // };
-
-        // try {
-        //     await ses.sendEmail(params).promise();
-        //     console.log(" JOBCARD SCHEDULER : Email successfully sent");
-        // } catch (emailError) {
-        //     console.error('Error sending email:', emailError);
-        // }
     }
 });
