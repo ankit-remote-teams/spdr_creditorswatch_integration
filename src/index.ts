@@ -6,7 +6,7 @@ import simproRoutes from './routes/simproRoute';
 import creditorsWatchRoutes from './routes/creditorsWatchRoutes';
 import smartSheetRoutes from './routes/smartSheetRoutes';
 const app = express();
-app.use(express.json());
+app.use(express.json({ limit: '10mb' }));
 
 const PORT: number = parseInt(process.env.PORT as string, 10) || 6001;
 
