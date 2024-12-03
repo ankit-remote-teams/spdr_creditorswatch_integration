@@ -60,21 +60,55 @@ export type SimproScheduleRowObjectType = {
     ScheduleDate: string | Date | undefined;
     StartTime: string | undefined;
     EndTime: string | undefined;
-    CustomerName: string | undefined;
-    JobID: string | number | undefined;
-    SiteID: string | number | undefined;
-    SiteName: string | undefined;
-    SiteContact: string | undefined;
-    CostCenterName: string | undefined;
-    CustomerPhone: string | undefined;
-    CustomerEmail: string | undefined;
-    JobName: string | undefined;
-    ProjectManager: string | undefined;
-    Zone: string | number | null | undefined;
-    JobTrade: string | number | null | undefined;
-    ScheduleNotes: string | null | undefined;
+    CustomerName?: string | undefined;
+    JobID?: string | number | undefined;
+    SiteID?: string | number | undefined;
+    SiteName?: string | undefined;
+    SiteContact?: string | undefined;
+    CostCenterName?: string | undefined;
+    CustomerPhone?: string | undefined;
+    CustomerEmail?: string | undefined;
+    JobName?: string | undefined;
+    ProjectManager?: string | undefined;
+    Zone?: string | number | null | undefined;
+    JobTrade?: string | number | null | undefined;
+    ScheduleNotes?: string | null | undefined;
 }
 
+
+export type SimproQuotationRowObjectType = {
+    QuoteID: string | number | undefined;
+    QuoteName: string | undefined;
+    Status: string | undefined;
+    Customer: string | undefined;
+    Site: string | undefined;
+    "SellPrice(IncTax)": string | undefined;
+    SalesPerson: string | number | undefined;
+    QuoteStage: string | number | undefined;
+    Tags: string | undefined;
+    CreatedDate: string | Date | undefined;
+    DueDate: string | Date | undefined;
+    QuoteChasedBy: string | undefined | null;
+    NewQuoteOrVariation: string | undefined | null;
+    Priority: string | null | undefined;
+    Lead: string | null | undefined;
+}
+
+export type SimproLeadRowObjectType = {
+    LeadID: string | number | undefined;
+    LeadName: string | undefined;
+    Status: string | undefined;
+    CreatedDate: string | undefined;
+    FollowUpDate: string | undefined;
+    LatestSchedule: string | number | undefined;
+    SalesPerson: string | number | undefined;
+    CustomerName: string | undefined;
+    SiteName: string | undefined;
+    DueDateBy: string | Date | undefined;
+    Priority: string | null | undefined;
+    Lead: string | null | undefined;
+    Tags: string | null | undefined;
+}
 
 declare module 'smartsheet' {
     const smartsheet: any;

@@ -2,14 +2,13 @@ const cron = require('node-cron');
 import { AxiosError } from 'axios';
 import InvoiceMappingModel from '../models/invoiceMappingModel';
 import moment from 'moment';
-import { fetchSimproPaginatedData } from '../services/simproService';
+import { fetchSimproPaginatedData } from '../services/SimproServices/simproPaginationService';
 import { CreditorsWatchCreditNoteType, CreditorsWatchInvoiceType, InvoiceItemPaymentsType, MappingType, } from '../types/creditorswatch.types';
 import { transformCreditNoteDataToCreditorsWatchArray, transformInvoiceDataToCreditorsWatchArray } from '../utils/transformDataHelper';
 import { SimproCreditNoteType, SimproCustomerPaymentsType, SimproInvoiceType } from '../types/simpro.types';
-import { creditorsWatchPostWithRetry, creditorsWatchPutWithRetry } from '../utils/apiUtils';
+import { creditorsWatchPostWithRetry, creditorsWatchPutWithRetry } from '../services/CreditorsWatchServices/CreditorsWatchApiUtils';
 import { calculateLatePaymentFeeAndBalanceDue, get48HoursAgoDate } from '../utils/helper';
 import CreditNoteMappingModel from '../models/creditNotesMappingModel';
-import { simproCustomerPaymentData, simproInvoiceData, simproCreditNoteData } from './data';
 import { ses } from '../config/awsConfig'
 
 

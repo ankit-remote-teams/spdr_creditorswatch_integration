@@ -1,11 +1,15 @@
 import { InvoiceItemPaymentsType } from "./creditorswatch.types";
 
+type CustomFieldValue = string | number | null;
+
 export type SimproStaffType = {
     ID: number;
     Name: string;
     Type: string;
     TypeId: number;
 }
+
+export type SimproManagerType = SimproStaffType;
 
 export type SimproScheduleBlockType = {
     Hrs: number;
@@ -141,6 +145,11 @@ export type SimproSiteType = {
     Name: string;
 }
 
+export type SimproTagsType = {
+    ID: number;
+    Name: string;
+}
+
 
 export type SimproJobStatusType = {
     ID: number;
@@ -148,12 +157,7 @@ export type SimproJobStatusType = {
     Color: string;
 }
 
-export type SimproManagerType = {
-    ID: number;
-    Name: string;
-    Type: string;
-    TypeId: number;
-}
+
 
 export type SimproCustomField = {
     ID: number;
@@ -161,6 +165,7 @@ export type SimproCustomField = {
     Type: string;
     IsMandatory?: boolean;
     ListItems?: string[];
+    Value?: CustomFieldValue
 }
 
 export type SimproCustomFieldWithValue = {
@@ -182,3 +187,83 @@ export type SimproJobType = {
     ProjectManager?: SimproManagerType | null;
     CustomFields?: SimproCustomFieldWithValue[];
 }
+
+export type SimproConvertedFromLeadType = {
+    ID: number;
+    LeadName: string;
+    DateCreated: string;
+}
+
+export type SimproQuotationStatusType = {
+    ID: number;
+    Name: string;
+    Color: string;
+}
+
+export type SimproCostType = {
+    Estimate: number;
+    Revised: number;
+    Revized: number;
+}
+
+export type SimproQuotationTotalsType = {
+    MaterialsCost: Cost;
+    ResourcesCost: {
+        Total: Cost;
+        Labor: Cost;
+        LaborHours: Cost;
+        PlantAndEquipment: Cost;
+        PlantAndEquipmentHours: Cost;
+        Commission: Cost;
+        Overhead: Cost;
+    };
+    MaterialsMarkup: Cost;
+    ResourcesMarkup: {
+        Total: Cost;
+        Labor: Cost;
+        PlantAndEquipment: Cost;
+    };
+    Adjusted: Cost;
+    MembershipDiscount: number;
+    Discount: number;
+    STCs: number;
+    VEECs: number;
+    GrossProfitLoss: Cost;
+    GrossMargin: Cost;
+    NettProfitLoss: Cost;
+    NettMargin: Cost;
+
+}
+
+export type SimproQuotationType = {
+    ID: number;
+    Name: string;
+    ConvertedFromLead: SimproConvertedFromLeadType;
+    Status: SimproQuotationStatusType;
+    DateIssued: string;
+    Salesperson: SimproStaffType;
+    Customer: SimproCustomerType;
+    Site: SimproSiteType;
+    Tags: SimproTagsType[];
+    DueDate: string | null;
+    Total: SimproTotalType;
+    Stage?: string;
+    CustomFields?: SimproCustomFieldWithValue[];
+}
+
+
+type SimproLeadType = {
+    ID: number;
+    LeadName: string;
+    Stage: string;
+    Status: SimproJobStatusType;
+    ProjectManager: SimproStaffType;
+    Salesperson: SimproStaffType;
+    Customer: SimproCustomerType;
+    FollowUpDate: string;
+    DateCreated: string;
+    Site: SimproSiteType;
+    Tags: SimproTagsType[];
+    CustomFields?: SimproCustomFieldWithValue[];
+};
+

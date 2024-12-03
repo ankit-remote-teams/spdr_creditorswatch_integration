@@ -3,7 +3,7 @@ import { AxiosError } from "axios";
 import moment from "moment";
 // import { ses } from '../config/awsConfig'
 import { SimproScheduleType } from "../types/simpro.types";
-import { fetchScheduleData } from "../controllers/simproController";
+import { fetchScheduleData } from "../services/SimproServices/simproScheduleService";
 import { addJobCardDataToSmartsheet } from "../controllers/smartSheetController";
 const jobCardReportSheetId = process.env.JOB_CARD_SHEET_ID ? process.env.JOB_CARD_SHEET_ID : "";
 const jobCardV2SheetId = process.env.JOB_CARD_SHEET_V2_ID ? process.env.JOB_CARD_SHEET_V2_ID : "";

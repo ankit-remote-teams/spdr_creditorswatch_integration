@@ -2,11 +2,11 @@ const cron = require('node-cron');
 import { AxiosError } from 'axios';
 import ContactMappingModel from '../models/contactMappingModel';
 import moment from 'moment';
-import { fetchSimproPaginatedData } from '../services/simproService';
+import { fetchSimproPaginatedData } from '../services/SimproServices/simproPaginationService';
 import { CreditorsWatchContactType, MappingType } from '../types/creditorswatch.types';
 import { SimproCompanyType } from '../types/simpro.types';
 import { transformContactDataToCreditorsWatchArray } from '../utils/transformDataHelper';
-import { creditorsWatchPostWithRetry, creditorsWatchPutWithRetry } from '../utils/apiUtils';
+import { creditorsWatchPostWithRetry, creditorsWatchPutWithRetry } from '../services/CreditorsWatchServices/CreditorsWatchApiUtils';
 import { get48HoursAgoDate } from '../utils/helper';
 import { ses } from '../config/awsConfig';
 

@@ -2,11 +2,11 @@ import express, { Request, Response } from 'express';
 import dotenv from 'dotenv';
 import mongoose from 'mongoose';
 dotenv.config({ path: `.env.${process.env.NODE_ENV}` });
+const app = express();
+app.use(express.json({ limit: '10mb' }));
 import simproRoutes from './routes/simproRoute';
 import creditorsWatchRoutes from './routes/creditorsWatchRoutes';
 import smartSheetRoutes from './routes/smartSheetRoutes';
-const app = express();
-app.use(express.json({ limit: '10mb' }));
 
 const PORT: number = parseInt(process.env.PORT as string, 10) || 6001;
 
@@ -26,14 +26,14 @@ if (process.env.NODE_ENV === 'production') {
 }
 
 // For local Development
-// if (process.env.NODE_ENV === 'development') {
-//     const cronJobs = [
-//         './cron/jobCardScheduler',
-//     ];
-//     cronJobs.forEach(job => {
-//         require(job);
-//     });
-// }
+if (process.env.NODE_ENV === 'development') {
+    const cronJobs = [
+        './cron/jobCardMinimalUpdateScheduler',
+    ];
+    cronJobs.forEach(job => {
+        require(job);
+    });
+}
 
 
 
