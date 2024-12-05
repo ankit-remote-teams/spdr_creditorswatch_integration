@@ -190,7 +190,7 @@ export const addJobCardDataToSmartsheet = async (rows: SimproScheduleType[], sma
         })
 
         if (rowsToAdd.length) {
-            const rowsToAddToSmartSheet = convertSimproScheduleDataToSmartsheetFormat(rowsToAdd, columns);
+            const rowsToAddToSmartSheet = convertSimproScheduleDataToSmartsheetFormat(rowsToAdd, columns, "full");
             if (rowsToAddToSmartSheet.length > 0) {
                 console.log('Adding the rows to sheet', rowsToAddToSmartSheet.length)
                 const chunks = splitIntoChunks(rowsToAddToSmartSheet, 100);
@@ -268,6 +268,7 @@ const updateTheSimproSchedulesData = async (
     columns: SmartsheetColumnType[],
     existingScheduleIdsData: ExistingScheduleType[],
     smartsheetId: string,
+    updateType: string,
 ) => {
     try {
         let simproIdRowIdMap: { [key: string]: string } = {};
@@ -280,7 +281,7 @@ const updateTheSimproSchedulesData = async (
         });
 
 
-        let rowsToUpdateToSmartSheet = convertSimproScheduleDataToSmartsheetFormatForUpdate(updatedSimproData, columns, simproIdRowIdMap);
+        let rowsToUpdateToSmartSheet = convertSimproScheduleDataToSmartsheetFormatForUpdate(updatedSimproData, columns, simproIdRowIdMap, updateType);
 
         const chunks = splitIntoChunks(rowsToUpdateToSmartSheet, 100);
         for (const chunk of chunks) {
@@ -337,7 +338,7 @@ export const updateExistingRecordsInJobCardSheet = async (
             .filter(Boolean);
 
         // Fetch schedule data for existing IDs
-        const fetchedScheduleDataForExistingData = await fetchScheduleDataForExistingScheduleIds(scheduleIdsNotPartOfSimproResponse);
+        const fetchedScheduleDataForExistingData = await fetchScheduleDataForExistingScheduleIds(scheduleIdsNotPartOfSimproResponse, "full");
         console.log("Fetching exsting data is completed.")
 
         // Extract schedule data and IDs to mark as deleted
@@ -357,7 +358,7 @@ export const updateExistingRecordsInJobCardSheet = async (
 
         if (updatedSimproData.length) {
             console.log("Update the ", updatedSimproData.length, "row fetched from simpro")
-            await updateTheSimproSchedulesData(updatedSimproData, columns, existingScheduleIdsData, smartsheetId);
+            await updateTheSimproSchedulesData(updatedSimproData, columns, existingScheduleIdsData, smartsheetId, 'full');
         }
 
     } catch (err) {
@@ -529,12 +530,73 @@ export const addOpenLeadsDataToSmartsheet = async (rows: SimproLeadType[]) => {
 }
 
 
+export const updateMinimalExistingRecordsInJobCardSheet = async (
+    rowsToUpdate: SimproScheduleType[],
+    scheduleIdsNotPartOfSimproResponse: number[],
+    smartsheetId: string,
+) => {
+    try {
+        const sheetInfo = await smartsheet.sheets.getSheet({ id: smartsheetId });
+        let scheduleIdColumnId = await getColumnIdForColumnName("ScheduleID", smartsheetId.toString());
+
+        const existingRows = sheetInfo.rows || [];
+        const columns = sheetInfo.columns || [];
+
+        console.log("Getting exisitng schedule id")
+        const existingScheduleIdsData: ExistingScheduleType[] = existingRows
+            .map((row: SmartsheetSheetRowsType) => {
+                const scheduleId = row.cells.find(cell => cell.columnId === scheduleIdColumnId)?.value;
+                return scheduleId ? { scheduleId: Number(scheduleId), rowId: row.id } : null;
+
+            })
+            .filter(Boolean);
+
+        // Fetch schedule data for existing IDs
+        const fetchedScheduleDataForExistingData = await fetchScheduleDataForExistingScheduleIds(scheduleIdsNotPartOfSimproResponse, "minimal");
+        console.log("Fetching exsting data is completed.")
+
+        // Extract schedule data and IDs to mark as deleted
+        const updatedSimproData: SimproScheduleType[] = [...(fetchedScheduleDataForExistingData?.scheduleDataFromSimpro || []), ...rowsToUpdate];
+        const schedulesIdToMarkDeleted: string[] = fetchedScheduleDataForExistingData?.scheduleIdToMarkDeleted || [];
+
+        // Find rows to delete based on the fetched schedule IDs to be marked as deleted
+        const rowsToMarkDeleted = existingScheduleIdsData.filter(item =>
+            schedulesIdToMarkDeleted.includes(item.scheduleId.toString())
+        );
+
+        // Delete rows in chunks if there are any rows to delete
+        if (rowsToMarkDeleted.length) {
+            console.log("Marking ", rowsToMarkDeleted.length, " rows as deleted")
+            await addScheduleDeleteCommentInChunks(rowsToMarkDeleted.map(row => Number(row.rowId)), smartsheetId);
+        }
+
+        if (updatedSimproData.length) {
+            console.log("Update the ", updatedSimproData.length, "row fetched from simpro")
+            await updateTheSimproSchedulesData(updatedSimproData, columns, existingScheduleIdsData, smartsheetId, 'minimal');
+        }
+
+    } catch (err) {
+        console.log("Error ", err)
+        if (err instanceof AxiosError) {
+            console.log("Error in updateExistingRecordsInJobCardSheet as AxiosError");
+            console.log("Error details: ", err.response?.data);
+
+        } else {
+            console.log("Error in updateExistingRecordsInJobCardSheet as other error");
+            console.log("Error details: ", err);
+        }
+        throw {
+            message: "Error in updateExistingRecordsInJobCardSheet ub smartsheet controller."
+        }
+    }
+}
+
+
 
 export const addMinimalJobCardDataToSmartsheet = async (rows: SimproScheduleType[], smartsheetId: string, updateType: string) => {
     try {
         const sheetInfo = await smartsheet.sheets.getSheet({ id: smartsheetId });
         const columns = sheetInfo.columns;
-        let rowsToAdd: SimproScheduleType[] = [];
         let rowsToUpdate: SimproScheduleType[] = [];
 
         let fetchedScheduleIDs = rows.map(row => row.ID);
@@ -561,40 +623,41 @@ export const addMinimalJobCardDataToSmartsheet = async (rows: SimproScheduleType
         let scheduleIdToAdd = Array.isArray(fetchedScheduleIDs) ? fetchedScheduleIDs.filter(scheduleId => !existingScheduleIdsInSheet.includes(scheduleId)) : [];
 
         rows.forEach((row) => {
-            if (scheduleIdToAdd.includes(row.ID)) {
-                rowsToAdd.push(row);
-            } else if (scheduleIdToUpdate.includes(row.ID)) {
+            if (scheduleIdToUpdate.includes(row.ID)) {
                 rowsToUpdate.push(row)
             }
         })
 
-        if (rowsToAdd.length) {
-            const rowsToAddToSmartSheet = convertSimproScheduleDataToSmartsheetFormat(rowsToAdd, columns);
-            if (rowsToAddToSmartSheet.length > 0) {
-                console.log('Adding the rows to sheet', rowsToAddToSmartSheet.length)
-                const chunks = splitIntoChunks(rowsToAddToSmartSheet, 100);
+        if (scheduleIdToAdd.length) {
+            const fetchedScheduleDataForAddNewData = await fetchScheduleDataForExistingScheduleIds(scheduleIdToAdd, "full");
+            let rowsToAddToSmartSheet;
+            if (fetchedScheduleDataForAddNewData && fetchedScheduleDataForAddNewData?.scheduleDataFromSimpro?.length) {
+                rowsToAddToSmartSheet = convertSimproScheduleDataToSmartsheetFormat(fetchedScheduleDataForAddNewData.scheduleDataFromSimpro || [], columns, "full");
+                if (rowsToAddToSmartSheet.length > 0) {
+                    console.log('Minimal : Adding the rows to sheet', rowsToAddToSmartSheet.length)
+                    const chunks = splitIntoChunks(rowsToAddToSmartSheet, 100);
 
-                for (const chunk of chunks) {
-                    try {
-                        await smartsheet.sheets.addRows({
-                            sheetId: smartsheetId,
-                            body: chunk,
-                        });
+                    for (const chunk of chunks) {
+                        try {
+                            await smartsheet.sheets.addRows({
+                                sheetId: smartsheetId,
+                                body: chunk,
+                            });
 
-                        console.log(` No. of records added in this chunk: ${chunk.length}`);
-                    } catch (err) {
-                        console.error(' Error in adding row chunk:', err);
-                        throw err;
+                            console.log(`Minimal : No. of records added in this chunk: ${chunk.length}`);
+                        } catch (err) {
+                            console.error('Minimal : Error in adding row chunk:', err);
+                            throw err;
+                        }
                     }
                 }
             }
+
         }
 
         if (rowsToUpdate.length) {
-            await updateExistingRecordsInJobCardSheet(rowsToUpdate, scheduleIdsNotPartOfSimproResponse, smartsheetId)
+            await updateMinimalExistingRecordsInJobCardSheet(rowsToUpdate, scheduleIdsNotPartOfSimproResponse, smartsheetId)
         }
-
-
 
 
         return { status: true, message: "Data added successfully" }

@@ -63,10 +63,27 @@ export const fetchScheduleData = async () => {
                     }
                 }
 
-                if (costCenterIdForSchedule) {
+                if (costCenterIdForSchedule && jobIdForSchedule) {
                     try {
-                        const costCenterDataForSchedule = await axiosSimPRO.get(`/jobCostCenters/?ID=${costCenterIdForSchedule}&columns=ID,Name`);
-                        schedule.CostCenter = costCenterDataForSchedule?.data;
+                        const costCenterDataForSchedule = await axiosSimPRO.get(`/jobCostCenters/?ID=${costCenterIdForSchedule}&columns=ID,Name,Job,Section`);
+                        let sectionIdForSchedule =
+                            Array.isArray(costCenterDataForSchedule?.data)
+                                ? costCenterDataForSchedule.data[0]?.Section?.ID
+                                : null;
+
+                        let jobIdForScheduleFetched =
+                            Array.isArray(costCenterDataForSchedule?.data)
+                                ? costCenterDataForSchedule.data[0]?.Job?.ID
+                                : null;
+
+                        try {
+                            let costCenterResponse = await axiosSimPRO.get(`jobs/${jobIdForScheduleFetched}/sections/${sectionIdForSchedule}/costCenters/${costCenterIdForSchedule}?columns=Name,ID,Claimed`);
+                            if (costCenterResponse) {
+                                schedule.CostCenter = costCenterResponse.data;
+                            }
+                        } catch (error) {
+                            console.log("Error in costCenterFetch : ", error)
+                        }
                     } catch (error) {
                         console.error(`Error fetching cost center data for schedule ID: ${costCenterIdForSchedule}`, error);
                     }
@@ -91,44 +108,10 @@ export const fetchScheduleData = async () => {
 
 export const fetchScheduleMinimal = async () => {
     try {
-        const allCustomerData: SimproCustomerType[] = await fetchSimproPaginatedData('/customers/', "");
-        const simproCustomerMap: { [key: string]: SimproCustomerType } = {};
-
-        if (allCustomerData.length > 0) {
-            // Fetching customer data sequentially
-            for (const customer of allCustomerData) {
-                const hrefForCustomerData = customer?._href;
-                if (!hrefForCustomerData) continue;
-
-                let customerUrl = hrefForCustomerData.split('customers')[1];
-                if (!customerUrl) continue;
-
-                try {
-                    let customerDataForJob: SimproCustomerType;
-                    if (customerUrl.includes('companies')) {
-                        const customerResponse = await axiosSimPRO.get(`/customers${customerUrl}?columns=ID,CompanyName,Phone,Address,Email`);
-                        customerDataForJob = { ...customerResponse.data, Type: "Company" };
-                    } else {
-                        const customerResponse = await axiosSimPRO.get(`/customers${customerUrl}?columns=ID,GivenName,FamilyName,Phone,Address,Email`);
-                        customerDataForJob = { ...customerResponse.data, Type: "Individual" };
-                    }
-                    if (customerDataForJob?.ID) {
-                        simproCustomerMap[customerDataForJob.ID.toString()] = customerDataForJob;
-                    }
-                } catch (error) {
-                    console.error("Error fetching customer data for:", customer.ID, error);
-                }
-            }
-        }
-
-        if (Object.keys(simproCustomerMap).length) {
-            const currentDate = moment().subtract(2, 'day').format("YYYY-MM-DD");
-            const url = `/schedules/?Type=job&Date=gt(${currentDate})&pageSize=100`;
-            let fetchedSimproSchedulesData: SimproScheduleType[] = await fetchSimproPaginatedData(url, "ID,Type,Reference,Staff,Date,Blocks,Notes");
-            return fetchedSimproSchedulesData;
-        } else {
-            return [];
-        }
+        const currentDate = moment().subtract(2, 'day').format("YYYY-MM-DD");
+        const url = `/schedules/?Type=job&Date=gt(${currentDate})&pageSize=100`;
+        let fetchedSimproSchedulesData: SimproScheduleType[] = await fetchSimproPaginatedData(url, "ID,Type,Reference,Staff,Date,Blocks,Notes");
+        return fetchedSimproSchedulesData;
     } catch (err) {
         if (err instanceof AxiosError) {
             console.log("Error in fetchScheduleData as AxiosError");

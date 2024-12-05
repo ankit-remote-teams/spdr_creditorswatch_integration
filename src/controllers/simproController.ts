@@ -21,7 +21,7 @@ const jobCardReportSheetId = process.env.JOB_CARD_SHEET_ID ? process.env.JOB_CAR
 const jobCardV2SheetId = process.env.JOB_CARD_SHEET_V2_ID ? process.env.JOB_CARD_SHEET_V2_ID : "";
 
 
-export const fetchScheduleDataForExistingScheduleIds = async (scheduleIds: number[]) => {
+export const fetchScheduleDataForExistingScheduleIds = async (scheduleIds: number[], fetchType: string) => {
     try {
         console.log('Fetching existing schedule', JSON.stringify(scheduleIds))
         const allCustomerData: SimproCustomerType[] = await fetchSimproPaginatedData('/customers/', "");
@@ -97,38 +97,59 @@ export const fetchScheduleDataForExistingScheduleIds = async (scheduleIds: numbe
 
             }
         }
+        if (fetchType == "full") {
+            for (let i = 0; i < scheduleDataFromSimpro.length; i++) {
+                const schedule = scheduleDataFromSimpro[i];
+                let jobIdForSchedule = schedule?.Reference?.split('-')[0];
+                let costCenterIdForSchedule = schedule?.Reference?.split('-')[1];
+                if (jobIdForSchedule) {
+                    try {
+                        // console.log("Fetching job for schdule " + jobIdForSchedule + ' at index', i, " of ", scheduleDataFromSimpro.length)
+                        const jobDataForSchedule = await axiosSimPRO.get(`/jobs/${jobIdForSchedule}?columns=ID,Type,Site,SiteContact,DateIssued,Status,Total,Customer,Name,ProjectManager,CustomFields`);
+                        schedule.Job = jobDataForSchedule?.data;
 
-        for (let i = 0; i < scheduleDataFromSimpro.length; i++) {
-            const schedule = scheduleDataFromSimpro[i];
-            let jobIdForSchedule = schedule?.Reference?.split('-')[0];
-            let costCenterIdForSchedule = schedule?.Reference?.split('-')[1];
-            if (jobIdForSchedule) {
-                try {
-                    // console.log("Fetching job for schdule " + jobIdForSchedule + ' at index', i, " of ", scheduleDataFromSimpro.length)
-                    const jobDataForSchedule = await axiosSimPRO.get(`/jobs/${jobIdForSchedule}?columns=ID,Type,Site,SiteContact,DateIssued,Status,Total,Customer,Name,ProjectManager,CustomFields`);
-                    schedule.Job = jobDataForSchedule?.data;
-
-                    if (schedule?.Job?.Customer) {
-                        const customerId = schedule.Job.Customer.ID?.toString();
-                        if (customerId && simproCustomerMap[customerId]) {
-                            schedule.Job.Customer = simproCustomerMap[customerId];
+                        if (schedule?.Job?.Customer) {
+                            const customerId = schedule.Job.Customer.ID?.toString();
+                            if (customerId && simproCustomerMap[customerId]) {
+                                schedule.Job.Customer = simproCustomerMap[customerId];
+                            }
                         }
+                    } catch (error) {
+                        console.error(`Error fetching job data for schedule ID: ${jobIdForSchedule}`, error);
                     }
-                } catch (error) {
-                    console.error(`Error fetching job data for schedule ID: ${jobIdForSchedule}`, error);
                 }
-            }
 
-            if (costCenterIdForSchedule) {
-                try {
-                    // console.log("Fetching cost centre for schdule " + jobIdForSchedule + ' at index', i, " of ", scheduleDataFromSimpro.length)
-                    const costCenterDataForSchedule = await axiosSimPRO.get(`/jobCostCenters/?ID=${costCenterIdForSchedule}&columns=ID,Name`);
-                    schedule.CostCenter = costCenterDataForSchedule?.data;
-                } catch (error) {
-                    console.error(`Error fetching cost center data for schedule ID: ${costCenterIdForSchedule}`, error);
+                if (costCenterIdForSchedule && jobIdForSchedule) {
+                    try {
+                        const costCenterDataForSchedule = await axiosSimPRO.get(`/jobCostCenters/?ID=${costCenterIdForSchedule}&columns=ID,Name,Job,Section`);
+                        let sectionIdForSchedule =
+                            Array.isArray(costCenterDataForSchedule?.data)
+                                ? costCenterDataForSchedule.data[0]?.Section?.ID
+                                : null;
+
+                        let jobIdForScheduleFetched =
+                            Array.isArray(costCenterDataForSchedule?.data)
+                                ? costCenterDataForSchedule.data[0]?.Job?.ID
+                                : null;
+
+                        console.log('fetch and main same?', jobIdForScheduleFetched, jobIdForSchedule)
+
+                        try {
+                            let costCenterResponse = await axiosSimPRO.get(`jobs/${jobIdForScheduleFetched}/sections/${sectionIdForSchedule}/costCenters/${costCenterIdForSchedule}?columns=Name,ID,Claimed`);
+                            if (costCenterResponse) {
+                                schedule.CostCenter = costCenterResponse.data;
+                                console.log("Success fetch for job and costcenter", jobIdForSchedule, costCenterIdForSchedule)
+                            }
+                        } catch (error) {
+                            console.log("Error in costCenterFetch : ", error)
+                        }
+                    } catch (error) {
+                        console.error(`Error fetching cost center data for schedule ID: ${costCenterIdForSchedule}`, error);
+                    }
                 }
             }
         }
+
 
         return {
             scheduleDataFromSimpro,

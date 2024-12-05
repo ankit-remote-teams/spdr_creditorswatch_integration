@@ -28,6 +28,16 @@ export type SimproScheduleRateType = {
 export type SimproCostCenterType = {
     Name: string;
     ID: number;
+    Claimed?: {
+        ToDate?: {
+            Percent?: number;
+            Amount?: SimproTotalType;
+        },
+        Remaining?: {
+            Percent?: number;
+            Amount?: SimproTotalType;
+        }
+    }
 }
 
 export type SimproScheduleType = {
@@ -39,7 +49,7 @@ export type SimproScheduleType = {
     Date: string;
     Blocks: SimproScheduleBlockType[];
     Job?: SimproJobType;
-    CostCenter?: SimproCostCenterType[];
+    CostCenter?: SimproCostCenterType;
     Notes?: string;
 }
 
@@ -66,7 +76,7 @@ export type SimproCustomerType = {
 
 export type SimproTotalType = {
     ExTax: number;
-    Tax: number;
+    Tax?: number;
     IncTax: number;
     ReverseChargeTax?: number;
     BalanceDue?: number;

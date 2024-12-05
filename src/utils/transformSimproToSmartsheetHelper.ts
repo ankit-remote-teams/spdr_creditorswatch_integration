@@ -21,6 +21,7 @@ export const convertSimproScheduleDataToSmartsheetFormatForUpdate = (
     rows: SimproScheduleType[],
     columns: SmartsheetColumnType[],
     scheduleIdRowIdMap: { [key: string]: string },
+    updateType: string,
 ) => {
     let convertedData: SmartsheetSheetRowsType[] = [];
 
@@ -33,51 +34,79 @@ export const convertSimproScheduleDataToSmartsheetFormatForUpdate = (
             (maxTime, block) => maxTime > block.ISO8601EndTime ? maxTime : block.ISO8601EndTime,
             rows[i].Blocks[0].ISO8601EndTime
         );
+        let rowObj: SimproScheduleRowObjectType;
+        if (updateType == "full") {
+            rowObj = {
+                "ScheduleID": rows[i].ID,
+                "ScheduleType": rows[i].Type,
+                "StaffName": rows[i].Staff?.Name,
+                "ScheduleDate": rows[i].Date,
+                "StartTime": startTime ? moment(startTime).format("HH:mm:ss") : "",
+                "EndTime": endTime ? moment(endTime).format("HH:mm:ss") : "",
+                "CustomerName": rows[i].Job?.Customer?.Type === "Company" ? rows[i].Job?.Customer?.CompanyName : (rows[i].Job?.Customer?.GivenName + " " + rows[i].Job?.Customer?.FamilyName),
+                "CustomerPhone": rows[i]?.Job?.Customer?.Phone,
+                "JobID": rows[i].Job?.ID,
+                "SiteID": rows[i].Job?.Site?.ID,
+                "SiteName": rows[i].Job?.Site?.Name,
+                "SiteContact": rows[i].Job?.SiteContact?.CompanyName
+                    ? rows[i].Job?.SiteContact?.CompanyName
+                    : rows[i].Job?.SiteContact?.GivenName
+                        ? `${rows[i].Job?.SiteContact?.GivenName} ${rows[i]?.Job?.SiteContact?.FamilyName}`
+                        : (rows[i].Job?.Customer?.Type === "Company"
+                            ? rows[i].Job?.Customer?.CompanyName
+                            : `${rows[i].Job?.Customer?.GivenName} ${rows[i].Job?.Customer?.FamilyName}`),
+                "CostCenterName": rows[i].CostCenter?.Name || "",
+                "CustomerEmail": rows[i].Job?.Customer?.Email || "",
+                "JobName": rows[i].Job?.Name || "",
+                "ProjectManager": rows[i].Job?.ProjectManager?.Name || "",
+                "Zone": rows[i].Job?.CustomFields?.find(field => field?.CustomField?.Name === "Zone (ie, North/East, West)")?.Value,
+                "JobTrade": rows[i].Job?.CustomFields?.find(field => field?.CustomField?.Name === "Job Trade (ie, Plumbing, Drainage, Roofing)")?.Value,
+                "ScheduleNotes": rows[i].Notes ? htmlToText(rows[i].Notes || "") : '',
+                "Percentage Client Invoice Claimed (From Simpro)": ((rows[i]?.CostCenter?.Claimed?.ToDate?.Percent ?? 0) / 100).toFixed(2),
+            };
+            const options: SmartsheetSheetRowsType = {
+                cells: (Object.keys(rowObj) as (keyof SimproScheduleRowObjectType)[]).map(columnName => {
+                    const column = columns.find(i => i.title === columnName);
+                    return {
+                        columnId: column?.id || null,
+                        value: rowObj[columnName] || null,
+                    };
+                }).filter(cell => cell.columnId !== null),
+            };
 
-        let rowObj: SimproScheduleRowObjectType = {
-            "ScheduleID": rows[i].ID,
-            "ScheduleType": rows[i].Type,
-            "StaffName": rows[i].Staff?.Name,
-            "ScheduleDate": rows[i].Date,
-            "StartTime": startTime ? moment(startTime).format("HH:mm:ss") : "",
-            "EndTime": endTime ? moment(endTime).format("HH:mm:ss") : "",
-            "CustomerName": rows[i].Job?.Customer?.Type === "Company" ? rows[i].Job?.Customer?.CompanyName : (rows[i].Job?.Customer?.GivenName + " " + rows[i].Job?.Customer?.FamilyName),
-            "CustomerPhone": rows[i]?.Job?.Customer?.Phone,
-            "JobID": rows[i].Job?.ID,
-            "SiteID": rows[i].Job?.Site?.ID,
-            "SiteName": rows[i].Job?.Site?.Name,
-            "SiteContact": rows[i].Job?.SiteContact?.CompanyName
-                ? rows[i].Job?.SiteContact?.CompanyName
-                : rows[i].Job?.SiteContact?.GivenName
-                    ? `${rows[i].Job?.SiteContact?.GivenName} ${rows[i]?.Job?.SiteContact?.FamilyName}`
-                    : (rows[i].Job?.Customer?.Type === "Company"
-                        ? rows[i].Job?.Customer?.CompanyName
-                        : `${rows[i].Job?.Customer?.GivenName} ${rows[i].Job?.Customer?.FamilyName}`),
-            "CostCenterName": rows[i].CostCenter?.[0]?.Name || "",
-            "CustomerEmail": rows[i].Job?.Customer?.Email || "",
-            "JobName": rows[i].Job?.Name || "",
-            "ProjectManager": rows[i].Job?.ProjectManager?.Name || "",
-            "Zone": rows[i].Job?.CustomFields?.find(field => field?.CustomField?.Name === "Zone (ie, North/East, West)")?.Value,
-            "JobTrade": rows[i].Job?.CustomFields?.find(field => field?.CustomField?.Name === "Job Trade (ie, Plumbing, Drainage, Roofing)")?.Value,
-            "ScheduleNotes": rows[i].Notes ? htmlToText(rows[i].Notes || "") : ''
-        };
+            if (scheduleIdRowIdMap && Object.keys(scheduleIdRowIdMap).length) {
+                const rowId = scheduleIdRowIdMap[rows[i]?.ID?.toString()];
+                if (rowId) {
+                    options.id = parseInt(rowId, 10); // Ensure rowId is parsed as an integer
+                    convertedData.push(options); // Only push if rowId exists
+                }
+            }
+        } else if (updateType == "minimal") {
+            rowObj = {
+                "ScheduleID": rows[i].ID,
+                "ScheduleType": rows[i].Type,
+                "StaffName": rows[i].Staff?.Name,
+                "ScheduleDate": rows[i].Date,
+                "StartTime": startTime ? moment(startTime).format("HH:mm:ss") : "",
+                "EndTime": endTime ? moment(endTime).format("HH:mm:ss") : "",
+                "ScheduleNotes": rows[i].Notes ? htmlToText(rows[i].Notes || "") : ''
+            };
+            const options: SmartsheetSheetRowsType = {
+                cells: (Object.keys(rowObj) as (keyof SimproScheduleRowObjectType)[]).map(columnName => {
+                    const column = columns.find(i => i.title === columnName);
+                    return {
+                        columnId: column?.id || null,
+                        value: rowObj[columnName] || null,
+                    };
+                }).filter(cell => cell.columnId !== null),
+            };
 
-
-        const options: SmartsheetSheetRowsType = {
-            cells: (Object.keys(rowObj) as (keyof SimproScheduleRowObjectType)[]).map(columnName => {
-                const column = columns.find(i => i.title === columnName);
-                return {
-                    columnId: column?.id || null,
-                    value: rowObj[columnName] || null,
-                };
-            }).filter(cell => cell.columnId !== null),
-        };
-
-        if (scheduleIdRowIdMap && Object.keys(scheduleIdRowIdMap).length) {
-            const rowId = scheduleIdRowIdMap[rows[i]?.ID?.toString()];
-            if (rowId) {
-                options.id = parseInt(rowId, 10); // Ensure rowId is parsed as an integer
-                convertedData.push(options); // Only push if rowId exists
+            if (scheduleIdRowIdMap && Object.keys(scheduleIdRowIdMap).length) {
+                const rowId = scheduleIdRowIdMap[rows[i]?.ID?.toString()];
+                if (rowId) {
+                    options.id = parseInt(rowId, 10); // Ensure rowId is parsed as an integer
+                    convertedData.push(options); // Only push if rowId exists
+                }
             }
         }
     }
@@ -88,6 +117,7 @@ export const convertSimproScheduleDataToSmartsheetFormatForUpdate = (
 export const convertSimproScheduleDataToSmartsheetFormat = (
     rows: SimproScheduleType[],
     columns: SmartsheetColumnType[],
+    updateType: string,
 ) => {
     let convertedData: SmartsheetSheetRowsType[] = [];
 
@@ -100,47 +130,69 @@ export const convertSimproScheduleDataToSmartsheetFormat = (
             (maxTime, block) => maxTime > block.ISO8601EndTime ? maxTime : block.ISO8601EndTime,
             rows[i].Blocks[0].ISO8601EndTime)
 
-        let rowObj: SimproScheduleRowObjectType = {
-            "ScheduleID": rows[i].ID,
-            "ScheduleType": rows[i].Type,
-            "StaffName": rows[i].Staff?.Name,
-            "ScheduleDate": rows[i].Date,
-            "StartTime": startTime ? moment(startTime).format("HH:mm:ss") : "",
-            "EndTime": endTime ? moment(endTime).format("HH:mm:ss") : "",
-            "CustomerName": rows[i].Job?.Customer?.Type === "Company" ? rows[i].Job?.Customer?.CompanyName : (rows[i].Job?.Customer?.GivenName + " " + rows[i].Job?.Customer?.FamilyName),
-            "CustomerPhone": rows[i]?.Job?.Customer?.Phone,
-            "JobID": rows[i].Job?.ID,
-            "SiteID": rows[i].Job?.Site?.ID,
-            "SiteName": rows[i].Job?.Site?.Name,
-            "SiteContact": rows[i].Job?.SiteContact?.CompanyName
-                ? rows[i].Job?.SiteContact?.CompanyName
-                : rows[i].Job?.SiteContact?.GivenName
-                    ? `${rows[i].Job?.SiteContact?.GivenName} ${rows[i]?.Job?.SiteContact?.FamilyName}`
-                    : (rows[i].Job?.Customer?.Type === "Company"
-                        ? rows[i].Job?.Customer?.CompanyName
-                        : `${rows[i].Job?.Customer?.GivenName} ${rows[i].Job?.Customer?.FamilyName}`),
-            "CostCenterName": rows[i].CostCenter?.[0]?.Name || "",
-            "CustomerEmail": rows[i].Job?.Customer?.Email || "",
-            "JobName": rows[i].Job?.Name || "",
-            "ProjectManager": rows[i].Job?.ProjectManager?.Name || "",
-            "Zone": rows[i].Job?.CustomFields?.find(field => field?.CustomField?.Name === "Zone (ie, North/East, West)")?.Value,
-            "JobTrade": rows[i].Job?.CustomFields?.find(field => field?.CustomField?.Name === "Job Trade (ie, Plumbing, Drainage, Roofing)")?.Value,
-            "ScheduleNotes": rows[i].Notes ? htmlToText(rows[i].Notes || "") : ''
-        };
+        let rowObj: SimproScheduleRowObjectType;
+        if (updateType == "full") {
+            rowObj = {
+                "ScheduleID": rows[i].ID,
+                "ScheduleType": rows[i].Type,
+                "StaffName": rows[i].Staff?.Name,
+                "ScheduleDate": rows[i].Date,
+                "StartTime": startTime ? moment(startTime).format("HH:mm:ss") : "",
+                "EndTime": endTime ? moment(endTime).format("HH:mm:ss") : "",
+                "CustomerName": rows[i].Job?.Customer?.Type === "Company" ? rows[i].Job?.Customer?.CompanyName : (rows[i].Job?.Customer?.GivenName + " " + rows[i].Job?.Customer?.FamilyName),
+                "CustomerPhone": rows[i]?.Job?.Customer?.Phone,
+                "JobID": rows[i].Job?.ID,
+                "SiteID": rows[i].Job?.Site?.ID,
+                "SiteName": rows[i].Job?.Site?.Name,
+                "SiteContact": rows[i].Job?.SiteContact?.CompanyName
+                    ? rows[i].Job?.SiteContact?.CompanyName
+                    : rows[i].Job?.SiteContact?.GivenName
+                        ? `${rows[i].Job?.SiteContact?.GivenName} ${rows[i]?.Job?.SiteContact?.FamilyName}`
+                        : (rows[i].Job?.Customer?.Type === "Company"
+                            ? rows[i].Job?.Customer?.CompanyName
+                            : `${rows[i].Job?.Customer?.GivenName} ${rows[i].Job?.Customer?.FamilyName}`),
+                "CostCenterName": rows[i].CostCenter?.Name || "",
+                "CustomerEmail": rows[i].Job?.Customer?.Email || "",
+                "JobName": rows[i].Job?.Name || "",
+                "ProjectManager": rows[i].Job?.ProjectManager?.Name || "",
+                "Zone": rows[i].Job?.CustomFields?.find(field => field?.CustomField?.Name === "Zone (ie, North/East, West)")?.Value,
+                "JobTrade": rows[i].Job?.CustomFields?.find(field => field?.CustomField?.Name === "Job Trade (ie, Plumbing, Drainage, Roofing)")?.Value,
+                "ScheduleNotes": rows[i].Notes ? htmlToText(rows[i].Notes || "") : '',
+                "Percentage Client Invoice Claimed (From Simpro)": ((rows[i]?.CostCenter?.Claimed?.ToDate?.Percent ?? 0) / 100).toFixed(2),
+            };
+            const options: SmartsheetSheetRowsType = {
+                cells: (Object.keys(rowObj) as (keyof SimproScheduleRowObjectType)[]).map(columnName => {
+                    const column = columns.find(i => i.title === columnName);
+                    return {
+                        columnId: column?.id || null,
+                        value: rowObj[columnName] || null,
+                    };
+                }).filter(cell => cell.columnId !== null),
+            };
 
-        const options: SmartsheetSheetRowsType = {
-            cells: (Object.keys(rowObj) as (keyof SimproScheduleRowObjectType)[]).map(columnName => {
-                const column = columns.find(i => i.title === columnName);
-                return {
-                    columnId: column?.id || null,
-                    value: rowObj[columnName] || null,
-                };
-            }).filter(cell => cell.columnId !== null),
-        };
-
-        convertedData.push(options);
+            convertedData.push(options);
+        } else if (updateType == "minimal") {
+            rowObj = {
+                "ScheduleID": rows[i].ID,
+                "ScheduleType": rows[i].Type,
+                "StaffName": rows[i].Staff?.Name,
+                "ScheduleDate": rows[i].Date,
+                "StartTime": startTime ? moment(startTime).format("HH:mm:ss") : "",
+                "EndTime": endTime ? moment(endTime).format("HH:mm:ss") : "",
+                "ScheduleNotes": rows[i].Notes ? htmlToText(rows[i].Notes || "") : ''
+            };
+            const options: SmartsheetSheetRowsType = {
+                cells: (Object.keys(rowObj) as (keyof SimproScheduleRowObjectType)[]).map(columnName => {
+                    const column = columns.find(i => i.title === columnName);
+                    return {
+                        columnId: column?.id || null,
+                        value: rowObj[columnName] || null,
+                    };
+                }).filter(cell => cell.columnId !== null),
+            };
+            convertedData.push(options);
+        }
     }
-
     return convertedData;
 };
 
@@ -224,13 +276,14 @@ export const convertSimproQuotationDataToSmartsheetFormatForUpdate = (
                     : rows[i].Job?.Customer?.Type === "Company"
                         ? rows[i].Job?.Customer?.CompanyName
                         : `${rows[i].Job?.Customer?.GivenName} ${rows[i].Job?.Customer?.FamilyName}`,
-            "CostCenterName": rows[i].CostCenter?.[0]?.Name || "",
+            "CostCenterName": rows[i].CostCenter?.Name || "",
             "CustomerEmail": rows[i].Job?.Customer?.Email || "",
             "JobName": rows[i].Job?.Name || "",
             "ProjectManager": rows[i].Job?.ProjectManager?.Name || "",
             "Zone": rows[i].Job?.CustomFields?.find(field => field?.CustomField?.Name === "Zone (ie, North/East, West)")?.Value,
             "JobTrade": rows[i].Job?.CustomFields?.find(field => field?.CustomField?.Name === "Job Trade (ie, Plumbing, Drainage, Roofing)")?.Value,
-            "ScheduleNotes": rows[i].Notes ? htmlToText(rows[i].Notes || "") : ''
+            "ScheduleNotes": rows[i].Notes ? htmlToText(rows[i].Notes || "") : '',
+            "Percentage Client Invoice Claimed (From Simpro)": ((rows[i]?.CostCenter?.Claimed?.ToDate?.Percent ?? 0) / 100).toFixed(2),
         };
 
         const options: SmartsheetSheetRowsType = {
