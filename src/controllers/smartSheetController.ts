@@ -102,7 +102,7 @@ export const handleTotalHourWebhookEvent = async (event: ISmartsheetEvent): Prom
             await newTask.save();
             console.log('New task created:', newTask);
         } else {
-            console.log('statusCellData', statusCellData);
+            // console.log('statusCellData', statusCellData);
             if (statusCellData === 'Start') {
                 await task.addStartTime(new Date());
             } else if (statusCellData === 'Stop' || statusCellData === 'Completed') {

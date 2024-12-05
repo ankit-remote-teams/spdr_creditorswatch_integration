@@ -18,7 +18,8 @@ if (process.env.NODE_ENV === 'production') {
         './cron/deleteDataScheduler',
         './cron/updateLateFeeScheduler',
         './cron/taskWorkingHourScheduler',
-        './cron/jobCardScheduler'
+        './cron/jobCardScheduler',
+        './cron/jobCardMinimalUpdateScheduler'
     ];
     cronJobs.forEach(job => {
         require(job);
