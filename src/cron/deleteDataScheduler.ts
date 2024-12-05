@@ -3,7 +3,7 @@ import { AxiosError } from "axios";
 import moment from "moment";
 import axiosSimPRO from "../config/axiosSimProConfig";
 import { MappingType } from "../types/creditorswatch.types";
-import { creditorsWatchPutWithRetry } from "../utils/apiUtils";
+import { creditorsWatchPutWithRetry } from "../services/CreditorsWatchServices/CreditorsWatchApiUtils";
 import InvoiceMappingModel from '../models/invoiceMappingModel';
 import ContactMappingModel from '../models/contactMappingModel';
 import CreditNoteMappingModel from "../models/creditNotesMappingModel";

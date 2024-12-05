@@ -1,9 +1,9 @@
 import moment from 'moment';
 import { CreditorsWatchInvoiceType, InvoiceItemPaymentsType, MappingType, } from '../types/creditorswatch.types';
-import { fetchSimproPaginatedData } from '../services/simproService';
+import { fetchSimproPaginatedData } from '../services/SimproServices/simproPaginationService';
 import { transformInvoiceDataToCreditorsWatchArray } from '../utils/transformDataHelper';
 import { calculateLatePaymentFeeAndBalanceDue } from '../utils/helper';
-import { creditorsWatchPostWithRetry, creditorsWatchPutWithRetry } from '../utils/apiUtils';
+import { creditorsWatchPostWithRetry, creditorsWatchPutWithRetry } from '../services/CreditorsWatchServices/CreditorsWatchApiUtils';
 const cron = require('node-cron');
 import InvoiceMappingModel from '../models/invoiceMappingModel';
 import { AxiosError } from 'axios';
