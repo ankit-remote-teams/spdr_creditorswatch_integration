@@ -161,7 +161,7 @@ export const fetchScheduleDataForExistingScheduleIds = async (scheduleIds: numbe
         console.log('jobsToFilter Length: ', jobIdsToFilter.length)
         console.log('Current schedule Length: ', scheduleDataFromSimpro.length)
         scheduleDataFromSimpro = scheduleDataFromSimpro.filter(schedule =>
-            jobIdsToFilter.includes(schedule?.Job?.ID ?? -1)
+            !jobIdsToFilter.includes(schedule?.Job?.ID ?? -1)
         );
         console.log('Filtered schedule Length: ', scheduleDataFromSimpro.length)
 
