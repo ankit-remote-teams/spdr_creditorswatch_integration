@@ -99,7 +99,7 @@ export const fetchScheduleData = async () => {
             console.log('jobsToFilter Length: ', jobIdsToFilter.length)
             console.log('Current schedule Length: ', fetchedSimproSchedulesData.length)
             fetchedSimproSchedulesData = fetchedSimproSchedulesData.filter(schedule =>
-                jobIdsToFilter.includes(schedule?.Job?.ID ?? -1)
+                !jobIdsToFilter.includes(schedule?.Job?.ID ?? -1)
             );
             console.log('Filtered schedule Length: ', fetchedSimproSchedulesData.length)
             return fetchedSimproSchedulesData;
