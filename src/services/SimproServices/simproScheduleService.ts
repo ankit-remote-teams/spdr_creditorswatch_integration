@@ -1,6 +1,6 @@
 import { AxiosError } from "axios";
 import axiosSimPRO from "../../config/axiosSimProConfig";
-import { SimproCustomerType, SimproScheduleType } from "../../types/simpro.types";
+import { SimproCustomerType, SimproJobType, SimproScheduleType } from "../../types/simpro.types";
 import { fetchSimproPaginatedData } from "./simproPaginationService";
 import moment from "moment";
 
@@ -40,7 +40,7 @@ export const fetchScheduleData = async () => {
             const currentDate = moment().subtract(2, 'day').format("YYYY-MM-DD");
             const url = `/schedules/?Type=job&Date=gt(${currentDate})&pageSize=100`;
             let fetchedSimproSchedulesData: SimproScheduleType[] = await fetchSimproPaginatedData(url, "ID,Type,Reference,Staff,Date,Blocks,Notes");
-
+            let jobIdsToFilter: number[] = []
             // Fetch job information sequentially
             for (let i = 0; i < fetchedSimproSchedulesData.length; i++) {
                 const schedule = fetchedSimproSchedulesData[i];
@@ -50,8 +50,12 @@ export const fetchScheduleData = async () => {
                     try {
                         // console.log("Fetching job for schdule " + jobIdForSchedule + ' at index', i, " of ", fetchedSimproSchedulesData.length)
                         const jobDataForSchedule = await axiosSimPRO.get(`/jobs/${jobIdForSchedule}?columns=ID,Type,Site,SiteContact,DateIssued,Status,Total,Customer,Name,ProjectManager,CustomFields`);
-                        schedule.Job = jobDataForSchedule?.data;
-
+                        let fetchedJobData: SimproJobType = jobDataForSchedule?.data;
+                        let jobTradeValue = fetchedJobData?.CustomFields?.find(field => field?.CustomField?.Name === "Job Trade (ie, Plumbing, Drainage, Roofing)")?.Value;
+                        if (jobTradeValue !== 'Roofing') {
+                            jobIdsToFilter.push(fetchedJobData.ID)
+                        }
+                        schedule.Job = fetchedJobData;
                         if (schedule?.Job?.Customer) {
                             const customerId = schedule.Job.Customer.ID?.toString();
                             if (customerId && simproCustomerMap[customerId]) {
@@ -63,7 +67,7 @@ export const fetchScheduleData = async () => {
                     }
                 }
 
-                if (costCenterIdForSchedule && jobIdForSchedule) {
+                if (costCenterIdForSchedule && !jobIdsToFilter.includes(parseInt(jobIdForSchedule))) {
                     try {
                         const costCenterDataForSchedule = await axiosSimPRO.get(`/jobCostCenters/?ID=${costCenterIdForSchedule}&columns=ID,Name,Job,Section`);
                         let sectionIdForSchedule =
@@ -88,7 +92,16 @@ export const fetchScheduleData = async () => {
                         console.error(`Error fetching cost center data for schedule ID: ${costCenterIdForSchedule}`, error);
                     }
                 }
+
+
             }
+
+            console.log('jobsToFilter Length: ', jobIdsToFilter.length)
+            console.log('Current schedule Length: ', fetchedSimproSchedulesData.length)
+            fetchedSimproSchedulesData = fetchedSimproSchedulesData.filter(schedule =>
+                jobIdsToFilter.includes(schedule?.Job?.ID ?? -1)
+            );
+            console.log('Filtered schedule Length: ', fetchedSimproSchedulesData.length)
             return fetchedSimproSchedulesData;
         } else {
             return [];

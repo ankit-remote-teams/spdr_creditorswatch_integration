@@ -73,7 +73,7 @@ export type SimproScheduleRowObjectType = {
     Zone?: string | number | null | undefined;
     JobTrade?: string | number | null | undefined;
     ScheduleNotes?: string | null | undefined;
-    "Percentage Client Invoice Claimed (From Simpro)"?: string | null | undefined;
+    "Percentage Client Invoice Claimed (From Simpro)"?: number | null | undefined;
 }
 
 
