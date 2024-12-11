@@ -74,6 +74,7 @@ export type SimproScheduleRowObjectType = {
     JobTrade?: string | number | null | undefined;
     ScheduleNotes?: string | null | undefined;
     "Percentage Client Invoice Claimed (From Simpro)"?: number | null | undefined;
+    Suburb?: string | null | undefined;
 }
 
 

@@ -63,6 +63,7 @@ export const convertSimproScheduleDataToSmartsheetFormatForUpdate = (
                 "JobTrade": rows[i].Job?.CustomFields?.find(field => field?.CustomField?.Name === "Job Trade (ie, Plumbing, Drainage, Roofing)")?.Value,
                 "ScheduleNotes": rows[i].Notes ? htmlToText(rows[i].Notes || "") : '',
                 "Percentage Client Invoice Claimed (From Simpro)": Math.round(((rows[i]?.CostCenter?.Claimed?.ToDate?.Percent ?? 0) / 100) * 100) / 100,
+                "Suburb": rows[i]?.Job?.Site?.Address?.City || "",
             };
             const options: SmartsheetSheetRowsType = {
                 cells: (Object.keys(rowObj) as (keyof SimproScheduleRowObjectType)[]).map(columnName => {
@@ -158,7 +159,8 @@ export const convertSimproScheduleDataToSmartsheetFormat = (
                 "Zone": rows[i].Job?.CustomFields?.find(field => field?.CustomField?.Name === "Zone (ie, North/East, West)")?.Value,
                 "JobTrade": rows[i].Job?.CustomFields?.find(field => field?.CustomField?.Name === "Job Trade (ie, Plumbing, Drainage, Roofing)")?.Value,
                 "ScheduleNotes": rows[i].Notes ? htmlToText(rows[i].Notes || "") : '',
-                "Percentage Client Invoice Claimed (From Simpro)": Math.round(((rows[i]?.CostCenter?.Claimed?.ToDate?.Percent ?? 0) / 100) * 100) / 100
+                "Percentage Client Invoice Claimed (From Simpro)": Math.round(((rows[i]?.CostCenter?.Claimed?.ToDate?.Percent ?? 0) / 100) * 100) / 100,
+                "Suburb": rows[i]?.Job?.Site?.Address?.City || "",
             };
             const options: SmartsheetSheetRowsType = {
                 cells: (Object.keys(rowObj) as (keyof SimproScheduleRowObjectType)[]).map(columnName => {
@@ -283,7 +285,8 @@ export const convertSimproQuotationDataToSmartsheetFormatForUpdate = (
             "Zone": rows[i].Job?.CustomFields?.find(field => field?.CustomField?.Name === "Zone (ie, North/East, West)")?.Value,
             "JobTrade": rows[i].Job?.CustomFields?.find(field => field?.CustomField?.Name === "Job Trade (ie, Plumbing, Drainage, Roofing)")?.Value,
             "ScheduleNotes": rows[i].Notes ? htmlToText(rows[i].Notes || "") : '',
-            "Percentage Client Invoice Claimed (From Simpro)": Math.round(((rows[i]?.CostCenter?.Claimed?.ToDate?.Percent ?? 0) / 100) * 100) / 100
+            "Percentage Client Invoice Claimed (From Simpro)": Math.round(((rows[i]?.CostCenter?.Claimed?.ToDate?.Percent ?? 0) / 100) * 100) / 100,
+            "Suburb": rows[i]?.Job?.Site?.Address?.City || "",
         };
 
         const options: SmartsheetSheetRowsType = {

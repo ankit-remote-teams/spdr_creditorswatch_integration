@@ -24,6 +24,7 @@ import {
     convertSimproQuotationDataToSmartsheetFormat,
     convertSimproLeadsDataToSmartsheetFormat,
 } from '../utils/transformSimproToSmartsheetHelper';
+import axiosSimPRO from '../config/axiosSimProConfig';
 
 
 const smartSheetAccessToken: string | undefined = process.env.SMARTSHEET_ACCESS_TOKEN;
@@ -31,6 +32,7 @@ const smartsheet = SmartsheetClient.createClient({ accessToken: smartSheetAccess
 const jobTrackerSheetId = process.env.TASK_TRACKER_SHEET_ID ? process.env.TASK_TRACKER_SHEET_ID : "";
 const ongoingQuotationSheetId = process.env.SIMPRO_ONGOING_QUOTE_SHEET_ID ? process.env.SIMPRO_ONGOING_QUOTE_SHEET_ID : "";
 const ongoingLeadsSheetId = process.env.SIMPRO_ONGOING_LEADS_SHEET_ID ? process.env.SIMPRO_ONGOING_LEADS_SHEET_ID : "";
+const jobCardSheetId = process.env.JOB_CARD_SHEET_ID ? process.env.JOB_CARD_SHEET_ID : "";
 
 
 // Define interfaces for Smartsheet events and cells
@@ -665,5 +667,48 @@ export const addMinimalJobCardDataToSmartsheet = async (rows: SimproScheduleType
         console.error('Error in adding job card data to Smartsheet:', err);
         return { status: false, message: "Error adding data to Smartsheet" }
 
+    }
+}
+
+console.log('jobCardSheetId', jobCardSheetId)
+// This is to test the site suburb information
+export const updateSuburbDataForSite = async (req: Request, res: Response) => {
+    try {
+        const sheetInfo = await smartsheet.sheets.getSheet({ id: jobCardSheetId });
+
+        let suburbColumnId = await getColumnIdForColumnName("Suburb", jobCardSheetId.toString());
+        console.log('suburbColumnId', suburbColumnId)
+        let siteIDColumnId = await getColumnIdForColumnName("SiteID", jobCardSheetId.toString());
+        const existingRows: SmartsheetSheetRowsType[] = sheetInfo.rows;
+        let dataToUpdate = [];
+        for (let i = 0; i < existingRows.length; i++) {
+            let rowIdForRow = existingRows[i].id;
+            let siteId = existingRows[i].cells.find(cell => cell.columnId === siteIDColumnId)?.value;
+            if (siteId) {
+                const siteResponse = await axiosSimPRO.get(`/sites/${siteId}?columns=ID,Name,Address`);
+                let siteResponseData = siteResponse.data;
+                console.log('Site response', siteResponseData)
+
+                let cellsData = [{ columnId: suburbColumnId, value: siteResponseData?.Address?.City || "" }]
+                let dataToPush: SmartsheetSheetRowsType = { id: rowIdForRow, cells: cellsData };
+                dataToUpdate.push(dataToPush)
+            }
+
+        }
+        console.log('dataToUpdate: ', JSON.stringify(dataToUpdate))
+
+        const chunks = splitIntoChunks(dataToUpdate, 150);
+        for (const chunk of chunks) {
+
+            await smartsheet.sheets.updateRow({
+                sheetId: jobCardSheetId,
+                body: chunk,
+            });
+            console.log("no of chunks updated", chunk.length)
+        }
+
+        res.status(200).json({ message: "updated the row data" });
+    } catch (err) {
+        res.status(500).json({ err: err })
     }
 }

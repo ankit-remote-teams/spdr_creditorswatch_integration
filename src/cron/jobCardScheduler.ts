@@ -7,10 +7,10 @@ import { fetchScheduleData } from "../services/SimproServices/simproScheduleServ
 import { addJobCardDataToSmartsheet } from "../controllers/smartSheetController";
 const jobCardReportSheetId = process.env.JOB_CARD_SHEET_ID ? process.env.JOB_CARD_SHEET_ID : "";
 const jobCardV2SheetId = process.env.JOB_CARD_SHEET_V2_ID ? process.env.JOB_CARD_SHEET_V2_ID : "";
-console.log(`JOBCARD SCHEDULER : Server time ${moment().format('YYYY-MM-DD HH:mm:ss')}`);
+console.log(`JOBCARD SCHEDULER : Server time 1 ${moment().format('YYYY-MM-DD HH:mm:ss')}`);
 
 
-cron.schedule("0 */4 * * *", async () => {
+cron.schedule("0 0/2 * * * ", async () => {
     try {
         console.log(`JOBCARD SCHEDULER : Task executed at ${moment().format('YYYY-MM-DD HH:mm:ss')}`);
         try {

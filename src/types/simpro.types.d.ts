@@ -153,6 +153,7 @@ export type SimproCompanyType = {
 export type SimproSiteType = {
     ID: number;
     Name: string;
+    Address?:SimproAddressType;
 }
 
 export type SimproTagsType = {
