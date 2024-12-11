@@ -51,6 +51,12 @@ export const fetchScheduleData = async () => {
                         // console.log("Fetching job for schdule " + jobIdForSchedule + ' at index', i, " of ", fetchedSimproSchedulesData.length)
                         const jobDataForSchedule = await axiosSimPRO.get(`/jobs/${jobIdForSchedule}?columns=ID,Type,Site,SiteContact,DateIssued,Status,Total,Customer,Name,ProjectManager,CustomFields`);
                         let fetchedJobData: SimproJobType = jobDataForSchedule?.data;
+                        let siteId = fetchedJobData?.Site?.ID;
+                        if (siteId) {
+                            const siteResponse = await axiosSimPRO.get(`/sites/${siteId}?columns=ID,Name,Address`);
+                            let siteResponseData = siteResponse.data;
+                            fetchedJobData.Site = siteResponseData;
+                        }
                         let jobTradeValue = fetchedJobData?.CustomFields?.find(field => field?.CustomField?.Name === "Job Trade (ie, Plumbing, Drainage, Roofing)")?.Value;
                         if (jobTradeValue !== 'Roofing') {
                             jobIdsToFilter.push(fetchedJobData.ID)
