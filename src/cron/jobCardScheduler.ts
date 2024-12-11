@@ -10,7 +10,7 @@ const jobCardV2SheetId = process.env.JOB_CARD_SHEET_V2_ID ? process.env.JOB_CARD
 console.log(`JOBCARD SCHEDULER : Server time 1 ${moment().format('YYYY-MM-DD HH:mm:ss')}`);
 
 
-cron.schedule("53 17 * * *", async () => {
+cron.schedule("0 0/2 * * * ", async () => {
     try {
         console.log(`JOBCARD SCHEDULER : Task executed at ${moment().format('YYYY-MM-DD HH:mm:ss')}`);
         try {
