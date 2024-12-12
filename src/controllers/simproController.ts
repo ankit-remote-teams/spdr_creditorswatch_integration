@@ -13,9 +13,10 @@ import axiosSimPRO from '../config/axiosSimProConfig';
 import {
     addJobCardDataToSmartsheet,
     addOpenQuotesDataToSmartsheet,
-    addOpenLeadsDataToSmartsheet
+    addOpenLeadsDataToSmartsheet,
+    addMinimalJobCardDataToSmartsheet
 } from './smartSheetController';
-import { fetchScheduleData } from '../services/SimproServices/simproScheduleService';
+import { fetchScheduleData, fetchScheduleMinimal } from '../services/SimproServices/simproScheduleService';
 import { fetchSimproQuotationData } from '../services/SimproServices/simproQuotationService';
 import { fetchSimproLeadsData } from '../services/SimproServices/simproLeadsService';
 const jobCardReportSheetId = process.env.JOB_CARD_SHEET_ID ? process.env.JOB_CARD_SHEET_ID : "";
@@ -265,6 +266,50 @@ export const getQuotationReport = async (req: Request, res: Response) => {
                 message: "Something went wrong"
             }
         }
+    } catch (err) {
+        if (err instanceof AxiosError) {
+            console.log("Error in getJobCardReport as AxiosError");
+            console.log("Error details: ", err.response?.data);
+            res.status(err.response?.status || 500).send({
+                message: 'Error from Axios request',
+                details: err.response?.data
+            });
+        } else {
+            console.log("Error in getJobCardReport as other error");
+            console.log("Error details: ", err);
+            res.status(500).send({
+                message: `Internal Server Error : ${JSON.stringify(err)}`
+            });
+        }
+    }
+};
+
+
+
+export const getMinimalJobReport = async (req: Request, res: Response) => {
+    try {
+        console.log("Fetch started for new data")
+        let fetchedSimproSchedulesData: SimproScheduleType[] = await fetchScheduleMinimal();
+        console.log("fetch completed for new data")
+
+        console.log("Adding new records to smartsheet through manual api trigger for sheet v1")
+        await addMinimalJobCardDataToSmartsheet(fetchedSimproSchedulesData, jobCardReportSheetId, "minimal");
+        // let responseOneFromSmartsheet = await addJobCardDataToSmartsheet(fetchedSimproSchedulesData, jobCardReportSheetId);
+
+
+        console.log("Adding new records to smartsheet through manual api trigger for sheet v2")
+        // let responseTwoFromSmartsheet = await addJobCardDataToSmartsheet(fetchedSimproSchedulesData, jobCardV2SheetId);
+
+
+        console.log("Completed: Adding new records to smartsheet")
+
+        // if (responseOneFromSmartsheet?.status && responseTwoFromSmartsheet?.status) {
+        res.status(200).json({ fetchedSimproSchedulesData });
+        // } else {
+        //     throw {
+        //         message: "Something went wrong"
+        //     }
+        // }
     } catch (err) {
         if (err instanceof AxiosError) {
             console.log("Error in getJobCardReport as AxiosError");
