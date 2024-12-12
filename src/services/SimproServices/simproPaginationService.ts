@@ -5,7 +5,7 @@ import axiosSimPRO from "../../config/axiosSimProConfig";
 export const fetchSimproPaginatedData = async <T>(url: string, columns: string, ifModifiedSinceHeader?: string): Promise<T[]> => {
     try {
 
-        console.log('columns', columns)
+        // console.log('columns', columns)
         let pageNum: number = 1;
         let allEntity: T[] = [];
         let totalPages: number = 1;
@@ -24,7 +24,7 @@ export const fetchSimproPaginatedData = async <T>(url: string, columns: string, 
                 };
             }
 
-            console.log(`Fetching page ${pageNum}...`);
+            // console.log(`Fetching page ${pageNum}...`);
             const response = await axiosSimPRO.get(url, requestOptions);
 
             const entity = response.data;

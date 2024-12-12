@@ -287,21 +287,6 @@ const updateTheSimproSchedulesData = async (
 
         const chunks = splitIntoChunks(rowsToUpdateToSmartSheet, 100);
         for (const chunk of chunks) {
-            for (let i = 0; i < chunk.length; i++) {
-                const row = chunk[i];
-                for (let j = 0; j < row.cells.length; j++) {
-                    const cell = row.cells[j];
-                    if (cell.hasOwnProperty('formula')) {
-                        row.cells.splice(j, 1);
-                        j--;
-                    } else {
-                        if (!cell.hasOwnProperty('value')) {
-                            cell.value = "";
-                        }
-                    }
-                }
-            }
-
             await smartsheet.sheets.updateRow({
                 sheetId: smartsheetId,
                 body: chunk
@@ -515,12 +500,6 @@ export const addOpenLeadsDataToSmartsheet = async (rows: SimproLeadType[]) => {
                 }
             }
         }
-
-        // if (rowsToUpdate.length) {
-        //     await updateExistingRecordsInJobCardSheet(rowsToUpdate, scheduleIdsNotPartOfSimproResponse, ongoingLeadsSheetId)
-        // }
-
-
 
 
         return { status: true, message: "Data added successfully" }
