@@ -59,7 +59,7 @@ export const fetchScheduleDataForExistingScheduleIds = async (scheduleIds: numbe
             }
         }
 
-        let jobIdsToFilter: number[] = []
+        let jobIdsToAddArray: number[] = []
 
         for (let i = 0; i < scheduleIds.length; i++) {
             try {
@@ -118,8 +118,8 @@ export const fetchScheduleDataForExistingScheduleIds = async (scheduleIds: numbe
                             fetchedJobData.Site = siteResponseData;
                         }
                         let jobTradeValue = fetchedJobData?.CustomFields?.find(field => field?.CustomField?.Name === "Job Trade (ie, Plumbing, Drainage, Roofing)")?.Value;
-                        if (jobTradeValue !== 'Roofing') {
-                            jobIdsToFilter.push(fetchedJobData.ID)
+                        if (jobTradeValue == 'Roofing') {
+                            jobIdsToAddArray.push(fetchedJobData.ID)
                         }
                         schedule.Job = fetchedJobData;
 
@@ -134,9 +134,9 @@ export const fetchScheduleDataForExistingScheduleIds = async (scheduleIds: numbe
                     }
                 }
 
-                if (costCenterIdForSchedule && !jobIdsToFilter.includes(parseInt(jobIdForSchedule))) {
+                if (costCenterIdForSchedule) {
                     try {
-                        const costCenterDataForSchedule = await axiosSimPRO.get(`/jobCostCenters/?ID=${costCenterIdForSchedule}&columns=ID,Name,Job,Section`);
+                        const costCenterDataForSchedule = await axiosSimPRO.get(`/jobCostCenters/?ID=${costCenterIdForSchedule}&columns=ID,Name,Job,Section,CostCenter`);
                         let sectionIdForSchedule =
                             Array.isArray(costCenterDataForSchedule?.data)
                                 ? costCenterDataForSchedule.data[0]?.Section?.ID
@@ -146,10 +146,11 @@ export const fetchScheduleDataForExistingScheduleIds = async (scheduleIds: numbe
                             Array.isArray(costCenterDataForSchedule?.data)
                                 ? costCenterDataForSchedule.data[0]?.Job?.ID
                                 : null;
-
-                        console.log('fetch and main same?', jobIdForScheduleFetched, jobIdForSchedule)
-
                         try {
+                            let defaultCostCenterAccountName = costCenterDataForSchedule?.data?.CostCenter?.Name;
+                            if (defaultCostCenterAccountName == "Roofing Income") {
+                                jobIdsToAddArray.push(jobIdForScheduleFetched)
+                            }
                             let costCenterResponse = await axiosSimPRO.get(`jobs/${jobIdForScheduleFetched}/sections/${sectionIdForSchedule}/costCenters/${costCenterIdForSchedule}?columns=Name,ID,Claimed`);
                             if (costCenterResponse) {
                                 schedule.CostCenter = costCenterResponse.data;
@@ -165,10 +166,10 @@ export const fetchScheduleDataForExistingScheduleIds = async (scheduleIds: numbe
             }
         }
 
-        console.log('jobsToFilter Length: ', jobIdsToFilter.length)
+        console.log('jobsToFilter Length: ', jobIdsToAddArray.length)
         console.log('Current schedule Length: ', scheduleDataFromSimpro.length)
         scheduleDataFromSimpro = scheduleDataFromSimpro.filter(schedule =>
-            !jobIdsToFilter.includes(schedule?.Job?.ID ?? -1)
+            jobIdsToAddArray.includes(schedule?.Job?.ID ?? -1)
         );
         console.log('Filtered schedule Length: ', scheduleDataFromSimpro.length)
 
