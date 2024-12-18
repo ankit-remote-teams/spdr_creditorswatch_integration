@@ -1,11 +1,13 @@
 import { AxiosError } from "axios";
 import axiosSimPRO from "../../config/axiosSimProConfig";
-import { SimproCustomerType, SimproJobType, SimproScheduleType } from "../../types/simpro.types";
+import { SimproAccountType, SimproCustomerType, SimproJobType, SimproScheduleType } from "../../types/simpro.types";
 import { fetchSimproPaginatedData } from "./simproPaginationService";
 import moment from "moment";
 
 export const fetchScheduleData = async () => {
     try {
+        let fetchedChartOfAccounts = await axiosSimPRO.get('/setup/accounts/chartOfAccounts/?pageSize=250&columns=ID,Name,Number');
+        let chartOfAccountsArray: SimproAccountType[] = fetchedChartOfAccounts?.data;
         const allCustomerData: SimproCustomerType[] = await fetchSimproPaginatedData('/customers/', "");
         const simproCustomerMap: { [key: string]: SimproCustomerType } = {};
 
@@ -86,9 +88,14 @@ export const fetchScheduleData = async () => {
                                 ? costCenterDataForSchedule.data[0]?.Job?.ID
                                 : null;
 
-                        let defaultCostCenterAccountName = costCenterDataForSchedule?.data?.CostCenter?.Name;
-                        if (defaultCostCenterAccountName == "Roofing Income") {
-                            jobIdsToAddArray.push(jobIdForScheduleFetched)
+                        let setupCostCenterID = costCenterDataForSchedule.data[0]?.CostCenter?.ID;
+                        let fetchedSetupCostCenterData = await axiosSimPRO.get(`/setup/accounts/costCenters/${setupCostCenterID}?columns=ID,Name,IncomeAccountNo`);
+                        let setupCostCenterData = fetchedSetupCostCenterData.data;
+                        if (setupCostCenterData?.IncomeAccountNo) {
+                            let incomeAccountName = chartOfAccountsArray?.find(account => account?.Number == setupCostCenterData?.IncomeAccountNo)?.Name;
+                            if (incomeAccountName == "Roofing Income") {
+                                jobIdsToAddArray.push(jobIdForScheduleFetched)
+                            }
                         }
 
                         try {
@@ -152,6 +159,8 @@ export const fetchScheduleMinimal = async () => {
 
 export const fetchCurrentDateScheduleData = async () => {
     try {
+        let fetchedChartOfAccounts = await axiosSimPRO.get('/setup/accounts/chartOfAccounts/?pageSize=250&columns=ID,Name,Number');
+        let chartOfAccountsArray: SimproAccountType[] = fetchedChartOfAccounts?.data;
         const allCustomerData: SimproCustomerType[] = await fetchSimproPaginatedData('/customers/', "");
         const simproCustomerMap: { [key: string]: SimproCustomerType } = {};
 
@@ -231,9 +240,14 @@ export const fetchCurrentDateScheduleData = async () => {
                                 ? costCenterDataForSchedule.data[0]?.Job?.ID
                                 : null;
 
-                        let defaultCostCenterAccountName = costCenterDataForSchedule?.data?.CostCenter?.Name;
-                        if (defaultCostCenterAccountName == "Roofing Income") {
-                            jobIdsToAddArray.push(jobIdForScheduleFetched)
+                        let setupCostCenterID = costCenterDataForSchedule.data[0]?.CostCenter?.ID;
+                        let fetchedSetupCostCenterData = await axiosSimPRO.get(`/setup/accounts/costCenters/${setupCostCenterID}?columns=ID,Name,IncomeAccountNo`);
+                        let setupCostCenterData = fetchedSetupCostCenterData.data;
+                        if (setupCostCenterData?.IncomeAccountNo) {
+                            let incomeAccountName = chartOfAccountsArray?.find(account => account?.Number == setupCostCenterData?.IncomeAccountNo)?.Name;
+                            if (incomeAccountName == "Roofing Income") {
+                                jobIdsToAddArray.push(jobIdForScheduleFetched)
+                            }
                         }
                         try {
                             let costCenterResponse = await axiosSimPRO.get(`jobs/${jobIdForScheduleFetched}/sections/${sectionIdForSchedule}/costCenters/${costCenterIdForSchedule}?columns=Name,ID,Claimed`);

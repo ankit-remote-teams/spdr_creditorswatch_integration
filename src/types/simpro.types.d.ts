@@ -9,6 +9,14 @@ export type SimproStaffType = {
     TypeId: number;
 }
 
+export type SimproAccountType = {
+    ID: number;
+    Name: string;
+    Number: number;
+    Type?: string;
+    Archived?: boolean;
+}
+
 export type SimproManagerType = SimproStaffType;
 
 export type SimproScheduleBlockType = {
@@ -153,7 +161,7 @@ export type SimproCompanyType = {
 export type SimproSiteType = {
     ID: number;
     Name: string;
-    Address?:SimproAddressType;
+    Address?: SimproAddressType;
 }
 
 export type SimproTagsType = {

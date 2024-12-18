@@ -3,6 +3,7 @@ import { Request, Response } from 'express';
 import { fetchSimproPaginatedData } from '../services/SimproServices/simproPaginationService';
 import moment from 'moment';
 import {
+    SimproAccountType,
     SimproCustomerType,
     SimproJobType,
     SimproLeadType,
@@ -25,6 +26,8 @@ const jobCardV2SheetId = process.env.JOB_CARD_SHEET_V2_ID ? process.env.JOB_CARD
 
 export const fetchScheduleDataForExistingScheduleIds = async (scheduleIds: number[], fetchType: string) => {
     try {
+        let fetchedChartOfAccounts = await axiosSimPRO.get('/setup/accounts/chartOfAccounts/?pageSize=250&columns=ID,Name,Number');
+        let chartOfAccountsArray: SimproAccountType[] = fetchedChartOfAccounts?.data;
         console.log('Fetching existing schedule', JSON.stringify(scheduleIds))
         const allCustomerData: SimproCustomerType[] = await fetchSimproPaginatedData('/customers/', "");
         console.log("Fetched all customers for existing schedule ids")
@@ -146,11 +149,17 @@ export const fetchScheduleDataForExistingScheduleIds = async (scheduleIds: numbe
                             Array.isArray(costCenterDataForSchedule?.data)
                                 ? costCenterDataForSchedule.data[0]?.Job?.ID
                                 : null;
-                        try {
-                            let defaultCostCenterAccountName = costCenterDataForSchedule?.data?.CostCenter?.Name;
-                            if (defaultCostCenterAccountName == "Roofing Income") {
+
+                        let setupCostCenterID = costCenterDataForSchedule.data[0]?.CostCenter?.ID;
+                        let fetchedSetupCostCenterData = await axiosSimPRO.get(`/setup/accounts/costCenters/${setupCostCenterID}?columns=ID,Name,IncomeAccountNo`);
+                        let setupCostCenterData = fetchedSetupCostCenterData.data;
+                        if (setupCostCenterData?.IncomeAccountNo) {
+                            let incomeAccountName = chartOfAccountsArray?.find(account => account?.Number == setupCostCenterData?.IncomeAccountNo)?.Name;
+                            if (incomeAccountName == "Roofing Income") {
                                 jobIdsToAddArray.push(jobIdForScheduleFetched)
                             }
+                        }
+                        try {
                             let costCenterResponse = await axiosSimPRO.get(`jobs/${jobIdForScheduleFetched}/sections/${sectionIdForSchedule}/costCenters/${costCenterIdForSchedule}?columns=Name,ID,Claimed`);
                             if (costCenterResponse) {
                                 schedule.CostCenter = costCenterResponse.data;
