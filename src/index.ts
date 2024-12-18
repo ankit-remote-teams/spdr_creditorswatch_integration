@@ -27,15 +27,15 @@ if (process.env.NODE_ENV === 'production') {
 }
 
 // For local Development
-// if (process.env.NODE_ENV === 'development') {
-//     const cronJobs = [
-//         // './cron/jobCardMinimalUpdateScheduler',
-//         './cron/jobCardScheduler',
-//     ];
-//     cronJobs.forEach(job => {
-//         require(job);
-//     });
-// }
+if (process.env.NODE_ENV === 'development') {
+    const cronJobs = [
+        // './cron/jobCardMinimalUpdateScheduler',
+        // './cron/jobCardTodayScheduler',
+    ];
+    cronJobs.forEach(job => {
+        require(job);
+    });
+}
 
 
 

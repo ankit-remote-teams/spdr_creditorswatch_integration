@@ -23,7 +23,7 @@ const axiosCreditorsWatch: AxiosInstance = axios.create({
 // Request Interceptor
 axiosCreditorsWatch.interceptors.request.use(
     (config) => {
-        console.log('Request to CreditorsWatch:', config.url);
+        // console.log('Request to CreditorsWatch:', config.url);
         return config;
     },
     (error) => {
