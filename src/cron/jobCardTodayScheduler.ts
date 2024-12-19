@@ -3,7 +3,7 @@ import { AxiosError } from "axios";
 import moment from "moment";
 // import { ses } from '../config/awsConfig'
 import { SimproScheduleType } from "../types/simpro.types";
-import { fetchScheduleData } from "../services/SimproServices/simproScheduleService";
+import { fetchCurrentDateScheduleData } from "../services/SimproServices/simproScheduleService";
 import { addJobCardDataToSmartsheet } from "../controllers/smartSheetController";
 const jobCardReportSheetId = process.env.JOB_CARD_SHEET_ID ? process.env.JOB_CARD_SHEET_ID : "";
 console.log(`Current Date Job Card Scheduler : Server time ${moment().format('YYYY-MM-DD HH:mm:ss')}`);
@@ -13,7 +13,7 @@ cron.schedule("*/30 * * * *", async () => {
         console.log(`JOBCARD SCHEDULER : Task executed at ${moment().format('YYYY-MM-DD HH:mm:ss')}`);
         try {
             console.log("Current Date Job Card Scheduler : Fetch started for new data")
-            let fetchedSimproSchedulesData: SimproScheduleType[] = await fetchScheduleData();
+            let fetchedSimproSchedulesData: SimproScheduleType[] = await fetchCurrentDateScheduleData();
             console.log("Current Date Job Card Scheduler : fetch completed for new data")
 
             console.log("Current Date Job Card Scheduler : Adding new records to smartsheet for sheet version 1 ")
