@@ -396,6 +396,8 @@ export const addOpenQuotesDataToSmartsheet = async (rows: SimproQuotationType[])
             ? existingQuoteIdsInSheet.filter(scheduleId => fetchedQuoteIDs.includes(scheduleId))
             : [];
 
+        let quoteIdNotPartOfSimproResponse = Array.isArray(fetchedQuoteIDs) ? existingQuoteIdsInSheet.filter(quoteId => !fetchedQuoteIDs.includes(quoteId)) : [];
+
 
         let quoteIdToAdd = Array.isArray(fetchedQuoteIDs) ? fetchedQuoteIDs.filter(scheduleId => !existingQuoteIdsInSheet.includes(scheduleId)) : [];
 
@@ -430,46 +432,48 @@ export const addOpenQuotesDataToSmartsheet = async (rows: SimproQuotationType[])
             }
         }
 
-        if (rowsToUpdate.length) {
-
-            let existingQuoteIdData: ExistingQuotationType[] = existingRows.map((row: SmartsheetSheetRowsType) => {
-                const quoteId = row.cells.find(cell => cell.columnId === quoteIdColumnId)?.value;
-                return quoteId ? { quoteId: Number(quoteId), rowId: row.id } : null;
-            })
-                .filter(Boolean);
-
-            // Logic to mark the quotation comments
-            const quoteIdsMarksAsDeleted: string[] = [];
-
-            const rowsToMarkDeleted = existingQuoteIdData.filter(item =>
-                quoteIdsMarksAsDeleted.includes(item.quoteId.toString())
-            );
-
-            console.log("Quotatin to mark as deleted:", rowsToMarkDeleted?.length)
 
 
-            // logic to mark the quote comment
-            if (rowsToMarkDeleted.length) {
-                let columnIdForQuoteComment = await getColumnIdForColumnName('QuoteComment', ongoingQuotationSheetId)
-                const chunks = splitIntoChunks(quoteIdsMarksAsDeleted, 300);
-                for (const chunk of chunks) {
-                    // Prepare rows for batch update
-                    const rowsToUpdateComment = chunk.map(rowId => ({
-                        id: rowId,
-                        cells: [{ columnId: columnIdForQuoteComment, value: "Not found in ongoing quotes" }],
-                    }));
+        let existingQuoteIdData: ExistingQuotationType[] = existingRows.map((row: SmartsheetSheetRowsType) => {
+            const quoteId = row.cells.find(cell => cell.columnId === quoteIdColumnId)?.value;
+            return quoteId ? { quoteId: Number(quoteId), rowId: row.id } : null;
+        })
+            .filter(Boolean);
 
-                    // Batch update rows
-                    await smartsheet.sheets.updateRow({
-                        sheetId: ongoingQuotationSheetId,
-                        body: rowsToUpdateComment,
-                    });
+        const rowIdsMarksAsDeleted: string[] = existingQuoteIdData
+            .filter(item => quoteIdNotPartOfSimproResponse.includes(Number(item.quoteId))) // Ensure quoteId is a number
+            .map(item => String(item.rowId));
 
-                    console.log('Quote ID: Updated chunk with', chunk.length, 'rows');
-                }
-                console.log("Marking ", rowsToMarkDeleted.length, " rows as deleted")
+
+        console.log("Quotatin to mark as deleted:", rowIdsMarksAsDeleted?.length)
+
+
+        // logic to mark the quote comment
+        if (rowIdsMarksAsDeleted.length) {
+            let columnIdForQuoteComment = await getColumnIdForColumnName('QuoteComment', ongoingQuotationSheetId)
+            console.log('ColumnId for quote comment:', columnIdForQuoteComment)
+            const chunks = splitIntoChunks(rowIdsMarksAsDeleted, 300);
+            for (const chunk of chunks) {
+                // Prepare rows for batch update
+                const rowsToUpdateComment = chunk.map(rowId => ({
+                    id: rowId,
+                    cells: [{ columnId: columnIdForQuoteComment, value: "Deleted From Simpro" }],
+                }));
+
+                console.log("rowsToUpdateComment", JSON.stringify(rowsToUpdateComment));
+
+                // Batch update rows
+                await smartsheet.sheets.updateRow({
+                    sheetId: ongoingQuotationSheetId,
+                    body: rowsToUpdateComment,
+                });
+
+                console.log('Quote ID: Updated chunk with', chunk.length, 'rows');
             }
+            console.log("Marking ", rowIdsMarksAsDeleted.length, " rows as deleted")
+        }
 
+        if (rowsToUpdate.length) {
             //logic to update the data in sheet:
             let simproIdRowIdMap: { [key: string]: string } = {};
             rowsToUpdate.forEach(simproQuoteItem => {
@@ -497,7 +501,7 @@ export const addOpenQuotesDataToSmartsheet = async (rows: SimproQuotationType[])
 
         return { status: true, message: "Data added successfully" }
     } catch (err) {
-        console.error('Error in adding job card data to Smartsheet:', err);
+        console.error('Error in adding quotes data to Smartsheet:', err);
         return { status: false, message: "Error adding data to Smartsheet" }
 
     }
@@ -511,7 +515,7 @@ export const addOpenLeadsDataToSmartsheet = async (rows: SimproLeadType[]) => {
         let rowsToAdd: SimproLeadType[] = [];
         let rowsToUpdate: SimproLeadType[] = [];
 
-        let fetcgedLeads = rows.map(row => row.ID);
+        let fetchedLeadsIds = rows.map(row => row.ID);
 
         let leadIdColumnId = await getColumnIdForColumnName("LeadID", ongoingLeadsSheetId);
         const existingRows = sheetInfo.rows;
@@ -527,12 +531,13 @@ export const addOpenLeadsDataToSmartsheet = async (rows: SimproLeadType[]) => {
             .filter((value: number | string | null) => value !== null);
 
         let leadIdsToUpdate = Array.isArray(existingLeadIdsInSheet)
-            ? existingLeadIdsInSheet.filter(leadId => fetcgedLeads.includes(leadId))
+            ? existingLeadIdsInSheet.filter(leadId => fetchedLeadsIds.includes(leadId))
             : [];
 
+        let leadIdNotPartOfSimproResponse = Array.isArray(fetchedLeadsIds) ? existingLeadIdsInSheet.filter(leadId => !fetchedLeadsIds.includes(leadId)) : [];
+        console.log("LeadIdNotPartOfSimproResponse", JSON.stringify(leadIdNotPartOfSimproResponse))
 
-
-        let leadIdToAdd = Array.isArray(fetcgedLeads) ? fetcgedLeads.filter(leadId => !existingLeadIdsInSheet.includes(leadId)) : [];
+        let leadIdToAdd = Array.isArray(fetchedLeadsIds) ? fetchedLeadsIds.filter(leadId => !existingLeadIdsInSheet.includes(leadId)) : [];
 
 
         rows.forEach((row) => {
@@ -566,47 +571,49 @@ export const addOpenLeadsDataToSmartsheet = async (rows: SimproLeadType[]) => {
         }
 
 
-        if (rowsToUpdate.length) {
 
-            let existingLeadIdData: ExistingLeadsType[] = existingRows.map((row: SmartsheetSheetRowsType) => {
-                const leadId = row.cells.find(cell => cell.columnId === leadIdColumnId)?.value;
-                return leadId ? { leadId: Number(leadId), rowId: row.id } : null;
-            })
-                .filter(Boolean);
 
-            // Logic to mark the quotation comments
-            const leadIdMarksAsDeleted: string[] = [];
-
-            const rowsToMarkDeleted = existingLeadIdData.filter(item =>
-                leadIdMarksAsDeleted.includes(item.leadId.toString())
-            );
-
-            console.log("Number of rows of to delete for leads :", rows?.length)
+        let existingLeadIdData: ExistingLeadsType[] = existingRows.map((row: SmartsheetSheetRowsType) => {
+            const leadId = row.cells.find(cell => cell.columnId === leadIdColumnId)?.value;
+            return leadId ? { leadId: Number(leadId), rowId: row.id } : null;
+        })
+            .filter(Boolean);
 
 
 
-            // logic to mark the quote comment
-            if (rowsToMarkDeleted.length) {
-                let columnIdForLeadComment = await getColumnIdForColumnName('LeadComment', ongoingLeadsSheetId)
-                const chunks = splitIntoChunks(leadIdMarksAsDeleted, 300);
-                for (const chunk of chunks) {
-                    // Prepare rows for batch update
-                    const rowsToUpdateComment = chunk.map(rowId => ({
-                        id: rowId,
-                        cells: [{ columnId: columnIdForLeadComment, value: "Not found in ongoing quotes" }],
-                    }));
+        const rowIdsMarksAsDeleted: string[] = existingLeadIdData
+            .filter(item => leadIdNotPartOfSimproResponse.includes(Number(item.leadId)))
+            .map(item => String(item.rowId));
 
-                    // Batch update rows
-                    await smartsheet.sheets.updateRow({
-                        sheetId: ongoingLeadsSheetId,
-                        body: rowsToUpdateComment,
-                    });
 
-                    console.log('Quote ID: Updated chunk with', chunk.length, 'rows');
-                }
-                console.log("Marking ", rowsToMarkDeleted.length, " rows as deleted")
+        console.log("Quotatin to mark as deleted:", rowIdsMarksAsDeleted?.length)
+
+
+
+        // logic to mark the quote comment
+        if (rowIdsMarksAsDeleted.length) {
+            let columnIdForLeadComment = await getColumnIdForColumnName('LeadComment', ongoingLeadsSheetId)
+            console.log('ColumnId for lead comment:', columnIdForLeadComment)
+            const chunks = splitIntoChunks(rowIdsMarksAsDeleted, 300);
+            for (const chunk of chunks) {
+                // Prepare rows for batch update
+                const rowsToUpdateComment = chunk.map(rowId => ({
+                    id: rowId,
+                    cells: [{ columnId: columnIdForLeadComment, value: "Deleted From Simpro" }],
+                }));
+
+                // Batch update rows
+                await smartsheet.sheets.updateRow({
+                    sheetId: ongoingLeadsSheetId,
+                    body: rowsToUpdateComment,
+                });
+
+                console.log('Quote ID: Updated chunk with', chunk.length, 'rows');
             }
+            console.log("Marking ", rowIdsMarksAsDeleted.length, " rows as deleted")
+        }
 
+        if (rowsToUpdate.length) {
             //logic to update the data in sheet:
             let simproIdRowIdMap: { [key: string]: string } = {};
             rowsToUpdate.forEach(simproQuoteItem => {
@@ -635,7 +642,7 @@ export const addOpenLeadsDataToSmartsheet = async (rows: SimproLeadType[]) => {
 
         return { status: true, message: "Data added successfully" }
     } catch (err) {
-        console.error('Error in adding job card data to Smartsheet:', err);
+        console.error('Error in adding leads data to Smartsheet:', err);
         return { status: false, message: "Error adding data to Smartsheet" }
 
     }
@@ -774,7 +781,7 @@ export const addMinimalJobCardDataToSmartsheet = async (rows: SimproScheduleType
 
         return { status: true, message: "Data added successfully" }
     } catch (err) {
-        console.error('Error in adding job card data to Smartsheet:', err);
+        console.error('Error in adding minimal job card data to Smartsheet:', err);
         return { status: false, message: "Error adding data to Smartsheet" }
 
     }

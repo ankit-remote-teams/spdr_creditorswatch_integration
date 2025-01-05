@@ -7,7 +7,7 @@ import { addOpenLeadsDataToSmartsheet, addOpenQuotesDataToSmartsheet } from "../
 import { ses } from "../config/awsConfig";
 
 console.log('Current time in austarlia : ', moment().format(" DD-MMM-YYYY HH:mm:ss"))
-cron.schedule("0 8,12,18 * * *", async () => {
+cron.schedule("49 10 * * *", async () => {
     try {
         console.log(`ONGOING QUOTATION SCHEDULER : Task executed at ${moment().format('YYYY-MM-DD HH:mm:ss')}`);
         console.log("Fetch ongoing quotation data")
@@ -29,12 +29,7 @@ cron.schedule("0 8,12,18 * * *", async () => {
 
         if (addQuoteDataToSheetResponse?.status && addLeadsDataToSheetResponse?.status) {
             console.log("Successfully updated the quotation and leads data");
-        } else {
-            throw {
-                message: "Something went wrong"
-            }
         }
-
     } catch (err: any) {
         const recipients: string[] = process.env.EMAIL_RECIPIENTS
             ? process.env.EMAIL_RECIPIENTS.split(',')
@@ -66,7 +61,7 @@ cron.schedule("0 8,12,18 * * *", async () => {
                 },
                 Subject: {
                     Charset: 'UTF-8',
-                    Data: 'Error in data delete scheduler',
+                    Data: 'Error in ongoing quotation and lead scheduler',
                 },
             },
             Source: process.env.SES_SENDER_EMAIL as string,
