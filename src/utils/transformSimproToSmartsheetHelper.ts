@@ -198,7 +198,10 @@ export const convertSimproScheduleDataToSmartsheetFormat = (
     return convertedData;
 };
 
-export const convertSimproQuotationDataToSmartsheetFormat = (rows: SimproQuotationType[], columns: SmartsheetColumnType[]) => {
+export const convertSimproQuotationDataToSmartsheetFormat = (
+    rows: SimproQuotationType[], 
+    columns: SmartsheetColumnType[]
+) => {
     let convertedData: SmartsheetSheetRowsType[] = [];
     for (let i = 0; i < rows.length; i++) {
         const rowObj: SimproQuotationRowObjectType = {
@@ -241,56 +244,37 @@ export const convertSimproQuotationDataToSmartsheetFormat = (rows: SimproQuotati
 }
 
 export const convertSimproQuotationDataToSmartsheetFormatForUpdate = (
-    rows: SimproScheduleType[],
+    rows: SimproQuotationType[],
     columns: SmartsheetColumnType[],
     quoteIdRowIdMap?: { [key: string]: string }
 ) => {
     let convertedData: SmartsheetSheetRowsType[] = [];
-
     for (let i = 0; i < rows.length; i++) {
-        let startTime = rows[i].Blocks.reduce(
-            (minTime, block) => minTime < block.ISO8601StartTime ? minTime : block.ISO8601StartTime,
-            rows[i].Blocks[0].ISO8601StartTime
-        );
-        let endTime = rows[i].Blocks.reduce(
-            (maxTime, block) => maxTime > block.ISO8601EndTime ? maxTime : block.ISO8601EndTime,
-            rows[i].Blocks[0].ISO8601EndTime
-        );
-
-        const rowObj: SimproScheduleRowObjectType = {
-            "ScheduleID": rows[i].ID,
-            "ScheduleType": rows[i].Type,
-            "StaffName": rows[i].Staff?.Name,
-            "ScheduleDate": rows[i].Date,
-            "StartTime": startTime ? moment(startTime).format("HH:mm:ss") : "",
-            "EndTime": endTime ? moment(endTime).format("HH:mm:ss") : "",
-            "CustomerName": rows[i].Job?.Customer?.Type === "Company"
-                ? rows[i].Job?.Customer?.CompanyName
-                : `${rows[i].Job?.Customer?.GivenName} ${rows[i].Job?.Customer?.FamilyName}`,
-            "CustomerPhone": rows[i]?.Job?.Customer?.Phone,
-            "JobID": rows[i].Job?.ID,
-            "SiteID": rows[i].Job?.Site?.ID,
-            "SiteName": rows[i].Job?.Site?.Name,
-            "SiteContact": rows[i].Job?.SiteContact?.CompanyName
-                ? rows[i].Job?.SiteContact?.CompanyName
-                : rows[i].Job?.SiteContact?.GivenName
-                    ? `${rows[i].Job?.SiteContact?.GivenName} ${rows[i]?.Job?.SiteContact?.FamilyName}`
-                    : rows[i].Job?.Customer?.Type === "Company"
-                        ? rows[i].Job?.Customer?.CompanyName
-                        : `${rows[i].Job?.Customer?.GivenName} ${rows[i].Job?.Customer?.FamilyName}`,
-            "CostCenterName": rows[i].CostCenter?.Name || "",
-            "CustomerEmail": rows[i].Job?.Customer?.Email || "",
-            "JobName": rows[i].Job?.Name || "",
-            "ProjectManager": rows[i].Job?.ProjectManager?.Name || "",
-            "Zone": rows[i].Job?.CustomFields?.find(field => field?.CustomField?.Name === "Zone (ie, North/East, West)")?.Value,
-            "JobTrade": rows[i].Job?.CustomFields?.find(field => field?.CustomField?.Name === "Job Trade (ie, Plumbing, Drainage, Roofing)")?.Value,
-            "ScheduleNotes": rows[i].Notes ? htmlToText(rows[i].Notes || "") : '',
-            "Percentage Client Invoice Claimed (From Simpro)": Math.round(((rows[i]?.CostCenter?.Claimed?.ToDate?.Percent ?? 0) / 100) * 100) / 100,
-            "Suburb": rows[i]?.Job?.Site?.Address?.City || "",
+        const rowObj: SimproQuotationRowObjectType = {
+            "QuoteID": rows[i].ID,
+            "QuoteName": rows[i].Name,
+            "Status": rows[i].Status?.Name,
+            "Customer": rows[i].Customer?.CompanyName ? rows[i].Customer?.CompanyName : (rows[i].Customer?.GivenName + " " + rows[i].Customer?.FamilyName),
+            "Site": rows[i].Site?.Name,
+            "SellPrice(IncTax)": rows[i].Total?.IncTax?.toString(),
+            "SalesPerson": rows[i].Salesperson?.Name,
+            "QuoteStage": rows[i].Stage,
+            "Tags": rows[i].Tags.reduce(
+                (accumulator, tagItem, index, array) =>
+                    accumulator + tagItem.Name + (index < array.length - 1 ? ", \n" : ""),
+                ""
+            ),
+            "CreatedDate": rows[i].DateIssued?.toString(),
+            "DueDate": rows[i].DueDate?.toString(),
+            "QuoteChasedBy": (rows[i].CustomFields?.find(customFieldItem => customFieldItem.CustomField?.Name == "Quote chased by")?.Value)?.toString(),
+            "NewQuoteOrVariation": (rows[i].CustomFields?.find(customFieldItem => customFieldItem.CustomField?.Name == "New Quote or Variation")?.Value)?.toString(),
+            "Priority": (rows[i].CustomFields?.find(customFieldItem => customFieldItem.CustomField?.Name == "Priority")?.Value)?.toString(),
+            "Lead": rows[i].ConvertedFromLead?.LeadName,
         };
 
+
         const options: SmartsheetSheetRowsType = {
-            cells: (Object.keys(rowObj) as (keyof SimproScheduleRowObjectType)[]).map(columnName => {
+            cells: (Object.keys(rowObj) as (keyof SimproQuotationRowObjectType)[]).map(columnName => {
                 const column = columns.find(i => i.title === columnName);
                 return {
                     columnId: column?.id || null,
@@ -302,7 +286,7 @@ export const convertSimproQuotationDataToSmartsheetFormatForUpdate = (
         if (quoteIdRowIdMap && Object.keys(quoteIdRowIdMap).length) {
             const rowId = quoteIdRowIdMap[rows[i]?.ID?.toString()];
             if (rowId) {
-                options.id = parseInt(rowId, 10);
+                options.id = parseInt(rowId, 10); 
                 convertedData.push(options);
             }
         }

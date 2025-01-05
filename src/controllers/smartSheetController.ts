@@ -3,6 +3,8 @@ const SmartsheetClient = require('smartsheet');
 import { Document } from 'mongoose';
 import SmartsheetTaskTrackingModel from '../models/smartsheetTaskTrackingModel';
 import {
+    ExistingLeadsType,
+    ExistingQuotationType,
     ExistingScheduleType,
     SmartsheetColumnType,
     SmartsheetRowCellType,
@@ -23,6 +25,8 @@ import {
     convertSimproScheduleDataToSmartsheetFormatForUpdate,
     convertSimproQuotationDataToSmartsheetFormat,
     convertSimproLeadsDataToSmartsheetFormat,
+    convertSimproQuotationDataToSmartsheetFormatForUpdate,
+    convertSimproLeadsDataToSmartsheetFormatForUpdate,
 } from '../utils/transformSimproToSmartsheetHelper';
 import axiosSimPRO from '../config/axiosSimProConfig';
 
@@ -367,6 +371,7 @@ export const updateExistingRecordsInJobCardSheet = async (
 
 export const addOpenQuotesDataToSmartsheet = async (rows: SimproQuotationType[]) => {
     try {
+        console.log("Fethced Quotation data length: ", rows.length);
         const sheetInfo = await smartsheet.sheets.getSheet({ id: ongoingQuotationSheetId });
         const columns = sheetInfo.columns;
         let rowsToAdd: SimproQuotationType[] = [];
@@ -390,8 +395,6 @@ export const addOpenQuotesDataToSmartsheet = async (rows: SimproQuotationType[])
         let quoteIdToUpdate = Array.isArray(existingQuoteIdsInSheet)
             ? existingQuoteIdsInSheet.filter(scheduleId => fetchedQuoteIDs.includes(scheduleId))
             : [];
-
-        let quoteIdsNotPartOfSimproResponse = Array.isArray(fetchedQuoteIDs) ? existingQuoteIdsInSheet.filter(scheduleId => !fetchedQuoteIDs.includes(scheduleId)) : [];
 
 
         let quoteIdToAdd = Array.isArray(fetchedQuoteIDs) ? fetchedQuoteIDs.filter(scheduleId => !existingQuoteIdsInSheet.includes(scheduleId)) : [];
@@ -427,9 +430,70 @@ export const addOpenQuotesDataToSmartsheet = async (rows: SimproQuotationType[])
             }
         }
 
-        // if (rowsToUpdate.length) {
-        //     await updateExistingRecordsInJobCardSheet(rowsToUpdate, quoteIdsNotPartOfSimproResponse, ongoingQuotationSheetId)
-        // }
+        if (rowsToUpdate.length) {
+
+            let existingQuoteIdData: ExistingQuotationType[] = existingRows.map((row: SmartsheetSheetRowsType) => {
+                const quoteId = row.cells.find(cell => cell.columnId === quoteIdColumnId)?.value;
+                return quoteId ? { quoteId: Number(quoteId), rowId: row.id } : null;
+            })
+                .filter(Boolean);
+
+            // Logic to mark the quotation comments
+            const quoteIdsMarksAsDeleted: string[] = [];
+
+            const rowsToMarkDeleted = existingQuoteIdData.filter(item =>
+                quoteIdsMarksAsDeleted.includes(item.quoteId.toString())
+            );
+
+            console.log("Quotatin to mark as deleted:", rowsToMarkDeleted?.length)
+
+
+            // logic to mark the quote comment
+            if (rowsToMarkDeleted.length) {
+                let columnIdForQuoteComment = await getColumnIdForColumnName('QuoteComment', ongoingQuotationSheetId)
+                const chunks = splitIntoChunks(quoteIdsMarksAsDeleted, 300);
+                for (const chunk of chunks) {
+                    // Prepare rows for batch update
+                    const rowsToUpdateComment = chunk.map(rowId => ({
+                        id: rowId,
+                        cells: [{ columnId: columnIdForQuoteComment, value: "Not found in ongoing quotes" }],
+                    }));
+
+                    // Batch update rows
+                    await smartsheet.sheets.updateRow({
+                        sheetId: ongoingQuotationSheetId,
+                        body: rowsToUpdateComment,
+                    });
+
+                    console.log('Quote ID: Updated chunk with', chunk.length, 'rows');
+                }
+                console.log("Marking ", rowsToMarkDeleted.length, " rows as deleted")
+            }
+
+            //logic to update the data in sheet:
+            let simproIdRowIdMap: { [key: string]: string } = {};
+            rowsToUpdate.forEach(simproQuoteItem => {
+                const matchingSchedule = existingQuoteIdData.find(quoteData => quoteData.quoteId === simproQuoteItem.ID);
+                if (matchingSchedule) {
+                    simproIdRowIdMap[simproQuoteItem.ID.toString()] = matchingSchedule.rowId.toString();
+                }
+            });
+
+            let rowsToUpdateToSmartsheet = convertSimproQuotationDataToSmartsheetFormatForUpdate(rowsToUpdate, columns, simproIdRowIdMap);
+
+
+            const chunks = splitIntoChunks(rowsToUpdateToSmartsheet, 100);
+            for (const chunk of chunks) {
+                await smartsheet.sheets.updateRow({
+                    sheetId: ongoingQuotationSheetId,
+                    body: chunk
+                })
+
+                console.log("update chunk", chunk?.length)
+            }
+
+
+        }
 
         return { status: true, message: "Data added successfully" }
     } catch (err) {
@@ -441,17 +505,18 @@ export const addOpenQuotesDataToSmartsheet = async (rows: SimproQuotationType[])
 
 export const addOpenLeadsDataToSmartsheet = async (rows: SimproLeadType[]) => {
     try {
+        console.log("Number of rows of leads fetch:", rows?.length)
         const sheetInfo = await smartsheet.sheets.getSheet({ id: ongoingLeadsSheetId });
         const columns = sheetInfo.columns;
         let rowsToAdd: SimproLeadType[] = [];
         let rowsToUpdate: SimproLeadType[] = [];
 
-        let fetchedQuoteIDs = rows.map(row => row.ID);
+        let fetcgedLeads = rows.map(row => row.ID);
 
         let leadIdColumnId = await getColumnIdForColumnName("LeadID", ongoingLeadsSheetId);
         const existingRows = sheetInfo.rows;
 
-        let existingQuoteIdsInSheet: number[] = existingRows
+        let existingLeadIdsInSheet: number[] = existingRows
             .map((row: SmartsheetSheetRowsType) => {
                 const cellData = row.cells.find((cellData) => cellData.columnId === leadIdColumnId);
                 if (cellData) {
@@ -461,20 +526,19 @@ export const addOpenLeadsDataToSmartsheet = async (rows: SimproLeadType[]) => {
             })
             .filter((value: number | string | null) => value !== null);
 
-        let quoteIdToUpdate = Array.isArray(existingQuoteIdsInSheet)
-            ? existingQuoteIdsInSheet.filter(quoteId => fetchedQuoteIDs.includes(quoteId))
+        let leadIdsToUpdate = Array.isArray(existingLeadIdsInSheet)
+            ? existingLeadIdsInSheet.filter(leadId => fetcgedLeads.includes(leadId))
             : [];
 
-        let quoteIdsNotPartOfSimproResponse = Array.isArray(fetchedQuoteIDs) ? existingQuoteIdsInSheet.filter(quoteId => !fetchedQuoteIDs.includes(quoteId)) : [];
 
 
-        let quoteIdToAdd = Array.isArray(fetchedQuoteIDs) ? fetchedQuoteIDs.filter(quoteId => !existingQuoteIdsInSheet.includes(quoteId)) : [];
+        let leadIdToAdd = Array.isArray(fetcgedLeads) ? fetcgedLeads.filter(leadId => !existingLeadIdsInSheet.includes(leadId)) : [];
 
 
         rows.forEach((row) => {
-            if (quoteIdToAdd.includes(row.ID)) {
+            if (leadIdToAdd.includes(row.ID)) {
                 rowsToAdd.push(row);
-            } else if (quoteIdToUpdate.includes(row.ID)) {
+            } else if (leadIdsToUpdate.includes(row.ID)) {
                 rowsToUpdate.push(row)
             }
         })
@@ -499,6 +563,73 @@ export const addOpenLeadsDataToSmartsheet = async (rows: SimproLeadType[]) => {
                     }
                 }
             }
+        }
+
+
+        if (rowsToUpdate.length) {
+
+            let existingLeadIdData: ExistingLeadsType[] = existingRows.map((row: SmartsheetSheetRowsType) => {
+                const leadId = row.cells.find(cell => cell.columnId === leadIdColumnId)?.value;
+                return leadId ? { leadId: Number(leadId), rowId: row.id } : null;
+            })
+                .filter(Boolean);
+
+            // Logic to mark the quotation comments
+            const leadIdMarksAsDeleted: string[] = [];
+
+            const rowsToMarkDeleted = existingLeadIdData.filter(item =>
+                leadIdMarksAsDeleted.includes(item.leadId.toString())
+            );
+
+            console.log("Number of rows of to delete for leads :", rows?.length)
+
+
+
+            // logic to mark the quote comment
+            if (rowsToMarkDeleted.length) {
+                let columnIdForLeadComment = await getColumnIdForColumnName('LeadComment', ongoingLeadsSheetId)
+                const chunks = splitIntoChunks(leadIdMarksAsDeleted, 300);
+                for (const chunk of chunks) {
+                    // Prepare rows for batch update
+                    const rowsToUpdateComment = chunk.map(rowId => ({
+                        id: rowId,
+                        cells: [{ columnId: columnIdForLeadComment, value: "Not found in ongoing quotes" }],
+                    }));
+
+                    // Batch update rows
+                    await smartsheet.sheets.updateRow({
+                        sheetId: ongoingLeadsSheetId,
+                        body: rowsToUpdateComment,
+                    });
+
+                    console.log('Quote ID: Updated chunk with', chunk.length, 'rows');
+                }
+                console.log("Marking ", rowsToMarkDeleted.length, " rows as deleted")
+            }
+
+            //logic to update the data in sheet:
+            let simproIdRowIdMap: { [key: string]: string } = {};
+            rowsToUpdate.forEach(simproQuoteItem => {
+                const matchingSchedule = existingLeadIdData.find(quoteData => quoteData.leadId === simproQuoteItem.ID);
+                if (matchingSchedule) {
+                    simproIdRowIdMap[simproQuoteItem.ID.toString()] = matchingSchedule.rowId.toString();
+                }
+            });
+
+            let rowsToUpdateToSmartsheet = convertSimproLeadsDataToSmartsheetFormatForUpdate(rowsToUpdate, columns, simproIdRowIdMap);
+
+
+            const chunks = splitIntoChunks(rowsToUpdateToSmartsheet, 100);
+            for (const chunk of chunks) {
+                await smartsheet.sheets.updateRow({
+                    sheetId: ongoingLeadsSheetId,
+                    body: chunk
+                })
+
+                console.log("update chunk", chunk?.length)
+            }
+
+
         }
 
 
