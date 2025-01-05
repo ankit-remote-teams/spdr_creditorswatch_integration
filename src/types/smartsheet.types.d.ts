@@ -121,3 +121,13 @@ export type ExistingScheduleType = {
     scheduleId: number | string;
     rowId: number | string;
 }
+
+export type ExistingQuotationType = {
+    quoteId: number | string;
+    rowId: number | string;
+}
+
+export type ExistingLeadsType = {
+    leadId: number | string;
+    rowId: number | string;
+}

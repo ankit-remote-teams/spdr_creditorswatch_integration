@@ -19,7 +19,8 @@ if (process.env.NODE_ENV === 'production') {
         './cron/updateLateFeeScheduler',
         './cron/taskWorkingHourScheduler',
         './cron/jobCardScheduler',
-        './cron/jobCardMinimalUpdateScheduler'
+        './cron/jobCardMinimalUpdateScheduler',
+        './cron/ongoingQuotationsAndLeadsScheduler',
     ];
     cronJobs.forEach(job => {
         require(job);
@@ -29,8 +30,7 @@ if (process.env.NODE_ENV === 'production') {
 // For local Development
 // if (process.env.NODE_ENV === 'development') {
 //     const cronJobs = [
-//         // './cron/jobCardMinimalUpdateScheduler',
-//         './cron/jobCardTodayScheduler',
+//         './cron/ongoingQuotationsAndLeadsScheduler'
 //     ];
 //     cronJobs.forEach(job => {
 //         require(job);
