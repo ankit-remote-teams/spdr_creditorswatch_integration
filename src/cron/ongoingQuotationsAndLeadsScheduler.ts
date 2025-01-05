@@ -7,7 +7,7 @@ import { addOpenLeadsDataToSmartsheet, addOpenQuotesDataToSmartsheet } from "../
 import { ses } from "../config/awsConfig";
 
 console.log('Current time in austarlia : ', moment().format(" DD-MMM-YYYY HH:mm:ss"))
-cron.schedule("49 10 * * *", async () => {
+cron.schedule("0 8,12,18 * * *", async () => {
     try {
         console.log(`ONGOING QUOTATION SCHEDULER : Task executed at ${moment().format('YYYY-MM-DD HH:mm:ss')}`);
         console.log("Fetch ongoing quotation data")
