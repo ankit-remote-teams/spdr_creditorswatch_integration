@@ -19,7 +19,7 @@ if (process.env.NODE_ENV === 'production') {
         './cron/updateLateFeeScheduler',
         './cron/taskWorkingHourScheduler',
         './cron/jobCardScheduler',
-        './cron/jobCardMinimalUpdateScheduler',
+        // './cron/jobCardMinimalUpdateScheduler',
         './cron/ongoingQuotationsAndLeadsScheduler',
     ];
     cronJobs.forEach(job => {
