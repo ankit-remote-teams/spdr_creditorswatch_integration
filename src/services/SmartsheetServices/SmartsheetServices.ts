@@ -5,8 +5,9 @@ import { convertSimproScheduleDataToSmartsheetFormat, convertSimproScheduleDataT
 const SmartsheetClient = require('smartsheet');
 const smartSheetAccessToken: string | undefined = process.env.SMARTSHEET_ACCESS_TOKEN;
 const smartsheet = SmartsheetClient.createClient({ accessToken: smartSheetAccessToken });
-// const jobCardSheetId = process.env.JOB_CARD_SHEET_ID ? process.env.JOB_CARD_SHEET_ID : "";
-const jobCardSheetId = "398991237795716";
+const jobCardReportSheetId = process.env.JOB_CARD_SHEET_ID ? process.env.JOB_CARD_SHEET_ID : "";
+const jobCardV2SheetId = process.env.JOB_CARD_SHEET_V2_ID ? process.env.JOB_CARD_SHEET_V2_ID : "";
+// const jobCardSheetId = "398991237795716";
 
 
 export class SmartsheetService {
@@ -90,52 +91,108 @@ export class SmartsheetService {
             }
 
             if (isInvoiceAccountNameRoofing) {
-                const sheetInfo = await smartsheet.sheets.getSheet({ id: jobCardSheetId });
-                const columns = sheetInfo.columns;
-                const column = columns.find((col: SmartsheetColumnType) => col.title === "ScheduleID");
 
-                // console.log('convertedDataForSmartsheet', convertedDataForSmartsheet)
-                if (!column) {
-                    throw {
-                        message: "ScheduleID column not found in the sheet",
-                        status: 400
+                if (jobCardReportSheetId) {
+                    const sheetInfo = await smartsheet.sheets.getSheet({ id: jobCardReportSheetId });
+                    const columns = sheetInfo.columns;
+                    const column = columns.find((col: SmartsheetColumnType) => col.title === "ScheduleID");
+
+                    // console.log('convertedDataForSmartsheet', convertedDataForSmartsheet)
+                    if (!column) {
+                        throw {
+                            message: "ScheduleID column not found in the sheet",
+                            status: 400
+                        }
+                    }
+                    const scheduleIdColumnId = column.id;
+                    const existingRows: SmartsheetSheetRowsType[] = sheetInfo.rows;
+                    let scheduleDataForSmartsheet: SmartsheetSheetRowsType | undefined;
+
+                    for (let i = 0; i < existingRows.length; i++) {
+                        let currentRow = existingRows[i];
+                        const cellData = currentRow.cells.find(
+                            (cell: { columnId: string; value: any }) => cell.columnId === scheduleIdColumnId
+                        );
+                        if (cellData?.value === schedule.ID) {
+                            scheduleDataForSmartsheet = currentRow;
+                            break;
+                        }
+                    }
+
+                    if (scheduleDataForSmartsheet) {
+                        let rowIdMap: { [key: string]: string } = {};
+                        rowIdMap = {
+                            [schedule.ID.toString()]: scheduleDataForSmartsheet?.id?.toString() || "",
+                        };
+                        const convertedData = convertSimproScheduleDataToSmartsheetFormatForUpdate([schedule], columns, rowIdMap, 'full');
+
+                        await smartsheet.sheets.updateRow({
+                            sheetId: jobCardReportSheetId,
+                            body: convertedData,
+                        });
+                        // console.log('Updated row in smartsheet')
+                        console.log('Updated row in smartsheet in sheet ', jobCardReportSheetId)
+
+                    } else {
+                        const convertedDataForSmartsheet = convertSimproScheduleDataToSmartsheetFormat([schedule], columns, 'full');
+                        const newRow = convertedDataForSmartsheet[0];
+                        await smartsheet.sheets.addRows({
+                            sheetId: jobCardReportSheetId,
+                            body: convertedDataForSmartsheet,
+                        });
+                        console.log('Added row in smartsheet in sheeet', jobCardReportSheetId)
                     }
                 }
-                const scheduleIdColumnId = column.id;
-                const existingRows: SmartsheetSheetRowsType[] = sheetInfo.rows;
-                let scheduleDataForSmartsheet: SmartsheetSheetRowsType | undefined;
 
-                for (let i = 0; i < existingRows.length; i++) {
-                    let currentRow = existingRows[i];
-                    const cellData = currentRow.cells.find(
-                        (cell: { columnId: string; value: any }) => cell.columnId === scheduleIdColumnId
-                    );
-                    if (cellData?.value === schedule.ID) {
-                        scheduleDataForSmartsheet = currentRow;
-                        break;
+                if (jobCardV2SheetId) {
+                    const sheetInfo = await smartsheet.sheets.getSheet({ id: jobCardV2SheetId });
+                    const columns = sheetInfo.columns;
+                    const column = columns.find((col: SmartsheetColumnType) => col.title === "ScheduleID");
+
+                    // console.log('convertedDataForSmartsheet', convertedDataForSmartsheet)
+                    if (!column) {
+                        throw {
+                            message: "ScheduleID column not found in the sheet",
+                            status: 400
+                        }
                     }
-                }
+                    const scheduleIdColumnId = column.id;
+                    const existingRows: SmartsheetSheetRowsType[] = sheetInfo.rows;
+                    let scheduleDataForSmartsheet: SmartsheetSheetRowsType | undefined;
 
-                if (scheduleDataForSmartsheet) {
-                    let rowIdMap: { [key: string]: string } = {};
-                    rowIdMap = {
-                        [schedule.ID.toString()]: scheduleDataForSmartsheet?.id?.toString() || "",
-                    };
-                    const convertedData = convertSimproScheduleDataToSmartsheetFormatForUpdate([schedule], columns, rowIdMap, 'full');
+                    for (let i = 0; i < existingRows.length; i++) {
+                        let currentRow = existingRows[i];
+                        const cellData = currentRow.cells.find(
+                            (cell: { columnId: string; value: any }) => cell.columnId === scheduleIdColumnId
+                        );
+                        if (cellData?.value === schedule.ID) {
+                            scheduleDataForSmartsheet = currentRow;
+                            break;
+                        }
+                    }
 
-                    await smartsheet.sheets.updateRow({
-                        sheetId: jobCardSheetId,
-                        body: convertedData,
-                    });
-                    console.log('Updated row in smartsheet')
-                } else {
-                    const convertedDataForSmartsheet = convertSimproScheduleDataToSmartsheetFormat([schedule], columns, 'full');
-                    const newRow = convertedDataForSmartsheet[0];
-                    await smartsheet.sheets.addRows({
-                        sheetId: jobCardSheetId,
-                        body: convertedDataForSmartsheet,
-                    });
-                    console.log('Added row in smartsheet')
+                    if (scheduleDataForSmartsheet) {
+                        let rowIdMap: { [key: string]: string } = {};
+                        rowIdMap = {
+                            [schedule.ID.toString()]: scheduleDataForSmartsheet?.id?.toString() || "",
+                        };
+                        const convertedData = convertSimproScheduleDataToSmartsheetFormatForUpdate([schedule], columns, rowIdMap, 'full');
+
+                        await smartsheet.sheets.updateRow({
+                            sheetId: jobCardV2SheetId,
+                            body: convertedData,
+                        });
+                        console.log('Updated row in smartsheet in sheet ', jobCardV2SheetId)
+                    } else {
+                        const convertedDataForSmartsheet = convertSimproScheduleDataToSmartsheetFormat([schedule], columns, 'full');
+                        const newRow = convertedDataForSmartsheet[0];
+                        await smartsheet.sheets.addRows({
+                            sheetId: jobCardV2SheetId,
+                            body: convertedDataForSmartsheet,
+                        });
+                        console.log('Added row in smartsheet in sheeet', jobCardV2SheetId)
+
+                    }
                 }
             }
 
@@ -151,38 +208,80 @@ export class SmartsheetService {
     static async handleDeleteScheduleInSmartsheet(webhookData: SimproWebhookType) {
         try {
             const { scheduleID, jobID, sectionID } = webhookData.reference;
-            const sheetInfo = await smartsheet.sheets.getSheet({ id: jobCardSheetId });
-            const columns = sheetInfo.columns;
-            const scheduleColumn = columns.find((col: SmartsheetColumnType) => col.title === "ScheduleID");
-            const scheduleIdColumnId = scheduleColumn.id;
-            const scheduleCommentColumn = columns.find((col: SmartsheetColumnType) => col.title === "ScheduleComment");
-            const scheduleCommentColumnId = scheduleCommentColumn.id;
-            let scheduleDataForSmartsheet: SmartsheetSheetRowsType | undefined;
-            const existingRows: SmartsheetSheetRowsType[] = sheetInfo.rows;
+
+            if (jobCardReportSheetId) {
+                const sheetInfo = await smartsheet.sheets.getSheet({ id: jobCardReportSheetId });
+                const columns = sheetInfo.columns;
+                const scheduleColumn = columns.find((col: SmartsheetColumnType) => col.title === "ScheduleID");
+                const scheduleIdColumnId = scheduleColumn.id;
+                const scheduleCommentColumn = columns.find((col: SmartsheetColumnType) => col.title === "ScheduleComment");
+                const scheduleCommentColumnId = scheduleCommentColumn.id;
+                let scheduleDataForSmartsheet: SmartsheetSheetRowsType | undefined;
+                const existingRows: SmartsheetSheetRowsType[] = sheetInfo.rows;
 
 
-            for (let i = 0; i < existingRows.length; i++) {
-                let currentRow = existingRows[i];
-                const cellData = currentRow.cells.find(
-                    (cell: { columnId: string; value: any }) => cell.columnId === scheduleIdColumnId
-                );
-                if (cellData?.value === scheduleID) {
-                    scheduleDataForSmartsheet = currentRow;
-                    break;
+                for (let i = 0; i < existingRows.length; i++) {
+                    let currentRow = existingRows[i];
+                    const cellData = currentRow.cells.find(
+                        (cell: { columnId: string; value: any }) => cell.columnId === scheduleIdColumnId
+                    );
+                    if (cellData?.value === scheduleID) {
+                        scheduleDataForSmartsheet = currentRow;
+                        break;
+                    }
                 }
+
+                const rowsToUpdate = [{
+                    id: scheduleDataForSmartsheet?.id,
+                    cells: [{ columnId: scheduleCommentColumnId, value: "Deleted from Simpro" }],
+                }]
+
+                await smartsheet.sheets.updateRow({
+                    sheetId: jobCardReportSheetId,
+                    body: rowsToUpdate,
+                });
+
+                console.log('delete comment added to the schedule in smartsheet', jobCardReportSheetId)
+
             }
 
-            const rowsToUpdate = [{
-                id: scheduleDataForSmartsheet?.id,
-                cells: [{ columnId: scheduleCommentColumnId, value: "Deleted from Simpro" }],
-            }]
 
-            await smartsheet.sheets.updateRow({
-                sheetId: jobCardSheetId,
-                body: rowsToUpdate,
-            });
 
-            console.log('delete comment added to the schedule in smartsheet')
+            if (jobCardV2SheetId) {
+                const sheetInfo = await smartsheet.sheets.getSheet({ id: jobCardV2SheetId });
+                const columns = sheetInfo.columns;
+                const scheduleColumn = columns.find((col: SmartsheetColumnType) => col.title === "ScheduleID");
+                const scheduleIdColumnId = scheduleColumn.id;
+                const scheduleCommentColumn = columns.find((col: SmartsheetColumnType) => col.title === "ScheduleComment");
+                const scheduleCommentColumnId = scheduleCommentColumn.id;
+                let scheduleDataForSmartsheet: SmartsheetSheetRowsType | undefined;
+                const existingRows: SmartsheetSheetRowsType[] = sheetInfo.rows;
+
+
+                for (let i = 0; i < existingRows.length; i++) {
+                    let currentRow = existingRows[i];
+                    const cellData = currentRow.cells.find(
+                        (cell: { columnId: string; value: any }) => cell.columnId === scheduleIdColumnId
+                    );
+                    if (cellData?.value === scheduleID) {
+                        scheduleDataForSmartsheet = currentRow;
+                        break;
+                    }
+                }
+
+                const rowsToUpdate = [{
+                    id: scheduleDataForSmartsheet?.id,
+                    cells: [{ columnId: scheduleCommentColumnId, value: "Deleted from Simpro" }],
+                }]
+
+                await smartsheet.sheets.updateRow({
+                    sheetId: jobCardV2SheetId,
+                    body: rowsToUpdate,
+                });
+
+                console.log('delete comment added to the schedule in smartsheet', jobCardV2SheetId)
+            }
+
         } catch (err) {
             console.log("Error in the delete schedule simpro webhook", err);
             throw {
