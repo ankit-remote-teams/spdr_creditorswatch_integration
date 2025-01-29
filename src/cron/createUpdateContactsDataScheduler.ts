@@ -99,7 +99,7 @@ export const updateContactsData = async () => {
             console.log('CONTACT SCHEDULER : Error syncing contact data:', error.response?.data || error.message);
             throw { message: error.message, data: error?.response?.data }
         } else {
-            console.log('CONTACT SCHEDULER : Unexpected error:', error);
+            console.log('CONTACT SCHEDULER : Unexpected error:', error?.details);
             throw error;
         }
     }

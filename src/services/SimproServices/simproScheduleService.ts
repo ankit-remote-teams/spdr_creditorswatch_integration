@@ -60,9 +60,9 @@ export const fetchScheduleData = async () => {
                             fetchedJobData.Site = siteResponseData;
                         }
                         let jobTradeValue = fetchedJobData?.CustomFields?.find(field => field?.CustomField?.Name === "Job Trade (ie, Plumbing, Drainage, Roofing)")?.Value;
-                        if (jobTradeValue == 'Roofing') {
-                            jobIdsToAddArray.push(fetchedJobData.ID)
-                        }
+                        // if (jobTradeValue == 'Roofing') {
+                        //     jobIdsToAddArray.push(fetchedJobData.ID)
+                        // }
                         schedule.Job = fetchedJobData;
                         if (schedule?.Job?.Customer) {
                             const customerId = schedule.Job.Customer.ID?.toString();

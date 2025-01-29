@@ -2,13 +2,15 @@ import { AxiosError } from 'axios';
 import { Request, Response } from 'express';
 import { fetchSimproPaginatedData } from '../services/SimproServices/simproPaginationService';
 import moment from 'moment';
+import { SmartsheetService } from '../services/SmartsheetServices/SmartsheetServices';
 import {
     SimproAccountType,
     SimproCustomerType,
     SimproJobType,
     SimproLeadType,
     SimproQuotationType,
-    SimproScheduleType
+    SimproScheduleType,
+    SimproWebhookType
 } from '../types/simpro.types';
 import axiosSimPRO from '../config/axiosSimProConfig';
 import {
@@ -22,7 +24,7 @@ import { fetchSimproQuotationData } from '../services/SimproServices/simproQuota
 import { fetchSimproLeadsData } from '../services/SimproServices/simproLeadsService';
 const jobCardReportSheetId = process.env.JOB_CARD_SHEET_ID ? process.env.JOB_CARD_SHEET_ID : "";
 const jobCardV2SheetId = process.env.JOB_CARD_SHEET_V2_ID ? process.env.JOB_CARD_SHEET_V2_ID : "";
-
+let jobCardWebhookTestSheetId = 398991237795716;
 
 export const fetchScheduleDataForExistingScheduleIds = async (scheduleIds: number[], fetchType: string) => {
     try {
@@ -200,17 +202,18 @@ export const getJobCardReport = async (req: Request, res: Response) => {
         let fetchedSimproSchedulesData: SimproScheduleType[] = await fetchScheduleData();
         console.log("fetch completed for new data")
 
-        console.log("Adding new records to smartsheet through manual api trigger for sheet v1")
-        let responseOneFromSmartsheet = await addJobCardDataToSmartsheet(fetchedSimproSchedulesData, jobCardReportSheetId);
+        console.log("Adding new records to smartsheet through manual api trigger for sheet v1", jobCardWebhookTestSheetId)
+        let responseOneFromSmartsheet = await addJobCardDataToSmartsheet(fetchedSimproSchedulesData, jobCardWebhookTestSheetId.toString());
 
 
         console.log("Adding new records to smartsheet through manual api trigger for sheet v2")
-        let responseTwoFromSmartsheet = await addJobCardDataToSmartsheet(fetchedSimproSchedulesData, jobCardV2SheetId);
+        // let responseTwoFromSmartsheet = await addJobCardDataToSmartsheet(fetchedSimproSchedulesData, jobCardV2SheetId);
 
 
         console.log("Completed: Adding new records to smartsheet")
 
-        if (responseOneFromSmartsheet?.status && responseTwoFromSmartsheet?.status) {
+        // if (responseOneFromSmartsheet?.status && responseTwoFromSmartsheet?.status) { // original code
+        if (responseOneFromSmartsheet?.status) {
             res.status(200).json({ fetchedSimproSchedulesData });
         } else {
             throw {
@@ -337,3 +340,58 @@ export const getMinimalJobReport = async (req: Request, res: Response) => {
         }
     }
 };
+
+
+export const simproWebhookHandler = async (req: Request, res: Response): Promise<void> => {
+    try {
+        console.log('POST /simpro/webhooks', req.body);
+        const webhookData: SimproWebhookType = req.body;
+
+        if (webhookData.ID === "job.schedule.created" || webhookData.ID === "job.schedule.updated") {
+            console.log("Schedule Create ", webhookData);
+            await SmartsheetService.handleAddUpdateScheduleToSmartsheet(webhookData);
+        } else if (webhookData.ID === "job.schedule.deleted") {
+            console.log("Schedule Deleted ", webhookData);
+            await SmartsheetService.handleDeleteScheduleInSmartsheet(webhookData);
+        }
+
+        // Send successful response
+        res.status(200).json({ message: "Simpro webhook processed successfully" });
+
+    } catch (err) {
+        // Handle AxiosError specifically
+        if (err instanceof AxiosError) {
+            console.error("Error during Axios request:", err.response?.data);
+            res.status(err.response?.status || 500).send({
+                message: 'Error from Axios request',
+                details: err.response?.data
+            });
+        } else {
+            // General error handling
+            console.error("Internal Server Error:", err);
+            res.status(500).send({
+                message: `Internal Server Error : ${JSON.stringify(err)}`
+            });
+        }
+    }
+}
+
+export const updateExistingSheetDataForSchedules = async (req: Request, res: Response): Promise<void> => {
+    try {
+
+    } catch (err: any) {
+        if (err instanceof AxiosError) {
+            console.error("Error during Axios request:", err.response?.data);
+            res.status(err.response?.status || 500).send({
+                message: 'Error from Axios request',
+                details: err.response?.data
+            });
+        } else {
+            // General error handling
+            console.error("Internal Server Error:", err);
+            res.status(500).send({
+                message: `Internal Server Error : ${JSON.stringify(err)}`
+            });
+        }
+    }
+}

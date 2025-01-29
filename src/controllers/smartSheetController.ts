@@ -123,13 +123,13 @@ export const handleTotalHourWebhookEvent = async (event: ISmartsheetEvent): Prom
 
 // Function to get column ID for a column name
 const getColumnIdForColumnName = async (columnName: string, sheetId: string): Promise<number> => {
-    // console.log('Get column id for column name', columnName);
+    console.log('Get column id for column name', columnName);
     try {
         const columns = await smartsheet.sheets.getColumns({ sheetId });
-
+        console.log('columns ', columns.length)
         // Specify the type of 'col' as 'Column' in the 'find' method callback
         const column = columns.data.find((col: SmartsheetColumnType) => col.title === columnName);
-
+        console.log('column:', column)
         if (column) {
             return column.id;
         } else {
@@ -165,8 +165,9 @@ export const addJobCardDataToSmartsheet = async (rows: SimproScheduleType[], sma
         let rowsToUpdate: SimproScheduleType[] = [];
 
         let fetchedScheduleIDs = rows.map(row => row.ID);
-
+        console.log('fetchedScheduleIDs: ', fetchedScheduleIDs.length)
         let scheduleIdColumnId = await getColumnIdForColumnName("ScheduleID", smartsheetId);
+        console.log('scheduleIdColumnId', scheduleIdColumnId)
         const existingRows = sheetInfo.rows;
 
         let existingScheduleIdsInSheet: number[] = existingRows
