@@ -14,7 +14,7 @@ const axiosSimPRO: AxiosInstance = axios.create({
 // Request Interceptor
 axiosSimPRO.interceptors.request.use(
     (config) => {
-        // console.log('Request to SimPRO:', config.url);
+        console.log('Request to SimPRO:', config.url);
         return config;
     },
     (error) => {

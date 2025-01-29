@@ -286,3 +286,20 @@ type SimproLeadType = {
     CustomFields?: SimproCustomFieldWithValue[];
 };
 
+type SimproWebhookReference = {
+    companyID: number;
+    scheduleID: number;
+    jobID: number;
+    sectionID: number;
+    costCenterID: number;
+  };
+  
+  type SimproWebhookType = {
+    ID: string;
+    build: string;
+    description: string;
+    name: string;
+    action: 'created' | 'updated' | 'deleted';
+    reference: SimproWebhookReference;
+    date_triggered: string; // ISO 8601 date string
+  };
