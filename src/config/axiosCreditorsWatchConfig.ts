@@ -17,7 +17,7 @@ const axiosCreditorsWatch: AxiosInstance = axios.create({
         'Accept': 'application/vnd.creditorwatchcollect.com.au; version=1',
         Authorization: `Token token="${AUTH_TOKEN}", email="${USER_EMAIL}"`,
     },
-    timeout: 100000,
+    timeout: 600000,
 });
 
 // Request Interceptor

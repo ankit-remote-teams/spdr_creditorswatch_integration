@@ -122,10 +122,10 @@ export const fetchScheduleDataForExistingScheduleIds = async (scheduleIds: numbe
                             let siteResponseData = siteResponse.data;
                             fetchedJobData.Site = siteResponseData;
                         }
-                        let jobTradeValue = fetchedJobData?.CustomFields?.find(field => field?.CustomField?.Name === "Job Trade (ie, Plumbing, Drainage, Roofing)")?.Value;
-                        if (jobTradeValue == 'Roofing') {
-                            jobIdsToAddArray.push(fetchedJobData.ID)
-                        }
+                        // let jobTradeValue = fetchedJobData?.CustomFields?.find(field => field?.CustomField?.Name === "Job Trade (ie, Plumbing, Drainage, Roofing)")?.Value;
+                        // if (jobTradeValue == 'Roofing') {
+                        //     jobIdsToAddArray.push(fetchedJobData.ID)
+                        // }
                         schedule.Job = fetchedJobData;
 
                         if (schedule?.Job?.Customer) {
