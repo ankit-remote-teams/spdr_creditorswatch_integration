@@ -169,6 +169,10 @@ const updateTaskHourInSmartSheet = async (): Promise<void> => {
 
 // Schedule the task using cron
 cron.schedule("*/10 * * * *", async () => {
-    console.log(`TASK HOUR SHEET : Task executed at ${moment().format('YYYY-MM-DD HH:mm:ss')}`);
-    await updateTaskHourInSmartSheet();
+    try {
+        console.log(`TASK HOUR SHEET : Task executed at ${moment().format('YYYY-MM-DD HH:mm:ss')}`);
+        await updateTaskHourInSmartSheet();
+    } catch (err: any) {
+        console.log("Error in task working hours scheduler")
+    }
 });
