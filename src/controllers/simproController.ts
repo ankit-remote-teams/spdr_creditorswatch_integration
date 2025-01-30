@@ -22,6 +22,7 @@ import {
 import { fetchScheduleData, fetchScheduleMinimal } from '../services/SimproServices/simproScheduleService';
 import { fetchSimproQuotationData } from '../services/SimproServices/simproQuotationService';
 import { fetchSimproLeadsData } from '../services/SimproServices/simproLeadsService';
+import { simproWebhookQueue } from '../queues/queue';
 const jobCardReportSheetId = process.env.JOB_CARD_SHEET_ID ? process.env.JOB_CARD_SHEET_ID : "";
 const jobCardV2SheetId = process.env.JOB_CARD_SHEET_V2_ID ? process.env.JOB_CARD_SHEET_V2_ID : "";
 let jobCardWebhookTestSheetId = 398991237795716;
@@ -347,13 +348,15 @@ export const simproWebhookHandler = async (req: Request, res: Response): Promise
         console.log('POST /simpro/webhooks', req.body);
         const webhookData: SimproWebhookType = req.body;
 
-        if (webhookData.ID === "job.schedule.created" || webhookData.ID === "job.schedule.updated") {
-            console.log("Schedule Create ", webhookData);
-            await SmartsheetService.handleAddUpdateScheduleToSmartsheet(webhookData);
-        } else if (webhookData.ID === "job.schedule.deleted") {
-            console.log("Schedule Deleted ", webhookData);
-            await SmartsheetService.handleDeleteScheduleInSmartsheet(webhookData);
-        }
+        await simproWebhookQueue.add({ webhookData })
+
+        // if (webhookData.ID === "job.schedule.created" || webhookData.ID === "job.schedule.updated") {
+        //     console.log("Schedule Create ", webhookData);
+        //     await SmartsheetService.handleAddUpdateScheduleToSmartsheet(webhookData);
+        // } else if (webhookData.ID === "job.schedule.deleted") {
+        //     console.log("Schedule Deleted ", webhookData);
+        //     await SmartsheetService.handleDeleteScheduleInSmartsheet(webhookData);
+        // }
 
         // Send successful response
         res.status(200).json({ message: "Simpro webhook processed successfully" });

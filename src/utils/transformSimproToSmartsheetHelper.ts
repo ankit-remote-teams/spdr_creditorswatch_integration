@@ -61,6 +61,7 @@ export const convertSimproScheduleDataToSmartsheetFormatForUpdate = (
                 "ProjectManager": rows[i].Job?.ProjectManager?.Name || "",
                 "Zone": rows[i].Job?.CustomFields?.find(field => field?.CustomField?.Name === "Zone (ie, North/East, West)")?.Value,
                 "JobTrade": rows[i].Job?.CustomFields?.find(field => field?.CustomField?.Name === "Job Trade (ie, Plumbing, Drainage, Roofing)")?.Value,
+                "Roof Double or Single": rows[i].Job?.CustomFields?.find(field => field?.CustomField?.Name === "Roofing Job Type")?.Value,
                 "ScheduleNotes": rows[i].Notes ? htmlToText(rows[i].Notes || "") : '',
                 "Percentage Client Invoice Claimed (From Simpro)": Math.round(((rows[i]?.CostCenter?.Claimed?.ToDate?.Percent ?? 0) / 100) * 100) / 100,
                 "Suburb": rows[i]?.Job?.Site?.Address?.City || "",
@@ -158,6 +159,7 @@ export const convertSimproScheduleDataToSmartsheetFormat = (
                 "ProjectManager": rows[i].Job?.ProjectManager?.Name || "",
                 "Zone": rows[i].Job?.CustomFields?.find(field => field?.CustomField?.Name === "Zone (ie, North/East, West)")?.Value,
                 "JobTrade": rows[i].Job?.CustomFields?.find(field => field?.CustomField?.Name === "Job Trade (ie, Plumbing, Drainage, Roofing)")?.Value,
+                "Roof Double or Single": rows[i].Job?.CustomFields?.find(field => field?.CustomField?.Name === "Roofing Job Type")?.Value,
                 "ScheduleNotes": rows[i].Notes ? htmlToText(rows[i].Notes || "") : '',
                 "Percentage Client Invoice Claimed (From Simpro)": Math.round(((rows[i]?.CostCenter?.Claimed?.ToDate?.Percent ?? 0) / 100) * 100) / 100,
                 "Suburb": rows[i]?.Job?.Site?.Address?.City || "",
@@ -199,7 +201,7 @@ export const convertSimproScheduleDataToSmartsheetFormat = (
 };
 
 export const convertSimproQuotationDataToSmartsheetFormat = (
-    rows: SimproQuotationType[], 
+    rows: SimproQuotationType[],
     columns: SmartsheetColumnType[]
 ) => {
     let convertedData: SmartsheetSheetRowsType[] = [];
@@ -286,7 +288,7 @@ export const convertSimproQuotationDataToSmartsheetFormatForUpdate = (
         if (quoteIdRowIdMap && Object.keys(quoteIdRowIdMap).length) {
             const rowId = quoteIdRowIdMap[rows[i]?.ID?.toString()];
             if (rowId) {
-                options.id = parseInt(rowId, 10); 
+                options.id = parseInt(rowId, 10);
                 convertedData.push(options);
             }
         }

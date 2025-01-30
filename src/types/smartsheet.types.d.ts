@@ -72,6 +72,7 @@ export type SimproScheduleRowObjectType = {
     ProjectManager?: string | undefined;
     Zone?: string | number | null | undefined;
     JobTrade?: string | number | null | undefined;
+    "Roof Double or Single"?: string | number | null | undefined;
     ScheduleNotes?: string | null | undefined;
     "Percentage Client Invoice Claimed (From Simpro)"?: number | null | undefined;
     Suburb?: string | null | undefined;
