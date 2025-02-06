@@ -159,6 +159,7 @@ export const fetchScheduleDataForExistingScheduleIds = async (scheduleIds: numbe
                         if (setupCostCenterData?.IncomeAccountNo) {
                             let incomeAccountName = chartOfAccountsArray?.find(account => account?.Number == setupCostCenterData?.IncomeAccountNo)?.Name;
                             if (incomeAccountName == "Roofing Income") {
+                                console.log('CostCenterId For Roofing Income 5', costCenterIdForSchedule, jobIdForScheduleFetched)
                                 jobIdsToAddArray.push(jobIdForScheduleFetched)
                             }
                         }

@@ -94,6 +94,7 @@ export const fetchScheduleData = async () => {
                         if (setupCostCenterData?.IncomeAccountNo) {
                             let incomeAccountName = chartOfAccountsArray?.find(account => account?.Number == setupCostCenterData?.IncomeAccountNo)?.Name;
                             if (incomeAccountName == "Roofing Income") {
+                                console.log('CostCenterId For Roofing Income 3', costCenterIdForSchedule, jobIdForScheduleFetched)
                                 jobIdsToAddArray.push(jobIdForScheduleFetched)
                             }
                         }
@@ -246,6 +247,7 @@ export const fetchCurrentDateScheduleData = async () => {
                         if (setupCostCenterData?.IncomeAccountNo) {
                             let incomeAccountName = chartOfAccountsArray?.find(account => account?.Number == setupCostCenterData?.IncomeAccountNo)?.Name;
                             if (incomeAccountName == "Roofing Income") {
+                                console.log('CostCenterId For Roofing Income 2', costCenterIdForSchedule, jobIdForScheduleFetched)
                                 jobIdsToAddArray.push(jobIdForScheduleFetched)
                             }
                         }
@@ -323,7 +325,7 @@ export const fetchNextDateScheduleData = async () => {
         }
 
         if (Object.keys(simproCustomerMap).length) {
-            const nextDate = moment().add(1,'days').format("YYYY-MM-DD");
+            const nextDate = moment().add(1, 'days').format("YYYY-MM-DD");
             const url = `/schedules/?Type=job&Date=${nextDate}&pageSize=100`;
             let fetchedSimproSchedulesData: SimproScheduleType[] = await fetchSimproPaginatedData(url, "ID,Type,Reference,Staff,Date,Blocks,Notes");
             let jobIdsToAddArray: number[] = []
@@ -377,6 +379,7 @@ export const fetchNextDateScheduleData = async () => {
                         if (setupCostCenterData?.IncomeAccountNo) {
                             let incomeAccountName = chartOfAccountsArray?.find(account => account?.Number == setupCostCenterData?.IncomeAccountNo)?.Name;
                             if (incomeAccountName == "Roofing Income") {
+                                console.log('CostCenterId For Roofing Income 1', costCenterIdForSchedule, jobIdForScheduleFetched)
                                 jobIdsToAddArray.push(jobIdForScheduleFetched)
                             }
                         }
