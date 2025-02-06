@@ -78,7 +78,7 @@ export class SmartsheetService {
             let setupCostCenterID = costCenterDataForSchedule.data[0]?.CostCenter?.ID;
             let fetchedSetupCostCenterData = await axiosSimPRO.get(`/setup/accounts/costCenters/${setupCostCenterID}?columns=ID,Name,IncomeAccountNo`);
             let setupCostCenterData = fetchedSetupCostCenterData.data;
-            console.log('CostCenterId IncomeAccountNo', costCenterID, setupCostCenterData?.IncomeAccountNo)
+            console.log('CostCenterId IncomeAccountNo', costCenterID, setupCostCenterData);
 
             if (setupCostCenterData?.IncomeAccountNo) {
                 let incomeAccountName = chartOfAccountsArray?.find(account => account?.Number == setupCostCenterData?.IncomeAccountNo)?.Name;
@@ -93,6 +93,7 @@ export class SmartsheetService {
                 schedule.CostCenter = costCenterResponse.data;
             }
 
+            console.log('IsInvoiceAccountNameRoofing: ' + isInvoiceAccountNameRoofing, costCenterID, scheduleID)
             if (isInvoiceAccountNameRoofing) {
 
                 if (jobCardReportSheetId) {
