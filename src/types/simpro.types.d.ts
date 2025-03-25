@@ -46,6 +46,7 @@ export type SimproCostCenterType = {
             Amount?: SimproTotalType;
         }
     };
+    Total: SimproTotalType;
     Totals?:SimproTotalsType;
 }
 

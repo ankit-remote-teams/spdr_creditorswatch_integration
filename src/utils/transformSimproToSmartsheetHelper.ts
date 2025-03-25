@@ -134,9 +134,9 @@ export const convertSimproScheduleDataToSmartsheetFormat = (
 
         let rowObj: SimproScheduleRowObjectType;
         if (updateType == "full") {
-            const totalIncTax = rows[i]?.Job?.Total?.IncTax;
-            const invoicedVal = rows[i]?.Job?.Totals?.InvoicedValue;
-            let yetToInvoiceValue = (totalIncTax && invoicedVal ? (totalIncTax - invoicedVal) : 0) / 1.1;
+            const totalIncTax = rows[i]?.CostCenter?.Total?.IncTax;
+            const invoicedVal = rows[i]?.CostCenter?.Totals?.InvoicedValue;
+            let yetToInvoiceValue = '$'.concat(((totalIncTax && invoicedVal ? (totalIncTax - invoicedVal) : 0) / 1.1).toFixed(2));
             rowObj = {
                 "ScheduleID": rows[i].ID,
                 "ScheduleType": rows[i].Type,
@@ -166,9 +166,9 @@ export const convertSimproScheduleDataToSmartsheetFormat = (
                 "ScheduleNotes": rows[i].Notes ? htmlToText(rows[i].Notes || "") : '',
                 "Percentage Client Invoice Claimed (From Simpro)": Math.round(((rows[i]?.CostCenter?.Claimed?.ToDate?.Percent ?? 0) / 100) * 100) / 100,
                 "Suburb": rows[i]?.Job?.Site?.Address?.City || "",
-                "Job level invoiced Percent": rows[i]?.Job?.Totals?.InvoicePercentage,
-                "Costcenter level invoiced Percent": rows[i]?.CostCenter?.Totals?.InvoicePercentage,
-                "CC Yet to invoice": yetToInvoiceValue > 0 ? yetToInvoiceValue : undefined ,
+                "Job level invoiced Percent": Math.round((rows[i]?.Job?.Totals?.InvoicePercentage ?? 0) * 100) / 100,
+                "Costcenter level invoiced Percent": Math.round((rows[i]?.CostCenter?.Totals?.InvoicePercentage ?? 0) * 100) / 100,
+                "CC Yet to invoice": yetToInvoiceValue,
             };
             const options: SmartsheetSheetRowsType = {
                 cells: (Object.keys(rowObj) as (keyof SimproScheduleRowObjectType)[]).map(columnName => {

@@ -100,7 +100,7 @@ export const fetchScheduleData = async () => {
                         }
 
                         try {
-                            let costCenterResponse = await axiosSimPRO.get(`jobs/${jobIdForScheduleFetched}/sections/${sectionIdForSchedule}/costCenters/${costCenterIdForSchedule}?columns=Name,ID,Claimed,Totals`);
+                            let costCenterResponse = await axiosSimPRO.get(`jobs/${jobIdForScheduleFetched}/sections/${sectionIdForSchedule}/costCenters/${costCenterIdForSchedule}?columns=Name,ID,Claimed,Total,Totals`);
                             if (costCenterResponse) {
                                 schedule.CostCenter = costCenterResponse.data;
                             }
@@ -420,4 +420,8 @@ export const fetchNextDateScheduleData = async () => {
             throw { message: `Internal Server Error in fetching schedule data : ${JSON.stringify(err)}` }
         }
     }
+}
+
+export const fetchJobData = async () => {
+
 }
