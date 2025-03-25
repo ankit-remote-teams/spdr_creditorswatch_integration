@@ -421,3 +421,79 @@ export const fetchNextDateScheduleData = async () => {
         }
     }
 }
+
+export const fetchJobRoofingData = async () => {
+    try {
+        let jobIdsToAddArray: number[] = []
+        let fetchedChartOfAccounts = await axiosSimPRO.get('/setup/accounts/chartOfAccounts/?pageSize=250&columns=ID,Name,Number');
+        let chartOfAccountsArray: SimproAccountType[] = fetchedChartOfAccounts?.data;
+        const currentDate = moment().subtract(2, 'day').format("YYYY-MM-DD");
+        const url = `/schedules/?Type=job&Date=gt(${currentDate})&pageSize=10`;
+        let fetchedSimproSchedulesData: SimproScheduleType[] = await fetchSimproPaginatedData(url, "ID,Type,Reference,Staff,Date,Blocks,Notes");
+        for (const schedule of fetchedSimproSchedulesData) {
+            let jobIdForSchedule = schedule?.Reference?.split('-')[0];
+            let costCenterIdForSchedule = schedule?.Reference?.split('-')[1];
+            if (jobIdForSchedule) {
+                try {
+                    const jobDataForSchedule = await axiosSimPRO.get(`/jobs/${jobIdForSchedule}?columns=ID,Type,Site,SiteContact,DateIssued,Status,Total,Customer,Name,ProjectManager,CustomFields,Totals`);
+                    let fetchedJobData: SimproJobType = jobDataForSchedule?.data;
+                    console.log(fetchedJobData);
+                    schedule.Job = fetchedJobData;
+                } catch (error) {
+                    console.error(`Error fetching job data for schedule ID: ${jobIdForSchedule}`, error);
+                }
+            }
+            if (costCenterIdForSchedule) {
+                try {
+                    const costCenterDataForSchedule = await axiosSimPRO.get(`/jobCostCenters/?ID=${costCenterIdForSchedule}&columns=ID,Name,Job,Section,CostCenter`);
+                    let sectionIdForSchedule =
+                        Array.isArray(costCenterDataForSchedule?.data)
+                            ? costCenterDataForSchedule.data[0]?.Section?.ID
+                            : null;
+
+                    let jobIdForScheduleFetched =
+                        Array.isArray(costCenterDataForSchedule?.data)
+                            ? costCenterDataForSchedule.data[0]?.Job?.ID
+                            : null;
+
+                    let setupCostCenterID = costCenterDataForSchedule.data[0]?.CostCenter?.ID;
+                    let fetchedSetupCostCenterData = await axiosSimPRO.get(`/setup/accounts/costCenters/${setupCostCenterID}?columns=ID,Name,IncomeAccountNo`);
+                    let setupCostCenterData = fetchedSetupCostCenterData.data;
+                    if (setupCostCenterData?.IncomeAccountNo) {
+                        let incomeAccountName = chartOfAccountsArray?.find(account => account?.Number == setupCostCenterData?.IncomeAccountNo)?.Name;
+                        if (incomeAccountName == "Roofing Income") {
+                            console.log('CostCenterId For Roofing Income 3', costCenterIdForSchedule, jobIdForScheduleFetched)
+                            jobIdsToAddArray.push(jobIdForScheduleFetched)
+                        }
+                    }
+
+                    try {
+                        let costCenterResponse = await axiosSimPRO.get(`jobs/${jobIdForScheduleFetched}/sections/${sectionIdForSchedule}/costCenters/${costCenterIdForSchedule}?columns=Name,ID,Claimed,Total,Totals`);
+                        if (costCenterResponse) {
+                            schedule.CostCenter = costCenterResponse.data;
+                        }
+                    } catch (error) {
+                        console.log("Error in costCenterFetch : ", error)
+                    }
+                } catch (error) {
+                    console.error(`Error fetching cost center data for schedule ID: ${costCenterIdForSchedule}`, error);
+                }
+            }
+        }
+        fetchedSimproSchedulesData = fetchedSimproSchedulesData.filter(schedule =>
+            jobIdsToAddArray.includes(schedule?.Job?.ID ?? -1)
+        );
+        console.log('Filtered schedule Length: ', fetchedSimproSchedulesData.length)
+        return fetchedSimproSchedulesData || [];
+    } catch (err) {
+        if (err instanceof AxiosError) {
+            console.log("Error in fetchScheduleData as AxiosError");
+            console.log("Error details: ", err.response?.data);
+            throw { message: "Something went wrong while fetching schedule data : " + JSON.stringify(err.response) }
+        } else {
+            console.log("Error in fetchScheduleData as other error");
+            console.log("Error details: ", err);
+            throw { message: `Internal Server Error in fetching schedule data : ${JSON.stringify(err)}` }
+        }
+    }
+}
