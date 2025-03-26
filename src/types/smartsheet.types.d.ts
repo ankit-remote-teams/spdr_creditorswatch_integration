@@ -76,9 +76,6 @@ export type SimproScheduleRowObjectType = {
     ScheduleNotes?: string | null | undefined;
     "Percentage Client Invoice Claimed (From Simpro)"?: number | null | undefined;
     Suburb?: string | null | undefined;
-    "Job level invoiced Percent"?: number | null | undefined;
-    "Costcenter level invoiced Percent"?: number | null | undefined;
-    "CC Yet to invoice"?: string | null | undefined;
 }
 
 
