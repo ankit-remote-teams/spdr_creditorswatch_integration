@@ -7,7 +7,7 @@
     "start": "node ./dist/index.js",
     "build": "tsc --build",
     "test": "nodemon ./src/index.ts",
-    "start:dev": "NODE_ENV=development nodemon -L ./src/index.ts",
+    "start:dev": "cross-env NODE_ENV=development nodemon -L ./src/index.ts",
     "start:prod": "NODE_ENV=production git stash && git checkout main && git pull && npm install && npm run build && cross-env NODE_ENV=production node ./dist/index.js"
   },
   "keywords": [],
