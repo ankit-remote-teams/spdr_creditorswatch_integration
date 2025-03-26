@@ -134,9 +134,6 @@ export const convertSimproScheduleDataToSmartsheetFormat = (
 
         let rowObj: SimproScheduleRowObjectType;
         if (updateType == "full") {
-            const totalIncTax = rows[i]?.CostCenter?.Total?.IncTax;
-            const invoicedVal = rows[i]?.CostCenter?.Totals?.InvoicedValue;
-            let yetToInvoiceValue = '$'.concat(((totalIncTax && invoicedVal ? (totalIncTax - invoicedVal) : 0) / 1.1).toFixed(2));
             rowObj = {
                 "ScheduleID": rows[i].ID,
                 "ScheduleType": rows[i].Type,
@@ -168,7 +165,7 @@ export const convertSimproScheduleDataToSmartsheetFormat = (
                 "Suburb": rows[i]?.Job?.Site?.Address?.City || "",
                 "Job level invoiced Percent": Math.round((rows[i]?.Job?.Totals?.InvoicePercentage ?? 0) * 100) / 100,
                 "Costcenter level invoiced Percent": Math.round((rows[i]?.CostCenter?.Totals?.InvoicePercentage ?? 0) * 100) / 100,
-                "CC Yet to invoice": yetToInvoiceValue,
+                "CC Yet to invoice": `$${rows[i]?.CostCenter?.Claimed?.Remaining?.Amount?.ExTax.toFixed(2)}`,
             };
             const options: SmartsheetSheetRowsType = {
                 cells: (Object.keys(rowObj) as (keyof SimproScheduleRowObjectType)[]).map(columnName => {
