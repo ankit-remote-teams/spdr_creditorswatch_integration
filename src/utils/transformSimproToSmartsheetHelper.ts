@@ -416,6 +416,7 @@ export const convertSimproRoofingDataToSmartsheetFormat = (
                 Customer: customerName,
                 "Job.SiteName": row?.Job?.Site?.Name,
                 "Job.Name": row?.Job?.Name,
+                "Cost_Center.ID": row?.CostCenter?.ID,
                 "Cost_Center.Name": row?.CostCenter?.Name,
                 "Remainingamount_Ex.Tax": row?.CostCenter?.Total?.ExTax,
             }
@@ -424,8 +425,8 @@ export const convertSimproRoofingDataToSmartsheetFormat = (
                 cells: (Object.keys(rowObj) as (keyof SimproJobRoofingDetailType)[]).map(columnName => {
                     const column = columns.find(i => i.title === columnName);
                     return {
-                        columnId: column?.id || null,
-                        value: rowObj[columnName] || null,
+                        columnId: column?.id ?? null,
+                        value: rowObj[columnName] ?? null,
                     };
                 }).filter(cell => cell.columnId !== null),
             };

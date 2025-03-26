@@ -874,24 +874,24 @@ export const addJobRoofingDetailsToSmartSheet = async (rows: SimproScheduleType[
         if (rowsToAdd.length) {
             const rowsToAddToSmartSheet = convertSimproRoofingDataToSmartsheetFormat(rowsToAdd, columns, "full");
             console.log('rowsToAddToSmartSheet', rowsToAddToSmartSheet);
-            // if (rowsToAddToSmartSheet.length > 0) {
-            //     console.log('Adding the rows to sheet', rowsToAddToSmartSheet.length)
-            //     const chunks = splitIntoChunks(rowsToAddToSmartSheet, 100);
+            if (rowsToAddToSmartSheet.length > 0) {
+                console.log('Adding the rows to sheet', rowsToAddToSmartSheet.length)
+                const chunks = splitIntoChunks(rowsToAddToSmartSheet, 100);
 
-            //     for (const chunk of chunks) {
-            //         try {
-            //             await smartsheet.sheets.addRows({
-            //                 sheetId: smartsheetId,
-            //                 body: chunk,
-            //             });
+                for (const chunk of chunks) {
+                    try {
+                        await smartsheet.sheets.addRows({
+                            sheetId: smartsheetId,
+                            body: chunk,
+                        });
 
-            //             console.log(` No. of records added in this chunk: ${chunk.length}`);
-            //         } catch (err) {
-            //             console.error(' Error in adding row chunk:', err);
-            //             throw err;
-            //         }
-            //     }
-            // }
+                        console.log(` No. of records added in this chunk: ${chunk.length}`);
+                    } catch (err) {
+                        console.error(' Error in adding row chunk:', err);
+                        throw err;
+                    }
+                }
+            }
         }
 
         // if (rowsToUpdate.length) {

@@ -437,7 +437,6 @@ export const fetchJobRoofingData = async () => {
                 try {
                     const jobDataForSchedule = await axiosSimPRO.get(`/jobs/${jobIdForSchedule}?columns=ID,Type,Site,SiteContact,DateIssued,Status,Total,Customer,Name,ProjectManager,CustomFields,Totals`);
                     let fetchedJobData: SimproJobType = jobDataForSchedule?.data;
-                    console.log(fetchedJobData);
                     schedule.Job = fetchedJobData;
                 } catch (error) {
                     console.error(`Error fetching job data for schedule ID: ${jobIdForSchedule}`, error);
@@ -483,7 +482,15 @@ export const fetchJobRoofingData = async () => {
         fetchedSimproSchedulesData = fetchedSimproSchedulesData.filter(schedule =>
             jobIdsToAddArray.includes(schedule?.Job?.ID ?? -1)
         );
-        console.log('Filtered schedule Length: ', fetchedSimproSchedulesData.length)
+        const uniqueJobs = new Set();
+        fetchedSimproSchedulesData = fetchedSimproSchedulesData.filter(item => {
+            const key = `${item?.Job?.ID}-${item?.CostCenter?.ID}`;
+            if (uniqueJobs.has(key)) {
+                return false;
+            }
+            uniqueJobs.add(key);
+            return true;
+        });
         return fetchedSimproSchedulesData || [];
     } catch (err) {
         if (err instanceof AxiosError) {

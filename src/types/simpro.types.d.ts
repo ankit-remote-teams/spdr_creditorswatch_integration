@@ -45,7 +45,8 @@ export type SimproCostCenterType = {
             Percent?: number;
             Amount?: SimproTotalType;
         }
-    }
+    };
+    Total: SimproTotalType;
 }
 
 export type SimproScheduleType = {
