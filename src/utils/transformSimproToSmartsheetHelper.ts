@@ -400,25 +400,18 @@ export const convertSimproRoofingDataToSmartsheetFormat = (
 ) => {
     let convertedData: SmartsheetSheetRowsType[] = [];
     for (const row of rows) {
-        let startTime = row.Blocks.reduce(
-            (minTime, block) => minTime < block.ISO8601StartTime ? minTime : block.ISO8601StartTime,
-            row.Blocks[0].ISO8601StartTime
-        )
-        let endTime = row.Blocks.reduce(
-            (maxTime, block) => maxTime > block.ISO8601EndTime ? maxTime : block.ISO8601EndTime,
-            row.Blocks[0].ISO8601EndTime)
-    
         let rowObj: SimproJobRoofingDetailType;
         if (updateType == "full") {
-            let customerName = row.Job?.Customer?.CompanyName && row.Job?.Customer?.CompanyName.length > 0 ? row.Job?.Customer?.CompanyName : (row.Job?.Customer?.GivenName + " " + row.Job?.Customer?.FamilyName)
+            const customerName = row.Job?.Customer?.CompanyName && row.Job?.Customer?.CompanyName.length > 0 ? row.Job?.Customer?.CompanyName : (row.Job?.Customer?.GivenName + " " + row.Job?.Customer?.FamilyName)
+            const exTax = `$${row?.CostCenter?.Total?.ExTax ?? 0}`;
             rowObj = {
-                JobId: row?.Job?.ID,
+                JobID: row?.Job?.ID,
                 Customer: customerName,
                 "Job.SiteName": row?.Job?.Site?.Name,
                 "Job.Name": row?.Job?.Name,
                 "Cost_Center.ID": row?.CostCenter?.ID,
                 "Cost_Center.Name": row?.CostCenter?.Name,
-                "Remainingamount_Ex.Tax": row?.CostCenter?.Total?.ExTax,
+                "Remainingamount_Ex.Tax": exTax,
             }
             console.table(rowObj);
             const options: SmartsheetSheetRowsType = {

@@ -134,7 +134,7 @@ export type ExistingLeadsType = {
 }
 
 export type SimproJobRoofingDetailType = {
-    JobId: string | number | undefined;
+    JobID: string | number | undefined;
     Customer: string | null | undefined;
     "Job.SiteName": string | null | undefined;
     "Job.Name": string | null | undefined;
