@@ -51,7 +51,7 @@ export const fetchScheduleData = async () => {
                 if (jobIdForSchedule) {
                     try {
                         // console.log("Fetching job for schdule " + jobIdForSchedule + ' at index', i, " of ", fetchedSimproSchedulesData.length)
-                        const jobDataForSchedule = await axiosSimPRO.get(`/jobs/${jobIdForSchedule}?columns=ID,Type,Site,SiteContact,DateIssued,Status,Total,Customer,Name,ProjectManager,CustomFields`);
+                        const jobDataForSchedule = await axiosSimPRO.get(`/jobs/${jobIdForSchedule}?columns=ID,Type,Site,SiteContact,DateIssued,Status,Total,Customer,Name,ProjectManager,CustomFields,Totals`);
                         let fetchedJobData: SimproJobType = jobDataForSchedule?.data;
                         let siteId = fetchedJobData?.Site?.ID;
                         if (siteId) {
@@ -100,7 +100,7 @@ export const fetchScheduleData = async () => {
                         }
 
                         try {
-                            let costCenterResponse = await axiosSimPRO.get(`jobs/${jobIdForScheduleFetched}/sections/${sectionIdForSchedule}/costCenters/${costCenterIdForSchedule}?columns=Name,ID,Claimed`);
+                            let costCenterResponse = await axiosSimPRO.get(`jobs/${jobIdForScheduleFetched}/sections/${sectionIdForSchedule}/costCenters/${costCenterIdForSchedule}?columns=Name,ID,Claimed,Total,Totals`);
                             if (costCenterResponse) {
                                 schedule.CostCenter = costCenterResponse.data;
                             }
@@ -424,18 +424,17 @@ export const fetchNextDateScheduleData = async () => {
 
 export const fetchJobRoofingData = async () => {
     try {
-        let jobIdsToAddArray: number[] = []
+        let jobIdsToAddArray: string[] = []
         let fetchedChartOfAccounts = await axiosSimPRO.get('/setup/accounts/chartOfAccounts/?pageSize=250&columns=ID,Name,Number');
         let chartOfAccountsArray: SimproAccountType[] = fetchedChartOfAccounts?.data;
-        const currentDate = moment().subtract(2, 'day').format("YYYY-MM-DD");
-        const url = `/schedules/?Type=job&Date=gt(${currentDate})&pageSize=250`;
+        const url = `/schedules/?Type=job`;
         let fetchedSimproSchedulesData: SimproScheduleType[] = await fetchSimproPaginatedData(url, "ID,Type,Reference,Staff,Date,Blocks,Notes");
         for (const schedule of fetchedSimproSchedulesData) {
             let jobIdForSchedule = schedule?.Reference?.split('-')[0];
             let costCenterIdForSchedule = schedule?.Reference?.split('-')[1];
             if (jobIdForSchedule) {
                 try {
-                    const jobDataForSchedule = await axiosSimPRO.get(`/jobs/${jobIdForSchedule}?columns=ID,Type,Site,SiteContact,DateIssued,Status,Total,Customer,Name,ProjectManager,CustomFields,Totals`);
+                    const jobDataForSchedule = await axiosSimPRO.get(`/jobs/${jobIdForSchedule}?columns=ID,Type,Site,SiteContact,DateIssued,Status,Total,Customer,Name,ProjectManager,CustomFields,Totals,Stage`);
                     let fetchedJobData: SimproJobType = jobDataForSchedule?.data;
                     schedule.Job = fetchedJobData;
                 } catch (error) {
@@ -461,8 +460,8 @@ export const fetchJobRoofingData = async () => {
                     if (setupCostCenterData?.IncomeAccountNo) {
                         let incomeAccountName = chartOfAccountsArray?.find(account => account?.Number == setupCostCenterData?.IncomeAccountNo)?.Name;
                         if (incomeAccountName == "Roofing Income") {
-                            console.log('CostCenterId For Roofing Income 3', costCenterIdForSchedule, jobIdForScheduleFetched)
-                            jobIdsToAddArray.push(jobIdForScheduleFetched)
+                            console.log('CostCenterId For Roofing Income', costCenterIdForSchedule, jobIdForScheduleFetched, incomeAccountName)
+                            jobIdsToAddArray.push(`${jobIdForScheduleFetched}-${costCenterIdForSchedule}`)
                         }
                     }
 
@@ -480,8 +479,10 @@ export const fetchJobRoofingData = async () => {
             }
         }
         fetchedSimproSchedulesData = fetchedSimproSchedulesData.filter(schedule =>
-            jobIdsToAddArray.includes(schedule?.Job?.ID ?? -1)
+            jobIdsToAddArray.includes(`${schedule?.Job?.ID}-${schedule?.CostCenter?.ID}`)
         );
+        console.log('fetchedSimproSchedulesData length', fetchedSimproSchedulesData.length)
+        console.log('jobIdsToAddArray length', jobIdsToAddArray.length)
         const uniqueJobs = new Set();
         fetchedSimproSchedulesData = fetchedSimproSchedulesData.filter(item => {
             const key = `${item?.Job?.ID}-${item?.CostCenter?.ID}`;

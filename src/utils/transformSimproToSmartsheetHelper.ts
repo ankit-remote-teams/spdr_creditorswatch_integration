@@ -403,15 +403,15 @@ export const convertSimproRoofingDataToSmartsheetFormat = (
         let rowObj: SimproJobRoofingDetailType;
         if (updateType == "full") {
             const customerName = row.Job?.Customer?.CompanyName && row.Job?.Customer?.CompanyName.length > 0 ? row.Job?.Customer?.CompanyName : (row.Job?.Customer?.GivenName + " " + row.Job?.Customer?.FamilyName)
-            const exTax = `$${row?.CostCenter?.Total?.ExTax ?? 0}`;
             rowObj = {
                 JobID: row?.Job?.ID,
                 Customer: customerName,
                 "Job.SiteName": row?.Job?.Site?.Name,
                 "Job.Name": row?.Job?.Name,
+                "Job.Stage": row?.Job?.Stage,
                 "Cost_Center.ID": row?.CostCenter?.ID,
                 "Cost_Center.Name": row?.CostCenter?.Name,
-                "Remainingamount_Ex.Tax": exTax,
+                "Remainingamount_Ex.Tax": `$${row?.CostCenter?.Claimed?.Remaining?.Amount?.ExTax}`,
             }
             console.table(rowObj);
             const options: SmartsheetSheetRowsType = {
