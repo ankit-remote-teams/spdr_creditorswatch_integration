@@ -71,5 +71,4 @@ mongoose.connect(process.env.DB_URL as string).then(() => {
 
 app.listen(PORT, () => {
     console.log(`Server is running on port ${PORT}`);
-    executeJobForRoofingDetail();
 });
