@@ -6,6 +6,7 @@ import {
     SmartsheetSheetRowsType,
     SimproQuotationRowObjectType,
     SimproLeadRowObjectType,
+    SimproJobRoofingDetailType,
 } from '../types/smartsheet.types';
 import {
     SimproScheduleType,
@@ -394,3 +395,40 @@ export const convertSimproLeadsDataToSmartsheetFormatForUpdate = (
 
     return convertedData;
 };
+
+export const convertSimproRoofingDataToSmartsheetFormat = (
+    rows: SimproScheduleType[],
+    columns: SmartsheetColumnType[],
+    updateType: string,
+) => {
+    let convertedData: SmartsheetSheetRowsType[] = [];
+    for (const row of rows) {
+        let rowObj: SimproJobRoofingDetailType;
+        if (updateType == "full") {
+            const customerName = row.Job?.Customer?.CompanyName && row.Job?.Customer?.CompanyName.length > 0 ? row.Job?.Customer?.CompanyName : (row.Job?.Customer?.GivenName + " " + row.Job?.Customer?.FamilyName)
+            rowObj = {
+                JobID: row?.Job?.ID,
+                Customer: customerName,
+                "Job.SiteName": row?.Job?.Site?.Name,
+                "Job.Name": row?.Job?.Name,
+                "Job.Stage": row?.Job?.Stage,
+                "Cost_Center.ID": row?.CostCenter?.ID,
+                "Cost_Center.Name": row?.CostCenter?.Name,
+                "Remainingamount_Ex.Tax": `$${row?.CostCenter?.Claimed?.Remaining?.Amount?.ExTax}`,
+            }
+            console.table(rowObj);
+            const options: SmartsheetSheetRowsType = {
+                cells: (Object.keys(rowObj) as (keyof SimproJobRoofingDetailType)[]).map(columnName => {
+                    const column = columns.find(i => i.title === columnName);
+                    return {
+                        columnId: column?.id ?? null,
+                        value: rowObj[columnName] ?? null,
+                    };
+                }).filter(cell => cell.columnId !== null),
+            };
+
+            convertedData.push(options);
+        }
+    }
+    return convertedData;
+}

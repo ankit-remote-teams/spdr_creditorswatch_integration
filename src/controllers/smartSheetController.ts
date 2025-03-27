@@ -27,6 +27,7 @@ import {
     convertSimproLeadsDataToSmartsheetFormat,
     convertSimproQuotationDataToSmartsheetFormatForUpdate,
     convertSimproLeadsDataToSmartsheetFormatForUpdate,
+    convertSimproRoofingDataToSmartsheetFormat,
 } from '../utils/transformSimproToSmartsheetHelper';
 import axiosSimPRO from '../config/axiosSimProConfig';
 
@@ -828,5 +829,78 @@ export const updateSuburbDataForSite = async (req: Request, res: Response) => {
         res.status(200).json({ message: "updated the row data" });
     } catch (err) {
         res.status(500).json({ err: err })
+    }
+}
+
+export const addJobRoofingDetailsToSmartSheet = async (rows: SimproScheduleType[], smartsheetId: string) => {
+    try {
+        const sheetInfo = await smartsheet.sheets.getSheet({ id: smartsheetId });
+        const columns = sheetInfo.columns;
+        let rowsToAdd: SimproScheduleType[] = [];
+        let rowsToUpdate: SimproScheduleType[] = [];
+
+        let fetchedScheduleIDs = rows.map(row => row.ID);
+        console.log('fetchedScheduleIDs: ', fetchedScheduleIDs.length)
+        let scheduleIdColumnId = await getColumnIdForColumnName("JobID", smartsheetId);
+        console.log('scheduleIdColumnId', scheduleIdColumnId)
+        const existingRows = sheetInfo.rows;
+
+        let existingScheduleIdsInSheet: number[] = existingRows
+            .map((row: SmartsheetSheetRowsType) => {
+                const cellData = row.cells.find((cellData) => cellData.columnId === scheduleIdColumnId);
+                if (cellData) {
+                    return cellData.value;
+                }
+                return null;
+            })
+            .filter((value: number | string | null) => value !== null);
+
+        let scheduleIdToUpdate = Array.isArray(existingScheduleIdsInSheet)
+            ? existingScheduleIdsInSheet.filter(scheduleId => fetchedScheduleIDs.includes(scheduleId))
+            : [];
+
+        let scheduleIdsNotPartOfSimproResponse = Array.isArray(fetchedScheduleIDs) ? existingScheduleIdsInSheet.filter(scheduleId => !fetchedScheduleIDs.includes(scheduleId)) : [];
+
+        let scheduleIdToAdd = Array.isArray(fetchedScheduleIDs) ? fetchedScheduleIDs.filter(scheduleId => !existingScheduleIdsInSheet.includes(scheduleId)) : [];
+
+        rows.forEach((row) => {
+            if (scheduleIdToAdd.includes(row.ID)) {
+                rowsToAdd.push(row);
+            } else if (scheduleIdToUpdate.includes(row.ID)) {
+                rowsToUpdate.push(row)
+            }
+        })
+
+        if (rowsToAdd.length) {
+            const rowsToAddToSmartSheet = convertSimproRoofingDataToSmartsheetFormat(rowsToAdd, columns, "full");
+            if (rowsToAddToSmartSheet.length > 0) {
+                console.log('Adding the rows to sheet', rowsToAddToSmartSheet.length)
+                const chunks = splitIntoChunks(rowsToAddToSmartSheet, 100);
+
+                for (const chunk of chunks) {
+                    try {
+                        await smartsheet.sheets.addRows({
+                            sheetId: smartsheetId,
+                            body: chunk,
+                        });
+
+                        console.log(` No. of records added in this chunk: ${chunk.length}`);
+                    } catch (err) {
+                        console.error(' Error in adding row chunk:', err);
+                        throw err;
+                    }
+                }
+            }
+        }
+
+        // if (rowsToUpdate.length) {
+        //     await updateExistingRecordsInJobCardSheet(rowsToUpdate, scheduleIdsNotPartOfSimproResponse, smartsheetId)
+        // }
+
+        return { status: true, message: "Data added successfully" }
+    } catch (err) {
+        console.error('Error in adding job card data to Smartsheet:', err);
+        return { status: false, message: "Error adding data to Smartsheet" }
+
     }
 }

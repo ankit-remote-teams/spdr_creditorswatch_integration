@@ -212,6 +212,7 @@ export type SimproJobType = {
     ProjectManager?: SimproManagerType | null;
     CustomFields?: SimproCustomFieldWithValue[];
     Totals?:SimproTotalsType;
+    Stage: string;
 }
 
 export type SimproConvertedFromLeadType = {

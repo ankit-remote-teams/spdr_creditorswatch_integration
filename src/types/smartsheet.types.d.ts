@@ -135,3 +135,14 @@ export type ExistingLeadsType = {
     leadId: number | string;
     rowId: number | string;
 }
+
+export type SimproJobRoofingDetailType = {
+    JobID: string | number | undefined;
+    Customer: string | null | undefined;
+    "Job.SiteName": string | null | undefined;
+    "Job.Name": string | null | undefined;
+    "Job.Stage": string | null | undefined;
+    "Cost_Center.ID": string | number | undefined;
+    "Cost_Center.Name": string | null | undefined;
+    "Remainingamount_Ex.Tax": string | number | undefined;
+}
