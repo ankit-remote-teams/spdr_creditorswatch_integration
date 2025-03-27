@@ -45,7 +45,9 @@ export type SimproCostCenterType = {
             Percent?: number;
             Amount?: SimproTotalType;
         }
-    }
+    };
+    Total: SimproTotalType;
+    Totals?:SimproTotalsType;
 }
 
 export type SimproScheduleType = {
@@ -91,6 +93,10 @@ export type SimproTotalType = {
     AmountApplied?: number;
 };
 
+export type SimproTotalsType = {
+    InvoicedValue: number;
+    InvoicePercentage?: number;
+};
 
 export type SimproInvoiceType = {
     ID: number;
@@ -205,6 +211,7 @@ export type SimproJobType = {
     Name?: string;
     ProjectManager?: SimproManagerType | null;
     CustomFields?: SimproCustomFieldWithValue[];
+    Totals?:SimproTotalsType;
 }
 
 export type SimproConvertedFromLeadType = {
