@@ -51,7 +51,7 @@ export const fetchScheduleData = async () => {
                 if (jobIdForSchedule) {
                     try {
                         // console.log("Fetching job for schdule " + jobIdForSchedule + ' at index', i, " of ", fetchedSimproSchedulesData.length)
-                        const jobDataForSchedule = await axiosSimPRO.get(`/jobs/${jobIdForSchedule}?columns=ID,Type,Site,SiteContact,DateIssued,Status,Total,Customer,Name,ProjectManager,CustomFields,Totals`);
+                        const jobDataForSchedule = await axiosSimPRO.get(`/jobs/${jobIdForSchedule}?columns=ID,Type,Site,SiteContact,DateIssued,Status,Total,Customer,Name,ProjectManager,CustomFields`);
                         let fetchedJobData: SimproJobType = jobDataForSchedule?.data;
                         let siteId = fetchedJobData?.Site?.ID;
                         if (siteId) {
@@ -100,7 +100,7 @@ export const fetchScheduleData = async () => {
                         }
 
                         try {
-                            let costCenterResponse = await axiosSimPRO.get(`jobs/${jobIdForScheduleFetched}/sections/${sectionIdForSchedule}/costCenters/${costCenterIdForSchedule}?columns=Name,ID,Claimed,Total,Totals`);
+                            let costCenterResponse = await axiosSimPRO.get(`jobs/${jobIdForScheduleFetched}/sections/${sectionIdForSchedule}/costCenters/${costCenterIdForSchedule}?columns=Name,ID,Claimed`);
                             if (costCenterResponse) {
                                 schedule.CostCenter = costCenterResponse.data;
                             }
