@@ -873,7 +873,6 @@ export const addJobRoofingDetailsToSmartSheet = async (rows: SimproScheduleType[
 
         if (rowsToAdd.length) {
             const rowsToAddToSmartSheet = convertSimproRoofingDataToSmartsheetFormat(rowsToAdd, columns, "full");
-            console.log('rowsToAddToSmartSheet', rowsToAddToSmartSheet);
             if (rowsToAddToSmartSheet.length > 0) {
                 console.log('Adding the rows to sheet', rowsToAddToSmartSheet.length)
                 const chunks = splitIntoChunks(rowsToAddToSmartSheet, 100);

@@ -49,6 +49,7 @@ export const executeJob = async () => {
 
 export const executeJobForRoofingDetail = async () => {
     try {
+        const startTime = moment().unix();
         console.log(`JOBCARD detail SCHEDULER : Task executed at ${moment().format('YYYY-MM-DD HH:mm:ss')}`);
         try {
             console.log(" JOBCARD detail SCHEDULER : Fetch started for new data")
@@ -58,6 +59,7 @@ export const executeJobForRoofingDetail = async () => {
             console.log(" JOBCARD SCHEDULER : Adding new records to smartsheet for sheet version 1 ")
             await addJobRoofingDetailsToSmartSheet(fetchedSimproSchedulesData, jobCardRoofingDetailSheetId);
             console.log(" JOBCARD SCHEDULER : Completed: Adding new records to smartsheet for sheet version 1 : COMPLETED ")
+            console.log("Time taken to fill the sheet in ms", (moment().unix() - startTime));
 
             // console.log(" JOBCARD SCHEDULER : Completed: Adding new records to smartsheet")
         } catch (err) {

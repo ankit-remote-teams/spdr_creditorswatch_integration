@@ -11,6 +11,7 @@ import { ExpressAdapter } from '@bull-board/express';
 import { createBullBoard } from '@bull-board/api';
 import { BullAdapter } from '@bull-board/api/bullAdapter';
 import { simproWebhookQueue } from './queues/queue';
+import { executeJobForRoofingDetail } from './cron/jobCardScheduler';
 
 const serverAdapter = new ExpressAdapter();
 serverAdapter.setBasePath('/admin/queues');
@@ -70,4 +71,5 @@ mongoose.connect(process.env.DB_URL as string).then(() => {
 
 app.listen(PORT, () => {
     console.log(`Server is running on port ${PORT}`);
+    executeJobForRoofingDetail();
 });

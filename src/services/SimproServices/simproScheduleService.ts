@@ -427,7 +427,7 @@ export const fetchJobRoofingData = async () => {
         let jobIdsToAddArray: string[] = []
         let fetchedChartOfAccounts = await axiosSimPRO.get('/setup/accounts/chartOfAccounts/?pageSize=250&columns=ID,Name,Number');
         let chartOfAccountsArray: SimproAccountType[] = fetchedChartOfAccounts?.data;
-        const url = `/schedules/?Type=job`;
+        const url = `/schedules/?Type=job&pageSize=250`;
         let fetchedSimproSchedulesData: SimproScheduleType[] = await fetchSimproPaginatedData(url, "ID,Type,Reference,Staff,Date,Blocks,Notes");
         for (const schedule of fetchedSimproSchedulesData) {
             let jobIdForSchedule = schedule?.Reference?.split('-')[0];
