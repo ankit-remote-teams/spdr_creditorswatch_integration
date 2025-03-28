@@ -170,7 +170,7 @@ export const convertSimproScheduleDataToSmartsheetFormat = (
                 "Suburb": rows[i]?.Job?.Site?.Address?.City || "",
                 "Job level invoiced Percent": ccLevelInvPercent == 0 ? "0" : ccLevelInvPercent,
                 "Costcenter level invoiced Percent": jobLevelInvPercent == 0 ? "0" : jobLevelInvPercent,
-                "CC Yet to invoice": ccYetToInvoice,
+                "CC Yet to invoice": ccYetToInvoice == 0 ? "0" : ccYetToInvoice,
             };
             const options: SmartsheetSheetRowsType = {
                 cells: (Object.keys(rowObj) as (keyof SimproScheduleRowObjectType)[]).map(columnName => {
