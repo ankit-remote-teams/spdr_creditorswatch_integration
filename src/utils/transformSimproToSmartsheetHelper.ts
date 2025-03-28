@@ -12,6 +12,7 @@ import {
     SimproScheduleType,
     SimproQuotationType,
     SimproLeadType,
+    SimproJobCostCenterType,
 
 } from '../types/simpro.types';
 import moment from 'moment';
@@ -400,7 +401,7 @@ export const convertSimproLeadsDataToSmartsheetFormatForUpdate = (
 };
 
 export const convertSimproRoofingDataToSmartsheetFormat = (
-    rows: SimproScheduleType[],
+    rows: SimproJobCostCenterType[],
     columns: SmartsheetColumnType[],
     updateType: string,
 ) => {
@@ -409,6 +410,9 @@ export const convertSimproRoofingDataToSmartsheetFormat = (
         let rowObj: SimproJobRoofingDetailType;
         if (updateType == "full") {
             const customerName = row.Job?.Customer?.CompanyName && row.Job?.Customer?.CompanyName.length > 0 ? row.Job?.Customer?.CompanyName : (row.Job?.Customer?.GivenName + " " + row.Job?.Customer?.FamilyName)
+            const totalIncTax = row?.CostCenter?.Total?.IncTax;
+            const invoicedVal = row?.CostCenter?.Totals?.InvoicedValue;
+            let yetToInvoiceValue = '$'.concat((((totalIncTax != undefined && invoicedVal != undefined) ? (totalIncTax - invoicedVal) : 0) / 1.1).toFixed(2));
             rowObj = {
                 JobID: row?.Job?.ID,
                 Customer: customerName,
@@ -417,9 +421,8 @@ export const convertSimproRoofingDataToSmartsheetFormat = (
                 "Job.Stage": row?.Job?.Stage,
                 "Cost_Center.ID": row?.CostCenter?.ID,
                 "Cost_Center.Name": row?.CostCenter?.Name,
-                "Remainingamount_Ex.Tax": `$${row?.CostCenter?.Claimed?.Remaining?.Amount?.ExTax}`,
+                "Remainingamount_Ex.Tax": row?.CostCenter?.Claimed?.Remaining?.Amount?.ExTax ? `$${row?.CostCenter?.Claimed?.Remaining?.Amount?.ExTax}` : yetToInvoiceValue,
             }
-            console.table(rowObj);
             const options: SmartsheetSheetRowsType = {
                 cells: (Object.keys(rowObj) as (keyof SimproJobRoofingDetailType)[]).map(columnName => {
                     const column = columns.find(i => i.title === columnName);
