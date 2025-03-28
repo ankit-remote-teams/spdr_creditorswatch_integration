@@ -11,7 +11,6 @@ import { ExpressAdapter } from '@bull-board/express';
 import { createBullBoard } from '@bull-board/api';
 import { BullAdapter } from '@bull-board/api/bullAdapter';
 import { simproWebhookQueue } from './queues/queue';
-import { executeJobForRoofingDetail } from './cron/jobCardScheduler';
 
 const serverAdapter = new ExpressAdapter();
 serverAdapter.setBasePath('/admin/queues');

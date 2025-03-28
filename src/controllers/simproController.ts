@@ -6,6 +6,7 @@ import { SmartsheetService } from '../services/SmartsheetServices/SmartsheetServ
 import {
     SimproAccountType,
     SimproCustomerType,
+    SimproJobCostCenterType,
     SimproJobType,
     SimproLeadType,
     SimproQuotationType,
@@ -17,14 +18,16 @@ import {
     addJobCardDataToSmartsheet,
     addOpenQuotesDataToSmartsheet,
     addOpenLeadsDataToSmartsheet,
-    addMinimalJobCardDataToSmartsheet
+    addMinimalJobCardDataToSmartsheet,
+    addJobRoofingDetailsToSmartSheet
 } from './smartSheetController';
-import { fetchScheduleData, fetchScheduleMinimal } from '../services/SimproServices/simproScheduleService';
+import { fetchScheduleData, fetchScheduleMinimal, fetchJobRoofingData } from '../services/SimproServices/simproScheduleService';
 import { fetchSimproQuotationData } from '../services/SimproServices/simproQuotationService';
 import { fetchSimproLeadsData } from '../services/SimproServices/simproLeadsService';
 import { simproWebhookQueue } from '../queues/queue';
 const jobCardReportSheetId = process.env.JOB_CARD_SHEET_ID ? process.env.JOB_CARD_SHEET_ID : "";
 const jobCardV2SheetId = process.env.JOB_CARD_SHEET_V2_ID ? process.env.JOB_CARD_SHEET_V2_ID : "";
+const jobCardRoofingDetailSheetId = process.env.JOB_CARD_SHEET_ROOFING_DETAIL_ID ? process.env.JOB_CARD_SHEET_ROOFING_DETAIL_ID : "";
 let jobCardWebhookTestSheetId = 398991237795716;
 
 export const fetchScheduleDataForExistingScheduleIds = async (scheduleIds: number[], fetchType: string) => {
@@ -397,5 +400,38 @@ export const updateExistingSheetDataForSchedules = async (req: Request, res: Res
                 message: `Internal Server Error : ${JSON.stringify(err)}`
             });
         }
+    }
+}
+
+export const fetchJobCostCenterDetail = async (req: Request, res: Response) => {
+    try {
+        const startTime = moment().unix();
+        console.log(`JOB CostCenter detail : Task executed at ${moment().format('YYYY-MM-DD HH:mm:ss')}`);
+        try {
+            console.log("JOB CostCenter detail SCHEDULER : Fetch started for new data")
+            const incomeAccountName = req.params.incomeAccount;
+            switch(incomeAccountName) {
+                case 'roofingincome': {
+                    let fetchedSimproSchedulesData: SimproJobCostCenterType[] = await fetchJobRoofingData();
+                    console.log("JOB CostCenter detail SCHEDULER : fetch completed for new data")
+                    await addJobRoofingDetailsToSmartSheet(fetchedSimproSchedulesData, jobCardRoofingDetailSheetId);
+                    res.status(200).json({ message: "Successfully fetched JOB CostCenter roofing income detail" }); 
+                    break;
+                }
+                default:
+                    break;
+            }
+            console.log("Time taken to fill the sheet in ms", (moment().unix() - startTime));
+        } catch (err) {
+            if (err instanceof AxiosError) {
+                console.log(" JOB CostCenter detail : Error in job card scheduler as AxiosError");
+                console.log(" JOB CostCenter detail : Error details: ", err.response?.data);
+            } else {
+                console.log(" JOB CostCenter detail : Error in job card scheduler as other error");
+                console.log(" JOB CostCenter detail : Error details: ", err);
+            }
+        }
+    } catch (err: any) {
+        console.log('Error in job card scheduler. Error: ' + JSON.stringify(err));
     }
 }
