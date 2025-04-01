@@ -46,7 +46,7 @@ export type SimproCostCenterType = {
             Amount?: SimproTotalType;
         }
     };
-    Total: SimproTotalType;
+    Total?: SimproTotalType;
     Totals?:SimproTotalsType;
 }
 
@@ -202,17 +202,17 @@ export type SimproCustomFieldWithValue = {
 export type SimproJobType = {
     ID: number;
     Type: string;
-    Customer: SimproCustomerType;
-    Site: SimproSiteType;
-    SiteContact: SimproCustomerType | null;
-    DateIssued: string;
-    Status: SimproStatusType;
-    Total: SimproTotalType;
+    Customer?: SimproCustomerType;
+    Site?: SimproSiteType;
+    SiteContact?: SimproCustomerType | null;
+    DateIssued?: string;
+    Status?: SimproStatusType;
+    Total?: SimproTotalType;
     Name?: string;
     ProjectManager?: SimproManagerType | null;
     CustomFields?: SimproCustomFieldWithValue[];
     Totals?:SimproTotalsType;
-    Stage: string;
+    Stage?: string;
 }
 
 export type SimproConvertedFromLeadType = {
@@ -311,3 +311,16 @@ type SimproWebhookReference = {
     reference: SimproWebhookReference;
     date_triggered: string; // ISO 8601 date string
   };
+
+  type SimproJobCostCenterType = {
+    ID: number;
+    CostCenter: SimproCostCenterType;
+    Name: string;
+    Job: SimproJobType;
+    Section: {
+        ID: number;
+        Name: string;
+    };
+    DateModified: string; // ISO 8601 date string 
+    _href: string;
+  }

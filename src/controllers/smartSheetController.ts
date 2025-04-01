@@ -14,7 +14,8 @@ import { ITaskHourRecord } from '../types/smartsheet.types';
 import {
     SimproScheduleType,
     SimproQuotationType,
-    SimproLeadType
+    SimproLeadType,
+    SimproJobCostCenterType
 } from '../types/simpro.types';
 import { splitIntoChunks } from '../utils/helper';
 import moment from 'moment';
@@ -832,15 +833,14 @@ export const updateSuburbDataForSite = async (req: Request, res: Response) => {
     }
 }
 
-export const addJobRoofingDetailsToSmartSheet = async (rows: SimproScheduleType[], smartsheetId: string) => {
+export const addJobRoofingDetailsToSmartSheet = async (rows: SimproJobCostCenterType[], smartsheetId: string) => {
     try {
         const sheetInfo = await smartsheet.sheets.getSheet({ id: smartsheetId });
         const columns = sheetInfo.columns;
-        let rowsToAdd: SimproScheduleType[] = [];
-        let rowsToUpdate: SimproScheduleType[] = [];
+        let rowsToAdd: SimproJobCostCenterType[] = [];
+        let rowsToUpdate: SimproJobCostCenterType[] = [];
 
         let fetchedScheduleIDs = rows.map(row => row.ID);
-        console.log('fetchedScheduleIDs: ', fetchedScheduleIDs.length)
         let scheduleIdColumnId = await getColumnIdForColumnName("JobID", smartsheetId);
         console.log('scheduleIdColumnId', scheduleIdColumnId)
         const existingRows = sheetInfo.rows;
