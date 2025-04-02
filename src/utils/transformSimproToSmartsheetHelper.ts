@@ -38,8 +38,10 @@ export const convertSimproScheduleDataToSmartsheetFormatForUpdate = (
         );
         let rowObj: SimproScheduleRowObjectType;
         if (updateType == "full") {
-            const ccLevelInvPercent = rows[i]?.CostCenter?.Totals?.InvoicePercentage ? rows[i]?.CostCenter?.Totals?.InvoicePercentage?.toFixed(2) : "0";
-            const jobLevelInvPercent = rows[i]?.Job?.Totals?.InvoicePercentage ? rows[i]?.Job?.Totals?.InvoicePercentage?.toFixed(2) : "0";
+            // const ccLevelInvPercent = rows[i]?.CostCenter?.Totals?.InvoicePercentage ? rows[i]?.CostCenter?.Totals?.InvoicePercentage?.toFixed(2) : "0";
+            // const jobLevelInvPercent = rows[i]?.Job?.Totals?.InvoicePercentage ? rows[i]?.Job?.Totals?.InvoicePercentage?.toFixed(2) : "0";
+            const ccLevelInvPercent = Math.round(((rows[i]?.CostCenter?.Totals?.InvoicePercentage ?? 0) / 100) * 100) / 100;
+            const jobLevelInvPercent = Math.round(((rows[i]?.Job?.Totals?.InvoicePercentage ?? 0) / 100) * 100) / 100;
             const ccYetToInvoice = Math.round(rows[i]?.CostCenter?.Claimed?.Remaining?.Amount?.ExTax ?? 0);
             rowObj = {
                 "ScheduleID": rows[i].ID,
@@ -142,8 +144,10 @@ export const convertSimproScheduleDataToSmartsheetFormat = (
 
         let rowObj: SimproScheduleRowObjectType;
         if (updateType == "full") {
-            const ccLevelInvPercent = rows[i]?.CostCenter?.Totals?.InvoicePercentage ? rows[i]?.CostCenter?.Totals?.InvoicePercentage?.toFixed(2) : "0";
-            const jobLevelInvPercent = rows[i]?.Job?.Totals?.InvoicePercentage ? rows[i]?.Job?.Totals?.InvoicePercentage?.toFixed(2) : "0";
+            // const ccLevelInvPercent = rows[i]?.CostCenter?.Totals?.InvoicePercentage ? rows[i]?.CostCenter?.Totals?.InvoicePercentage?.toFixed(2) : "0";
+            // const jobLevelInvPercent = rows[i]?.Job?.Totals?.InvoicePercentage ? rows[i]?.Job?.Totals?.InvoicePercentage?.toFixed(2) : "0";
+            const ccLevelInvPercent = Math.round(((rows[i]?.CostCenter?.Totals?.InvoicePercentage ?? 0) / 100) * 100) / 100;
+            const jobLevelInvPercent = Math.round(((rows[i]?.Job?.Totals?.InvoicePercentage ?? 0) / 100) * 100) / 100;
             const ccYetToInvoice = Math.round(rows[i]?.CostCenter?.Claimed?.Remaining?.Amount?.ExTax ?? 0);
             rowObj = {
                 "ScheduleID": rows[i].ID,
