@@ -436,6 +436,7 @@ export const fetchJobRoofingData = async () => {
             let fetchedJobData: SimproJobType = jobDataForSchedule?.data;
             jobCostCenter.Job = fetchedJobData;
             try {
+                const ccRecordId = jobCostCenter?.CostCenter?.ID;
                 let fetchedSetupCostCenterData = await axiosSimPRO.get(`/setup/accounts/costCenters/${jobCostCenter?.CostCenter?.ID}?columns=ID,Name,IncomeAccountNo`);
                 let setupCostCenterData = fetchedSetupCostCenterData.data;
                 if (setupCostCenterData?.IncomeAccountNo) {
@@ -447,6 +448,7 @@ export const fetchJobRoofingData = async () => {
                             let costCenterResponse = await axiosSimPRO.get(`${jcUrl}?columns=Name,ID,Claimed,Total,Totals`);
                             if (costCenterResponse) {
                                 jobCostCenter.CostCenter = costCenterResponse.data;
+                                jobCostCenter.ccRecordId = ccRecordId;
                                 foundCostCenters++;
                                 jobsData.push(jobCostCenter);
                             }

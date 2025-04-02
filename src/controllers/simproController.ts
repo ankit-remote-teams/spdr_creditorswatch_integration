@@ -435,3 +435,67 @@ export const fetchJobCostCenterDetail = async (req: Request, res: Response) => {
         console.log('Error in job card scheduler. Error: ' + JSON.stringify(err));
     }
 }
+
+export const fetchDataForExistingCostCenters = async (costCenters: SimproJobCostCenterType[], fetchType: string) => {
+    let costCenterIdToMarkDeleted: string[] = [];
+    let costCenterDataFromSimpro: SimproJobCostCenterType[] = [];
+    try {
+        if (fetchType == "full") {
+            let fetchedChartOfAccounts = await axiosSimPRO.get('/setup/accounts/chartOfAccounts/?pageSize=250&columns=ID,Name,Number');
+            let chartOfAccountsArray: SimproAccountType[] = fetchedChartOfAccounts?.data;
+            let foundCostCenters = 0;
+            let notFoundCostCenters = 0;
+            for (const jobCostCenter of costCenters) {
+                const jobDataForSchedule = await axiosSimPRO.get(`/jobs/${jobCostCenter?.Job?.ID}?columns=ID,Type,Site,SiteContact,DateIssued,Status,Total,Customer,Name,ProjectManager,CustomFields,Totals,Stage`);
+                let fetchedJobData: SimproJobType = jobDataForSchedule?.data;
+                jobCostCenter.Job = fetchedJobData;
+                try {
+                    let fetchedSetupCostCenterData = await axiosSimPRO.get(`/setup/accounts/costCenters/${jobCostCenter?.ccRecordId}?columns=ID,Name,IncomeAccountNo`);
+                    let setupCostCenterData = fetchedSetupCostCenterData.data;
+                    if (setupCostCenterData?.IncomeAccountNo) {
+                        let incomeAccountName = chartOfAccountsArray?.find(account => account?.Number == setupCostCenterData?.IncomeAccountNo)?.Name;
+                        if (incomeAccountName == "Roofing Income") {
+                            console.log("Roofing income  ", jobCostCenter?.ID, jobCostCenter?.Job?.ID);
+                            try {
+                                const jcUrl = jobCostCenter?._href?.substring(jobCostCenter?._href?.indexOf('jobs'), jobCostCenter?._href.length);
+                                let costCenterResponse = await axiosSimPRO.get(`${jcUrl}?columns=Name,ID,Claimed,Total,Totals`);
+                                if (costCenterResponse) {
+                                    jobCostCenter.CostCenter = costCenterResponse.data;
+                                    foundCostCenters++;
+                                    costCenterDataFromSimpro.push(jobCostCenter);
+                                }
+                            } catch (error) {
+                                console.log("Error in costCenterFetch : ", error)
+                            }
+                        }
+                    }
+                } catch (err) {
+                    if (err instanceof AxiosError) {
+                        console.log("Error in fetch Const center from setup");
+                        console.log("Error details: ", err.response?.data);
+                        notFoundCostCenters++;
+                        costCenterIdToMarkDeleted.push(jobCostCenter?.CostCenter?.ID.toString());
+                    } else {
+                        console.log("Error in fetch Const center from setup");
+                    }
+                }
+            }
+            
+            console.log('fetchedSimproSchedulesData length', costCenterDataFromSimpro.length)
+            console.log('found cost centers', foundCostCenters)
+            console.log('not found cost centers', notFoundCostCenters)
+        }
+        return { costCenterIdToMarkDeleted, costCenterDataFromSimpro }
+    } catch (err) {
+        if (err instanceof AxiosError) {
+            console.log("Error in fetchScheduleData as AxiosError");
+            console.log("Error details: ", err.response?.data);
+            throw { message: "Something went wrong while fetching schedule data : " + JSON.stringify(err.response) }
+        } else {
+            console.log("Error in fetchScheduleData as other error");
+            console.log("Error details: ", err);
+            throw { message: `Internal Server Error in fetching schedule data : ${JSON.stringify(err)}` }
+        }
+    }
+    
+}

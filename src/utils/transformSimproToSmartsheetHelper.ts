@@ -425,6 +425,7 @@ export const convertSimproRoofingDataToSmartsheetFormat = (
                 "Job.SiteName": row?.Job?.Site?.Name,
                 "Job.Name": row?.Job?.Name,
                 "Job.Stage": row?.Job?.Stage,
+                "Job_Section.ID": row?.Section?.ID,
                 "Cost_Center.ID": row?.CostCenter?.ID,
                 "Cost_Center.Name": row?.CostCenter?.Name,
                 "Remainingamount_Ex.Tax": row?.CostCenter?.Claimed?.Remaining?.Amount?.ExTax ? `$${row?.CostCenter?.Claimed?.Remaining?.Amount?.ExTax}` : yetToInvoiceValue,
@@ -440,6 +441,53 @@ export const convertSimproRoofingDataToSmartsheetFormat = (
             };
 
             convertedData.push(options);
+        }
+    }
+    return convertedData;
+}
+
+export const convertSimprocostCenterDataToSmartsheetFormatForUpdate = (
+    rows: SimproJobCostCenterType[],
+    columns: SmartsheetColumnType[],
+    scheduleIdRowIdMap: { [key: string]: string },
+    updateType: string,
+) => {
+    let convertedData: SmartsheetSheetRowsType[] = [];
+    for (const row of rows) {
+        let rowObj: SimproJobRoofingDetailType;
+        if (updateType == "full") {
+            const customerName = row.Job?.Customer?.CompanyName && row.Job?.Customer?.CompanyName.length > 0 ? row.Job?.Customer?.CompanyName : (row.Job?.Customer?.GivenName + " " + row.Job?.Customer?.FamilyName)
+            const totalIncTax = row?.CostCenter?.Total?.IncTax;
+            const invoicedVal = row?.CostCenter?.Totals?.InvoicedValue;
+            let yetToInvoiceValue = '$'.concat((((totalIncTax != undefined && invoicedVal != undefined) ? (totalIncTax - invoicedVal) : 0) / 1.1).toFixed(2));
+            rowObj = {
+                JobID: row?.Job?.ID,
+                Customer: customerName,
+                "Job.SiteName": row?.Job?.Site?.Name,
+                "Job.Name": row?.Job?.Name,
+                "Job.Stage": row?.Job?.Stage,
+                "Job_Section.ID": row?.Section?.ID,
+                "Cost_Center.ID": row?.CostCenter?.ID,
+                "Cost_Center.Name": row?.CostCenter?.Name,
+                "Remainingamount_Ex.Tax": row?.CostCenter?.Claimed?.Remaining?.Amount?.ExTax ? `$${row?.CostCenter?.Claimed?.Remaining?.Amount?.ExTax}` : yetToInvoiceValue,
+            }
+            const options: SmartsheetSheetRowsType = {
+                cells: (Object.keys(rowObj) as (keyof SimproJobRoofingDetailType)[]).map(columnName => {
+                    const column = columns.find(i => i.title === columnName);
+                    return {
+                        columnId: column?.id ?? null,
+                        value: rowObj[columnName] ?? null,
+                    };
+                }).filter(cell => cell.columnId !== null),
+            };
+
+            if (scheduleIdRowIdMap && Object.keys(scheduleIdRowIdMap).length) {
+                const rowId = scheduleIdRowIdMap[row.ID?.toString()];
+                if (rowId) {
+                    options.id = parseInt(rowId, 10); // Ensure rowId is parsed as an integer
+                    convertedData.push(options); // Only push if rowId exists
+                }
+            }
         }
     }
     return convertedData;

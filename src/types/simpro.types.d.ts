@@ -314,6 +314,7 @@ type SimproWebhookReference = {
 
   type SimproJobCostCenterType = {
     ID: number;
+    ccRecordId: number;
     CostCenter: SimproCostCenterType;
     Name: string;
     Job: SimproJobType;
