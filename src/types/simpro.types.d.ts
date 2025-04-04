@@ -324,4 +324,4 @@ type SimproWebhookReference = {
     };
     DateModified: string; // ISO 8601 date string 
     _href: string;
-  }
+  };

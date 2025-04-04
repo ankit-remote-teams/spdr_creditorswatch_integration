@@ -21,6 +21,8 @@ simproWebhookQueue.process(async (job) => {
     } else if (webhookData.ID === "job.schedule.deleted") {
         console.log("Schedule Deleted ", webhookData);
         await SmartsheetService.handleDeleteScheduleInSmartsheet(webhookData);
+    } else if(webhookData.ID === "job.created" || webhookData.ID === "job.updated") {
+        await SmartsheetService.handleAddUpdateCostcenterRoofingToSmartSheet(webhookData);
     }
 });
 

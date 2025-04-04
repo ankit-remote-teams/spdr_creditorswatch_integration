@@ -1,12 +1,15 @@
+import { AxiosError } from "axios";
 import axiosSimPRO from "../../config/axiosSimProConfig";
-import { SimproAccountType, SimproJobType, SimproScheduleType, SimproWebhookType } from "../../types/simpro.types";
+import { SimproAccountType, SimproJobCostCenterType, SimproJobType, SimproScheduleType, SimproWebhookType } from "../../types/simpro.types";
 import { SmartsheetColumnType, SmartsheetSheetRowsType } from "../../types/smartsheet.types";
-import { convertSimproScheduleDataToSmartsheetFormat, convertSimproScheduleDataToSmartsheetFormatForUpdate } from "../../utils/transformSimproToSmartsheetHelper";
+import { convertSimprocostCenterDataToSmartsheetFormatForUpdate, convertSimproRoofingDataToSmartsheetFormat, convertSimproScheduleDataToSmartsheetFormat, convertSimproScheduleDataToSmartsheetFormatForUpdate } from "../../utils/transformSimproToSmartsheetHelper";
+import { fetchSimproPaginatedData } from "../SimproServices/simproPaginationService";
 const SmartsheetClient = require('smartsheet');
 const smartSheetAccessToken: string | undefined = process.env.SMARTSHEET_ACCESS_TOKEN;
 const smartsheet = SmartsheetClient.createClient({ accessToken: smartSheetAccessToken });
 const jobCardReportSheetId = process.env.JOB_CARD_SHEET_ID ? process.env.JOB_CARD_SHEET_ID : "";
 const jobCardV2SheetId = process.env.JOB_CARD_SHEET_V2_ID ? process.env.JOB_CARD_SHEET_V2_ID : "";
+const jobCardRoofingDetailSheetId = process.env.JOB_CARD_SHEET_ROOFING_DETAIL_ID ?? "";
 // const jobCardReportSheetId = "398991237795716";
 console.log('jobCardReportSheetId', jobCardReportSheetId)
 
@@ -294,4 +297,110 @@ export class SmartsheetService {
         }
 
     }
+
+    static async handleAddUpdateCostcenterRoofingToSmartSheet(webhookData: SimproWebhookType) {
+        const { jobID } = webhookData.reference;
+        let costCenterIdToMarkDeleted: string[] = [];
+        let costCenterDataFromSimpro: SimproJobCostCenterType[] = [];
+        const url = `/jobCostCenters/?Job.ID=${jobID}`;
+        const costCenters: SimproJobCostCenterType[] = await fetchSimproPaginatedData(url, "ID,CostCenter,Name,Job,Section,DateModified,_href");
+        let fetchedChartOfAccounts = await axiosSimPRO.get('/setup/accounts/chartOfAccounts/?pageSize=250&columns=ID,Name,Number');
+            let chartOfAccountsArray: SimproAccountType[] = fetchedChartOfAccounts?.data;
+            let foundCostCenters = 0;
+            let notFoundCostCenters = 0;
+            const jobDataForSchedule = await axiosSimPRO.get(`/jobs/${jobID}?columns=ID,Type,Site,SiteContact,DateIssued,Status,Total,Customer,Name,ProjectManager,CustomFields,Totals,Stage`);
+            let fetchedJobData: SimproJobType = jobDataForSchedule?.data;
+        for (const jobCostCenter of costCenters) {
+            console.dir(jobCostCenter, {depth: null})
+            jobCostCenter.Job = fetchedJobData;
+            try {
+                const ccRecordId = jobCostCenter?.CostCenter?.ID;
+                let fetchedSetupCostCenterData = await axiosSimPRO.get(`/setup/accounts/costCenters/${ccRecordId}?columns=ID,Name,IncomeAccountNo`);
+                let setupCostCenterData = fetchedSetupCostCenterData.data;
+                if (setupCostCenterData?.IncomeAccountNo) {
+                    let incomeAccountName = chartOfAccountsArray?.find(account => account?.Number == setupCostCenterData?.IncomeAccountNo)?.Name;
+                    if (incomeAccountName == "Roofing Income") {
+                        console.log("Roofing income  ", jobCostCenter?.ID, jobCostCenter?.Job?.ID);
+                        try {
+                            const jcUrl = jobCostCenter?._href?.substring(jobCostCenter?._href?.indexOf('jobs'), jobCostCenter?._href.length);
+                            let costCenterResponse = await axiosSimPRO.get(`${jcUrl}?columns=Name,ID,Claimed,Total,Totals`);
+                            if (costCenterResponse) {
+                                jobCostCenter.CostCenter = costCenterResponse.data;
+                                jobCostCenter.ccRecordId = ccRecordId;
+                                foundCostCenters++;
+                                costCenterDataFromSimpro.push(jobCostCenter);
+                            }
+                        } catch (error) {
+                            console.log("Error in costCenterFetch : ", error)
+                        }
+                    }
+                }
+            } catch (err) {
+                if (err instanceof AxiosError) {
+                    console.log("Error in fetch Const center from setup");
+                    console.log("Error details: ", err.response?.data);
+                    notFoundCostCenters++;
+                    costCenterIdToMarkDeleted.push(jobCostCenter?.CostCenter?.ID.toString());
+                } else {
+                    console.log("Error in fetch Const center from setup");
+                }
+            }
+        }
+
+        SmartsheetService.updateCostcenterRoofingToSmartSheet(costCenterIdToMarkDeleted, costCenterDataFromSimpro);
+    }
+
+    static async updateCostcenterRoofingToSmartSheet (costCenterIdToMarkDeleted: string[],
+        costCenterDataFromSimpro: SimproJobCostCenterType[]) {
+        if (jobCardRoofingDetailSheetId) {
+            const sheetInfo = await smartsheet.sheets.getSheet({ id: jobCardRoofingDetailSheetId });
+            const columns = sheetInfo.columns;
+            const column = columns.find((col: SmartsheetColumnType) => col.title === "Cost_Center.ID");
+
+            // console.log('convertedDataForSmartsheet', convertedDataForSmartsheet)
+            if (!column) {
+                const error = new Error("Cost_Center.ID column not found in the sheet");
+                throw error;
+            }
+            const scheduleIdColumnId = column.id;
+            const existingRows: SmartsheetSheetRowsType[] = sheetInfo.rows;
+            let scheduleDataForSmartsheet: SmartsheetSheetRowsType | undefined;
+            for (const jobCostCenter of costCenterDataFromSimpro) {
+                for (const element of existingRows) {
+                    let currentRow = element;
+                    const cellData = currentRow.cells.find(
+                        (cell: { columnId: string; value: any }) => cell.columnId === scheduleIdColumnId
+                    );
+                    if (cellData?.value === jobCostCenter.CostCenter.ID) {
+                        scheduleDataForSmartsheet = currentRow;
+                        break;
+                    }
+                }
+
+                if (scheduleDataForSmartsheet) {
+                    let rowIdMap: { [key: string]: string } = {};
+                    rowIdMap = {
+                        [jobCostCenter.CostCenter.ID.toString()]: scheduleDataForSmartsheet?.id?.toString() || "",
+                    };
+                    const convertedData = convertSimprocostCenterDataToSmartsheetFormatForUpdate([jobCostCenter], columns, rowIdMap, 'full');
+
+                    await smartsheet.sheets.updateRow({
+                        sheetId: jobCardRoofingDetailSheetId,
+                        body: convertedData,
+                    });
+                    // console.log('Updated row in smartsheet')
+                    console.log('Updated row in smartsheet in sheet ', jobCardRoofingDetailSheetId)
+
+                } else {
+                    const convertedDataForSmartsheet = convertSimproRoofingDataToSmartsheetFormat([jobCostCenter], columns, 'full');
+                    await smartsheet.sheets.addRows({
+                        sheetId: jobCardRoofingDetailSheetId,
+                        body: convertedDataForSmartsheet,
+                    });
+                    console.log('Added row in smartsheet in sheeet', jobCardRoofingDetailSheetId)
+                }
+            }
+        }
+    }
 }
+

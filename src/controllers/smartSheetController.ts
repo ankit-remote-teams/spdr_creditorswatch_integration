@@ -21,7 +21,7 @@ import {
 import { splitIntoChunks } from '../utils/helper';
 import moment from 'moment';
 import { AxiosError } from 'axios';
-import { fetchDataForExistingCostCenters, fetchScheduleDataForExistingScheduleIds } from './simproController';
+import { fetchDataCostCenters, fetchScheduleDataForExistingScheduleIds } from './simproController';
 import {
     convertSimproScheduleDataToSmartsheetFormat,
     convertSimproScheduleDataToSmartsheetFormatForUpdate,
@@ -932,30 +932,31 @@ export const updateJobRoofingDetailsToSmartSheet = async (rowsToUpdate: SimproJo
             .filter(Boolean);
 
         // Fetch costCenter data for existing IDs
-        const fetchedDataForExistingData = await fetchDataForExistingCostCenters(costCentersNotPartOfSimproResponse, "full");
-        console.log("Fetching exsting data is completed.")
+        fetchDataCostCenters(costCentersNotPartOfSimproResponse, 'full', async (costCenterIdToMarkDeleted: string[], costCenterDataFromSimpro: SimproJobCostCenterType[]) => {
+            // Extract costCenter data and IDs to mark as deleted
+            const updatedSimproData: SimproJobCostCenterType[] = [...(costCenterDataFromSimpro || []), ...rowsToUpdate];
+            const costCentersIdToMarkDeleted: string[] = costCenterIdToMarkDeleted || [];
 
-        // Extract costCenter data and IDs to mark as deleted
-        const updatedSimproData: SimproJobCostCenterType[] = [...(fetchedDataForExistingData?.costCenterDataFromSimpro || []), ...rowsToUpdate];
-        const costCentersIdToMarkDeleted: string[] = fetchedDataForExistingData?.costCenterIdToMarkDeleted || [];
+            console.dir(updatedSimproData, { depth: null })
 
-        console.dir(updatedSimproData, {depth: null})
+            // Find rows to delete based on the fetched costCenter IDs to be marked as deleted
+            const rowsToMarkDeleted = existingcostCenterIdsData.filter(item =>
+                costCentersIdToMarkDeleted.includes(item.costCenterId.toString())
+            );
 
-        // Find rows to delete based on the fetched costCenter IDs to be marked as deleted
-        const rowsToMarkDeleted = existingcostCenterIdsData.filter(item =>
-            costCentersIdToMarkDeleted.includes(item.costCenterId.toString())
-        );
+            // Delete rows in chunks if there are any rows to delete
+            if (rowsToMarkDeleted.length) {
+                console.log("Marking ", rowsToMarkDeleted.length, " rows as deleted")
+                await addCostCenterDeleteCommentInChunks(rowsToMarkDeleted.map(row => Number(row.rowId)), smartsheetId);
+            }
 
-        // Delete rows in chunks if there are any rows to delete
-        if (rowsToMarkDeleted.length) {
-            console.log("Marking ", rowsToMarkDeleted.length, " rows as deleted")
-            await addCostCenterDeleteCommentInChunks(rowsToMarkDeleted.map(row => Number(row.rowId)), smartsheetId);
-        }
-
-        if (updatedSimproData.length) {
-            console.log("Update the ", updatedSimproData.length, "row fetched from simpro")
-            await updateSimproRoofingJobData(updatedSimproData, columns, existingcostCenterIdsData, smartsheetId, 'full');
-        }
+            if (updatedSimproData.length) {
+                console.log("Update the ", updatedSimproData.length, "row fetched from simpro")
+                await updateSimproRoofingJobData(updatedSimproData, columns, existingcostCenterIdsData, smartsheetId, 'full');
+            }
+        });
+        
+        
     } catch (err) {
         console.log("Error ", err)
         if (err instanceof AxiosError) {
