@@ -126,6 +126,13 @@ export type ExistingScheduleType = {
     rowId: number | string;
 }
 
+export type ExistingCostCenterType = {
+    costCenterId: number | string;
+    jobId: number | string;
+    jobSectionId: number | string;
+    rowId: number | string;
+}
+
 export type ExistingQuotationType = {
     quoteId: number | string;
     rowId: number | string;
@@ -142,6 +149,7 @@ export type SimproJobRoofingDetailType = {
     "Job.SiteName": string | null | undefined;
     "Job.Name": string | null | undefined;
     "Job.Stage": string | null | undefined;
+    "Job_Section.ID": string | number | undefined;
     "Cost_Center.ID": string | number | undefined;
     "Cost_Center.Name": string | null | undefined;
     "Remainingamount_Ex.Tax": string | number | undefined;
