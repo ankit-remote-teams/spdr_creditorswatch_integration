@@ -27,7 +27,7 @@ export class SmartsheetService {
             let simPROScheduleUpdateUrl = `/schedules/${scheduleID}`
             console.log('simPROScheduleUpdateUrl', simPROScheduleUpdateUrl)
             let individualScheduleResponse = await axiosSimPRO(`${simPROScheduleUpdateUrl}?columns=ID,Type,Reference,Staff,Date,Blocks,Notes`)
-            let jobForScheduleResponse = await axiosSimPRO(`/jobs/${jobID}?columns=ID,Type,Site,SiteContact,DateIssued,Status,Total,Customer,Name,ProjectManager,CustomFields`)
+            let jobForScheduleResponse = await axiosSimPRO(`/jobs/${jobID}?columns=ID,Type,Site,SiteContact,DateIssued,Status,Total,Customer,Name,ProjectManager,CustomFields,Totals`)
             let schedule: SimproScheduleType = individualScheduleResponse?.data;
             console.log('Shceuld Blocks', schedule.Blocks)
             let fetchedJobData: SimproJobType = jobForScheduleResponse?.data;
@@ -91,7 +91,7 @@ export class SmartsheetService {
                 }
             }
 
-            let costCenterResponse = await axiosSimPRO.get(`jobs/${jobID}/sections/${sectionID}/costCenters/${costCenterID}?columns=Name,ID,Claimed`);
+            let costCenterResponse = await axiosSimPRO.get(`jobs/${jobID}/sections/${sectionID}/costCenters/${costCenterID}?columns=Name,ID,Claimed,Total,Totals`);
             if (costCenterResponse) {
                 schedule.CostCenter = costCenterResponse.data;
             }
