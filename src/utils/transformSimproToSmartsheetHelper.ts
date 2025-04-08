@@ -27,54 +27,55 @@ export const convertSimproScheduleDataToSmartsheetFormatForUpdate = (
 ) => {
     let convertedData: SmartsheetSheetRowsType[] = [];
 
-    for (let i = 0; i < rows.length; i++) {
-        let startTime = rows[i].Blocks.reduce(
+    for (const element of rows) {
+        let startTime = element.Blocks.reduce(
             (minTime, block) => minTime < block.ISO8601StartTime ? minTime : block.ISO8601StartTime,
-            rows[i].Blocks[0].ISO8601StartTime
+            element.Blocks[0].ISO8601StartTime
         );
-        let endTime = rows[i].Blocks.reduce(
+        let endTime = element.Blocks.reduce(
             (maxTime, block) => maxTime > block.ISO8601EndTime ? maxTime : block.ISO8601EndTime,
-            rows[i].Blocks[0].ISO8601EndTime
+            element.Blocks[0].ISO8601EndTime
         );
         let rowObj: SimproScheduleRowObjectType;
         if (updateType == "full") {
-            // const ccLevelInvPercent = rows[i]?.CostCenter?.Totals?.InvoicePercentage ? rows[i]?.CostCenter?.Totals?.InvoicePercentage?.toFixed(2) : "0";
-            // const jobLevelInvPercent = rows[i]?.Job?.Totals?.InvoicePercentage ? rows[i]?.Job?.Totals?.InvoicePercentage?.toFixed(2) : "0";
-            const ccLevelInvPercent = Math.round(((rows[i]?.CostCenter?.Totals?.InvoicePercentage ?? 0) / 100) * 100) / 100;
-            const jobLevelInvPercent = Math.round(((rows[i]?.Job?.Totals?.InvoicePercentage ?? 0) / 100) * 100) / 100;
-            const ccYetToInvoice = Math.round(rows[i]?.CostCenter?.Claimed?.Remaining?.Amount?.ExTax ?? 0);
+            const ccLevelInvPercent = Math.round(((element?.CostCenter?.Totals?.InvoicePercentage ?? 0) / 100) * 100) / 100;
+            const jobLevelInvPercent = Math.round(((element?.Job?.Totals?.InvoicePercentage ?? 0) / 100) * 100) / 100;
+            const totalIncTax = element?.CostCenter?.Total?.IncTax;
+            const invoicedVal = element?.CostCenter?.Totals?.InvoicedValue;
+            let yetToInvoiceValue =  element?.CostCenter?.Claimed?.Remaining?.Amount?.ExTax ? (element?.CostCenter?.Totals?.InvoicePercentage == 100 && element?.CostCenter?.Claimed?.Remaining?.Amount?.ExTax < 0) ? `$0.00` : `$${element?.CostCenter?.Claimed?.Remaining?.Amount?.ExTax}` : undefined;
+            yetToInvoiceValue = yetToInvoiceValue ?? '$'.concat((((totalIncTax != undefined && invoicedVal != undefined) ? (totalIncTax - invoicedVal) : 0) / 1.1).toFixed(2));
             rowObj = {
-                "ScheduleID": rows[i].ID,
-                "ScheduleType": rows[i].Type,
-                "StaffName": rows[i].Staff?.Name,
-                "ScheduleDate": rows[i].Date,
+                "ScheduleID": element.ID,
+                "ScheduleType": element.Type,
+                "StaffName": element.Staff?.Name,
+                "ScheduleDate": element.Date,
                 "StartTime": startTime ? moment(startTime).format("HH:mm:ss") : "",
                 "EndTime": endTime ? moment(endTime).format("HH:mm:ss") : "",
-                "CustomerName": rows[i].Job?.Customer?.Type === "Company" ? rows[i].Job?.Customer?.CompanyName : (rows[i].Job?.Customer?.GivenName + " " + rows[i].Job?.Customer?.FamilyName),
-                "CustomerPhone": rows[i]?.Job?.Customer?.Phone,
-                "JobID": rows[i].Job?.ID,
-                "SiteID": rows[i].Job?.Site?.ID,
-                "SiteName": rows[i].Job?.Site?.Name,
-                "SiteContact": rows[i].Job?.SiteContact?.CompanyName
-                    ? rows[i].Job?.SiteContact?.CompanyName
-                    : rows[i].Job?.SiteContact?.GivenName
-                        ? `${rows[i].Job?.SiteContact?.GivenName} ${rows[i]?.Job?.SiteContact?.FamilyName}`
-                        : (rows[i].Job?.Customer?.Type === "Company"
-                            ? rows[i].Job?.Customer?.CompanyName
-                            : `${rows[i].Job?.Customer?.GivenName} ${rows[i].Job?.Customer?.FamilyName}`),
-                "CostCenterName": rows[i].CostCenter?.Name || "",
-                "CustomerEmail": rows[i].Job?.Customer?.Email || "",
-                "JobName": rows[i].Job?.Name || "",
-                "ProjectManager": rows[i].Job?.ProjectManager?.Name || "",
-                "Zone": rows[i].Job?.CustomFields?.find(field => field?.CustomField?.Name === "Roof Zones")?.Value,
-                "JobTrade": rows[i].Job?.CustomFields?.find(field => field?.CustomField?.Name === "Job Trade (ie, Plumbing, Drainage, Roofing)")?.Value,
-                "Roof Double or Single": rows[i].Job?.CustomFields?.find(field => field?.CustomField?.Name === "Roofing Job Type")?.Value,
-                "ScheduleNotes": rows[i].Notes ? htmlToText(rows[i].Notes || "") : '',
-                "Percentage Client Invoice Claimed (From Simpro)": Math.round(((rows[i]?.CostCenter?.Claimed?.ToDate?.Percent ?? 0) / 100) * 100) / 100,
-                "Suburb": rows[i]?.Job?.Site?.Address?.City || "",
+                "CustomerName": element.Job?.Customer?.Type === "Company" ? element.Job?.Customer?.CompanyName : (element.Job?.Customer?.GivenName + " " + element.Job?.Customer?.FamilyName),
+                "CustomerPhone": element?.Job?.Customer?.Phone,
+                "JobID": element.Job?.ID,
+                "SiteID": element.Job?.Site?.ID,
+                "SiteName": element.Job?.Site?.Name,
+                "SiteContact": element.Job?.SiteContact?.CompanyName
+                    ? element.Job?.SiteContact?.CompanyName
+                    : element.Job?.SiteContact?.GivenName
+                        ? `${element.Job?.SiteContact?.GivenName} ${element?.Job?.SiteContact?.FamilyName}`
+                        : (element.Job?.Customer?.Type === "Company"
+                            ? element.Job?.Customer?.CompanyName
+                            : `${element.Job?.Customer?.GivenName} ${element.Job?.Customer?.FamilyName}`),
+                "CostCenterName": element.CostCenter?.Name || "",
+                "CustomerEmail": element.Job?.Customer?.Email || "",
+                "JobName": element.Job?.Name || "",
+                "ProjectManager": element.Job?.ProjectManager?.Name || "",
+                "Zone": element.Job?.CustomFields?.find(field => field?.CustomField?.Name === "Roof Zones")?.Value,
+                "JobTrade": element.Job?.CustomFields?.find(field => field?.CustomField?.Name === "Job Trade (ie, Plumbing, Drainage, Roofing)")?.Value,
+                "Roof Double or Single": element.Job?.CustomFields?.find(field => field?.CustomField?.Name === "Roofing Job Type")?.Value,
+                "ScheduleNotes": element.Notes ? htmlToText(element.Notes || "") : '',
+                "Percentage Client Invoice Claimed (From Simpro)": Math.round(((element?.CostCenter?.Claimed?.ToDate?.Percent ?? 0) / 100) * 100) / 100,
+                "Suburb": element?.Job?.Site?.Address?.City || "",
                 "Job level invoiced Percent": jobLevelInvPercent,
                 "Costcenter level invoiced Percent": ccLevelInvPercent,
-                "CC Yet to invoice": ccYetToInvoice == 0 ? "0" : ccYetToInvoice,
+                "CC Yet to invoice": yetToInvoiceValue,
             };
             const options: SmartsheetSheetRowsType = {
                 cells: (Object.keys(rowObj) as (keyof SimproScheduleRowObjectType)[]).map(columnName => {
@@ -87,7 +88,7 @@ export const convertSimproScheduleDataToSmartsheetFormatForUpdate = (
             };
 
             if (scheduleIdRowIdMap && Object.keys(scheduleIdRowIdMap).length) {
-                const rowId = scheduleIdRowIdMap[rows[i]?.ID?.toString()];
+                const rowId = scheduleIdRowIdMap[element?.ID?.toString()];
                 if (rowId) {
                     options.id = parseInt(rowId, 10); // Ensure rowId is parsed as an integer
                     convertedData.push(options); // Only push if rowId exists
@@ -95,13 +96,13 @@ export const convertSimproScheduleDataToSmartsheetFormatForUpdate = (
             }
         } else if (updateType == "minimal") {
             rowObj = {
-                "ScheduleID": rows[i].ID,
-                "ScheduleType": rows[i].Type,
-                "StaffName": rows[i].Staff?.Name,
-                "ScheduleDate": rows[i].Date,
+                "ScheduleID": element.ID,
+                "ScheduleType": element.Type,
+                "StaffName": element.Staff?.Name,
+                "ScheduleDate": element.Date,
                 "StartTime": startTime ? moment(startTime).format("HH:mm:ss") : "",
                 "EndTime": endTime ? moment(endTime).format("HH:mm:ss") : "",
-                "ScheduleNotes": rows[i].Notes ? htmlToText(rows[i].Notes || "") : ''
+                "ScheduleNotes": element.Notes ? htmlToText(element.Notes || "") : ''
             };
             const options: SmartsheetSheetRowsType = {
                 cells: (Object.keys(rowObj) as (keyof SimproScheduleRowObjectType)[]).map(columnName => {
@@ -114,7 +115,7 @@ export const convertSimproScheduleDataToSmartsheetFormatForUpdate = (
             };
 
             if (scheduleIdRowIdMap && Object.keys(scheduleIdRowIdMap).length) {
-                const rowId = scheduleIdRowIdMap[rows[i]?.ID?.toString()];
+                const rowId = scheduleIdRowIdMap[element?.ID?.toString()];
                 if (rowId) {
                     options.id = parseInt(rowId, 10); // Ensure rowId is parsed as an integer
                     convertedData.push(options); // Only push if rowId exists
@@ -133,54 +134,55 @@ export const convertSimproScheduleDataToSmartsheetFormat = (
 ) => {
     let convertedData: SmartsheetSheetRowsType[] = [];
 
-    for (let i = 0; i < rows.length; i++) {
-        let startTime = rows[i].Blocks.reduce(
+    for (const element of rows) {
+        let startTime = element.Blocks.reduce(
             (minTime, block) => minTime < block.ISO8601StartTime ? minTime : block.ISO8601StartTime,
-            rows[i].Blocks[0].ISO8601StartTime
+            element.Blocks[0].ISO8601StartTime
         )
-        let endTime = rows[i].Blocks.reduce(
+        let endTime = element.Blocks.reduce(
             (maxTime, block) => maxTime > block.ISO8601EndTime ? maxTime : block.ISO8601EndTime,
-            rows[i].Blocks[0].ISO8601EndTime)
+            element.Blocks[0].ISO8601EndTime)
 
         let rowObj: SimproScheduleRowObjectType;
         if (updateType == "full") {
-            // const ccLevelInvPercent = rows[i]?.CostCenter?.Totals?.InvoicePercentage ? rows[i]?.CostCenter?.Totals?.InvoicePercentage?.toFixed(2) : "0";
-            // const jobLevelInvPercent = rows[i]?.Job?.Totals?.InvoicePercentage ? rows[i]?.Job?.Totals?.InvoicePercentage?.toFixed(2) : "0";
-            const ccLevelInvPercent = Math.round(((rows[i]?.CostCenter?.Totals?.InvoicePercentage ?? 0) / 100) * 100) / 100;
-            const jobLevelInvPercent = Math.round(((rows[i]?.Job?.Totals?.InvoicePercentage ?? 0) / 100) * 100) / 100;
-            const ccYetToInvoice = Math.round(rows[i]?.CostCenter?.Claimed?.Remaining?.Amount?.ExTax ?? 0);
+            const ccLevelInvPercent = Math.round(((element?.CostCenter?.Totals?.InvoicePercentage ?? 0) / 100) * 100) / 100;
+            const jobLevelInvPercent = Math.round(((element?.Job?.Totals?.InvoicePercentage ?? 0) / 100) * 100) / 100;
+            const totalIncTax = element?.CostCenter?.Total?.IncTax;
+            const invoicedVal = element?.CostCenter?.Totals?.InvoicedValue;
+            let yetToInvoiceValue =  element?.CostCenter?.Claimed?.Remaining?.Amount?.ExTax ? (element?.CostCenter?.Totals?.InvoicePercentage == 100 && element?.CostCenter?.Claimed?.Remaining?.Amount?.ExTax < 0) ? `$0.00` : `$${element?.CostCenter?.Claimed?.Remaining?.Amount?.ExTax}` : undefined;
+            yetToInvoiceValue = yetToInvoiceValue ?? '$'.concat((((totalIncTax != undefined && invoicedVal != undefined) ? (totalIncTax - invoicedVal) : 0) / 1.1).toFixed(2));
             rowObj = {
-                "ScheduleID": rows[i].ID,
-                "ScheduleType": rows[i].Type,
-                "StaffName": rows[i].Staff?.Name,
-                "ScheduleDate": rows[i].Date,
+                "ScheduleID": element.ID,
+                "ScheduleType": element.Type,
+                "StaffName": element.Staff?.Name,
+                "ScheduleDate": element.Date,
                 "StartTime": startTime ? moment(startTime).format("HH:mm:ss") : "",
                 "EndTime": endTime ? moment(endTime).format("HH:mm:ss") : "",
-                "CustomerName": rows[i].Job?.Customer?.Type === "Company" ? rows[i].Job?.Customer?.CompanyName : (rows[i].Job?.Customer?.GivenName + " " + rows[i].Job?.Customer?.FamilyName),
-                "CustomerPhone": rows[i]?.Job?.Customer?.Phone,
-                "JobID": rows[i].Job?.ID,
-                "SiteID": rows[i].Job?.Site?.ID,
-                "SiteName": rows[i].Job?.Site?.Name,
-                "SiteContact": rows[i].Job?.SiteContact?.CompanyName
-                    ? rows[i].Job?.SiteContact?.CompanyName
-                    : rows[i].Job?.SiteContact?.GivenName
-                        ? `${rows[i].Job?.SiteContact?.GivenName} ${rows[i]?.Job?.SiteContact?.FamilyName}`
-                        : (rows[i].Job?.Customer?.Type === "Company"
-                            ? rows[i].Job?.Customer?.CompanyName
-                            : `${rows[i].Job?.Customer?.GivenName} ${rows[i].Job?.Customer?.FamilyName}`),
-                "CostCenterName": rows[i].CostCenter?.Name || "",
-                "CustomerEmail": rows[i].Job?.Customer?.Email || "",
-                "JobName": rows[i].Job?.Name || "",
-                "ProjectManager": rows[i].Job?.ProjectManager?.Name || "",
-                "Zone": rows[i].Job?.CustomFields?.find(field => field?.CustomField?.Name === "Roof Zones")?.Value,
-                "JobTrade": rows[i].Job?.CustomFields?.find(field => field?.CustomField?.Name === "Job Trade (ie, Plumbing, Drainage, Roofing)")?.Value,
-                "Roof Double or Single": rows[i].Job?.CustomFields?.find(field => field?.CustomField?.Name === "Roofing Job Type")?.Value,
-                "ScheduleNotes": rows[i].Notes ? htmlToText(rows[i].Notes || "") : '',
-                "Percentage Client Invoice Claimed (From Simpro)": Math.round(((rows[i]?.CostCenter?.Claimed?.ToDate?.Percent ?? 0) / 100) * 100) / 100,
-                "Suburb": rows[i]?.Job?.Site?.Address?.City || "",
+                "CustomerName": element.Job?.Customer?.Type === "Company" ? element.Job?.Customer?.CompanyName : (element.Job?.Customer?.GivenName + " " + element.Job?.Customer?.FamilyName),
+                "CustomerPhone": element?.Job?.Customer?.Phone,
+                "JobID": element.Job?.ID,
+                "SiteID": element.Job?.Site?.ID,
+                "SiteName": element.Job?.Site?.Name,
+                "SiteContact": element.Job?.SiteContact?.CompanyName
+                    ? element.Job?.SiteContact?.CompanyName
+                    : element.Job?.SiteContact?.GivenName
+                        ? `${element.Job?.SiteContact?.GivenName} ${element?.Job?.SiteContact?.FamilyName}`
+                        : (element.Job?.Customer?.Type === "Company"
+                            ? element.Job?.Customer?.CompanyName
+                            : `${element.Job?.Customer?.GivenName} ${element.Job?.Customer?.FamilyName}`),
+                "CostCenterName": element.CostCenter?.Name || "",
+                "CustomerEmail": element.Job?.Customer?.Email || "",
+                "JobName": element.Job?.Name || "",
+                "ProjectManager": element.Job?.ProjectManager?.Name || "",
+                "Zone": element.Job?.CustomFields?.find(field => field?.CustomField?.Name === "Roof Zones")?.Value,
+                "JobTrade": element.Job?.CustomFields?.find(field => field?.CustomField?.Name === "Job Trade (ie, Plumbing, Drainage, Roofing)")?.Value,
+                "Roof Double or Single": element.Job?.CustomFields?.find(field => field?.CustomField?.Name === "Roofing Job Type")?.Value,
+                "ScheduleNotes": element.Notes ? htmlToText(element.Notes || "") : '',
+                "Percentage Client Invoice Claimed (From Simpro)": Math.round(((element?.CostCenter?.Claimed?.ToDate?.Percent ?? 0) / 100) * 100) / 100,
+                "Suburb": element?.Job?.Site?.Address?.City || "",
                 "Job level invoiced Percent": jobLevelInvPercent,
                 "Costcenter level invoiced Percent": ccLevelInvPercent,
-                "CC Yet to invoice": ccYetToInvoice == 0 ? "0" : ccYetToInvoice,
+                "CC Yet to invoice": yetToInvoiceValue,
             };
             const options: SmartsheetSheetRowsType = {
                 cells: (Object.keys(rowObj) as (keyof SimproScheduleRowObjectType)[]).map(columnName => {
@@ -195,13 +197,13 @@ export const convertSimproScheduleDataToSmartsheetFormat = (
             convertedData.push(options);
         } else if (updateType == "minimal") {
             rowObj = {
-                "ScheduleID": rows[i].ID,
-                "ScheduleType": rows[i].Type,
-                "StaffName": rows[i].Staff?.Name,
-                "ScheduleDate": rows[i].Date,
+                "ScheduleID": element.ID,
+                "ScheduleType": element.Type,
+                "StaffName": element.Staff?.Name,
+                "ScheduleDate": element.Date,
                 "StartTime": startTime ? moment(startTime).format("HH:mm:ss") : "",
                 "EndTime": endTime ? moment(endTime).format("HH:mm:ss") : "",
-                "ScheduleNotes": rows[i].Notes ? htmlToText(rows[i].Notes || "") : ''
+                "ScheduleNotes": element.Notes ? htmlToText(element.Notes || "") : ''
             };
             const options: SmartsheetSheetRowsType = {
                 cells: (Object.keys(rowObj) as (keyof SimproScheduleRowObjectType)[]).map(columnName => {
