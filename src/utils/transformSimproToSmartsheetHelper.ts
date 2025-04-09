@@ -38,8 +38,8 @@ export const convertSimproScheduleDataToSmartsheetFormatForUpdate = (
         );
         let rowObj: SimproScheduleRowObjectType;
         if (updateType == "full") {
-            const ccLevelInvPercent = Math.round(((element?.CostCenter?.Totals?.InvoicePercentage ?? 0) / 100) * 100) / 100;
-            const jobLevelInvPercent = Math.round(((element?.Job?.Totals?.InvoicePercentage ?? 0) / 100) * 100) / 100;
+            const ccLevelInvPercent = (element?.CostCenter?.Totals?.InvoicePercentage ?? 0).toFixed(2);
+            const jobLevelInvPercent = (element?.Job?.Totals?.InvoicePercentage ?? 0).toFixed(2);
             const totalIncTax = element?.CostCenter?.Total?.IncTax;
             const invoicedVal = element?.CostCenter?.Totals?.InvoicedValue;
             let yetToInvoiceValue =  element?.CostCenter?.Claimed?.Remaining?.Amount?.ExTax ? (element?.CostCenter?.Totals?.InvoicePercentage == 100 && element?.CostCenter?.Claimed?.Remaining?.Amount?.ExTax < 0) ? `$0.00` : `$${element?.CostCenter?.Claimed?.Remaining?.Amount?.ExTax}` : undefined;
@@ -145,8 +145,8 @@ export const convertSimproScheduleDataToSmartsheetFormat = (
 
         let rowObj: SimproScheduleRowObjectType;
         if (updateType == "full") {
-            const ccLevelInvPercent = Math.round(((element?.CostCenter?.Totals?.InvoicePercentage ?? 0) / 100) * 100) / 100;
-            const jobLevelInvPercent = Math.round(((element?.Job?.Totals?.InvoicePercentage ?? 0) / 100) * 100) / 100;
+            const ccLevelInvPercent = (element?.CostCenter?.Totals?.InvoicePercentage ?? 0).toFixed(2);
+            const jobLevelInvPercent = (element?.Job?.Totals?.InvoicePercentage ?? 0).toFixed(2);
             const totalIncTax = element?.CostCenter?.Total?.IncTax;
             const invoicedVal = element?.CostCenter?.Totals?.InvoicedValue;
             let yetToInvoiceValue =  element?.CostCenter?.Claimed?.Remaining?.Amount?.ExTax ? (element?.CostCenter?.Totals?.InvoicePercentage == 100 && element?.CostCenter?.Claimed?.Remaining?.Amount?.ExTax < 0) ? `$0.00` : `$${element?.CostCenter?.Claimed?.Remaining?.Amount?.ExTax}` : undefined;
