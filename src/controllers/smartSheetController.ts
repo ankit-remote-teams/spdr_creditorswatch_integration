@@ -4,6 +4,7 @@ import { Document } from 'mongoose';
 import SmartsheetTaskTrackingModel from '../models/smartsheetTaskTrackingModel';
 import {
     ExistingCostCenterType,
+    ExistingIncomeType,
     ExistingLeadsType,
     ExistingQuotationType,
     ExistingScheduleType,
@@ -839,45 +840,75 @@ export const addJobRoofingDetailsToSmartSheet = async (rows: SimproJobCostCenter
     try {
         const sheetInfo = await smartsheet.sheets.getSheet({ id: smartsheetId });
         const columns = sheetInfo.columns;
-        let rowsToAdd: SimproJobCostCenterType[] = [];
-        let rowsToUpdate: SimproJobCostCenterType[] = [];
 
         let fetchedCostCenters = rows;
-        let fetchedCostCenterIds = rows.map(row => row.CostCenter.ID);
-        let uniqueId = await getColumnIdForColumnName("Cost_Center.ID", smartsheetId);
-        console.log('uniqueId', uniqueId)
+        let costCenterIdColumnId = await getColumnIdForColumnName("Cost_Center.ID", smartsheetId);
+        let jobIdColumnId = await getColumnIdForColumnName("JobID", smartsheetId);
+        let jobSectionIdColumnId = await getColumnIdForColumnName("Job_Section.ID", smartsheetId);
         const existingRows = sheetInfo.rows;
 
-        let existingCostcenterIdsInSheet: number[] = existingRows
+        let existingCostcenterIdsInSheet: ExistingIncomeType[] = existingRows
             .map((row: SmartsheetSheetRowsType) => {
-                const cellData = row.cells.find((cellData) => cellData.columnId === uniqueId);
-                if (cellData) {
-                    return cellData.value;
+                const cellDataCostCenter = row.cells.find((cellData) => cellData.columnId === costCenterIdColumnId);
+                const cellDataJob = row.cells.find((cellData) => cellData.columnId === jobIdColumnId);
+                const cellDataSection = row.cells.find((cellData) => cellData.columnId === jobSectionIdColumnId);
+                if (cellDataCostCenter && cellDataJob && cellDataSection) {
+                    return {
+                        JobID: cellDataJob.value,
+                        CostCenterID: cellDataCostCenter.value,
+                        SectionID: cellDataSection.value
+                    };
                 }
                 return null;
             })
             .filter((value: number | string | null) => value !== null);
 
-        let constCenterIdsToUpdate = Array.isArray(existingCostcenterIdsInSheet)
-            ? existingCostcenterIdsInSheet.filter(costCenterId => fetchedCostCenterIds.includes(costCenterId))
-            : [];
+        let constCentersToUpdate = Array.isArray(existingCostcenterIdsInSheet)
+            ? 
+            fetchedCostCenters.filter(fetched => 
+                existingCostcenterIdsInSheet.some(existing => 
+                    existing.CostCenterID == fetched.CostCenter.ID
+                    && existing.JobID == fetched.Job.ID
+                    && existing.SectionID == fetched.Section.ID))
+             : [];
 
-        let constCentersNotPartOfSimproResponse = Array.isArray(existingCostcenterIdsInSheet)
-        ? fetchedCostCenters.filter(costCenter => !existingCostcenterIdsInSheet.includes(costCenter.CostCenter.ID))
-        : [];
+        let constCentersNotPartOfSimproResponse: SimproJobCostCenterType[] = [];
+        existingCostcenterIdsInSheet.forEach(existing => {
+                if(!fetchedCostCenters.some(costCenter => 
+                    costCenter.CostCenter.ID == existing.CostCenterID 
+                    && costCenter.Job.ID == existing.JobID 
+                    && costCenter.Section.ID == existing.SectionID))
+                    constCentersNotPartOfSimproResponse.push({
+                        CostCenter: {
+                            ID: existing.CostCenterID,
+                            Name: ''
+                        },
+                        Job: {
+                            ID: existing.JobID,
+                            Type: ''
+                        },
+                        Section: {
+                            ID: existing.SectionID,
+                            Name: ''
+                        },
+                        ID: 0,
+                        ccRecordId: 0,
+                        Name: '',
+                        DateModified: '',
+                        _href: ''
+                    })
+            })
 
-        let constCenterIdsToAdd = Array.isArray(fetchedCostCenterIds) ? fetchedCostCenterIds.filter(costCenterId => !existingCostcenterIdsInSheet.includes(costCenterId)) : [];
+        let constCentersToAdd = Array.isArray(existingCostcenterIdsInSheet) ? fetchedCostCenters.filter(costCenter => 
+            !existingCostcenterIdsInSheet.some(existing => 
+                costCenter.CostCenter.ID == existing.CostCenterID 
+                && costCenter.Job.ID == existing.JobID 
+                && costCenter.Section.ID == existing.SectionID)) : [];
 
-        rows.forEach((row) => {
-            if (constCenterIdsToAdd.includes(row.ID)) {
-                rowsToAdd.push(row);
-            } else if (constCenterIdsToUpdate.includes(row.ID)) {
-                rowsToUpdate.push(row)
-            }
-        })
+        
 
-        if (rowsToAdd.length) {
-            const rowsToAddToSmartSheet = convertSimproRoofingDataToSmartsheetFormat(rowsToAdd, columns, "full");
+        if (constCentersToAdd.length) {
+            const rowsToAddToSmartSheet = convertSimproRoofingDataToSmartsheetFormat(constCentersToAdd, columns, "full");
             if (rowsToAddToSmartSheet.length > 0) {
                 console.log('Adding the rows to sheet', rowsToAddToSmartSheet.length)
                 const chunks = splitIntoChunks(rowsToAddToSmartSheet, 100);
@@ -898,8 +929,8 @@ export const addJobRoofingDetailsToSmartSheet = async (rows: SimproJobCostCenter
             }
         }
 
-        if (rowsToUpdate.length) {
-            await updateJobRoofingDetailsToSmartSheet(rowsToUpdate, constCentersNotPartOfSimproResponse, smartsheetId)
+        if (constCentersToUpdate.length) {
+            await updateJobRoofingDetailsToSmartSheet(constCentersToUpdate, constCentersNotPartOfSimproResponse, smartsheetId)
         }
 
         return { status: true, message: "Data added successfully" }
