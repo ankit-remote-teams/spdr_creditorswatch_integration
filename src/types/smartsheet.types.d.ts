@@ -154,3 +154,9 @@ export type SimproJobRoofingDetailType = {
     "Cost_Center.Name": string | null | undefined;
     "Remainingamount_Ex.Tax": string | number | undefined;
 }
+
+export type ExistingIncomeType = {
+    JobID: number;
+    CostCenterID: number;
+    SectionID: number;
+}
