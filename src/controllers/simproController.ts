@@ -207,8 +207,8 @@ export const getJobCardReport = async (req: Request, res: Response) => {
         let fetchedSimproSchedulesData: SimproScheduleType[] = await fetchScheduleData();
         console.log("fetch completed for new data")
 
-        console.log("Adding new records to smartsheet through manual api trigger for sheet v1", jobCardWebhookTestSheetId)
-        let responseOneFromSmartsheet = await addJobCardDataToSmartsheet(fetchedSimproSchedulesData, jobCardWebhookTestSheetId.toString());
+        console.log("Adding new records to smartsheet through manual api trigger for sheet v1", jobCardV2SheetId)
+        let responseOneFromSmartsheet = await addJobCardDataToSmartsheet(fetchedSimproSchedulesData, jobCardV2SheetId.toString());
 
 
         console.log("Adding new records to smartsheet through manual api trigger for sheet v2")
