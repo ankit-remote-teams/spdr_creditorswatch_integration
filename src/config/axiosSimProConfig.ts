@@ -1,15 +1,19 @@
 // /src/api/axiosSimPROConfig.ts
 import axios, { AxiosInstance } from 'axios';
+import rateLimit from 'axios-rate-limit';
 
 // Create Axios instance for SimPRO API
-const axiosSimPRO: AxiosInstance = axios.create({
+const axiosSimPRO: AxiosInstance = rateLimit(axios.create({
     baseURL: `${process.env.SIMPRO_BASE_URL}/companies/${process.env.SIMPRO_COMPANY_ID}`,
     headers: {
         'Content-Type': 'application/json',
         Authorization: `Bearer ${process.env.SIMPRO_ACCESS_TOKEN}`,
     },
     timeout: 600000,
-});
+}), {
+    maxRequests: 10,
+    perMilliseconds: 1000
+  });
 
 // Request Interceptor
 axiosSimPRO.interceptors.request.use(
