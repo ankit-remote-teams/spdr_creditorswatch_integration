@@ -481,7 +481,7 @@ export const getCostCentersData = async (costCenters: SimproJobCostCenterType[],
     let costCenterIdToMarkDeleted: string[] = [];
     let costCenterDataFromSimpro: SimproJobCostCenterType[] = [];
     for (const jobCostCenter of costCenters) {
-        await delay(300);
+        await delay(500);
         const jobDataForSchedule = await axiosSimPRO.get(`/jobs/${jobCostCenter?.Job?.ID}?columns=ID,Type,Site,SiteContact,DateIssued,Status,Total,Customer,Name,ProjectManager,CustomFields,Totals,Stage`);
         let fetchedJobData: SimproJobType = jobDataForSchedule?.data;
         jobCostCenter.Job = fetchedJobData;
