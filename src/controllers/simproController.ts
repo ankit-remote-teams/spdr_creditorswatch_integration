@@ -30,8 +30,6 @@ const jobCardV2SheetId = process.env.JOB_CARD_SHEET_V2_ID ? process.env.JOB_CARD
 const jobCardRoofingDetailSheetId = process.env.JOB_CARD_SHEET_ROOFING_DETAIL_ID ? process.env.JOB_CARD_SHEET_ROOFING_DETAIL_ID : "";
 let jobCardWebhookTestSheetId = 398991237795716;
 
-const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
-
 export const fetchScheduleDataForExistingScheduleIds = async (scheduleIds: number[], fetchType: string) => {
     try {
         let fetchedChartOfAccounts = await axiosSimPRO.get('/setup/accounts/chartOfAccounts/?pageSize=250&columns=ID,Name,Number');
@@ -481,7 +479,6 @@ export const getCostCentersData = async (costCenters: SimproJobCostCenterType[],
     let costCenterIdToMarkDeleted: string[] = [];
     let costCenterDataFromSimpro: SimproJobCostCenterType[] = [];
     for (const jobCostCenter of costCenters) {
-        await delay(300);
         const jobDataForSchedule = await axiosSimPRO.get(`/jobs/${jobCostCenter?.Job?.ID}?columns=ID,Type,Site,SiteContact,DateIssued,Status,Total,Customer,Name,ProjectManager,CustomFields,Totals,Stage`);
         let fetchedJobData: SimproJobType = jobDataForSchedule?.data;
         jobCostCenter.Job = fetchedJobData;
