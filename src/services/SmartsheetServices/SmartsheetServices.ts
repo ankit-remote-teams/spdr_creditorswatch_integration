@@ -1,5 +1,6 @@
 import { AxiosError } from "axios";
 import axiosSimPRO from "../../config/axiosSimProConfig";
+import axiosSimPROV2 from "../../config/axiosSimProConfigV2";
 import { SimproAccountType, SimproJobCostCenterType, SimproJobType, SimproScheduleType, SimproWebhookType } from "../../types/simpro.types";
 import { SmartsheetColumnType, SmartsheetSheetRowsType } from "../../types/smartsheet.types";
 import { convertSimprocostCenterDataToSmartsheetFormatForUpdate, convertSimproRoofingDataToSmartsheetFormat, convertSimproScheduleDataToSmartsheetFormat, convertSimproScheduleDataToSmartsheetFormatForUpdate } from "../../utils/transformSimproToSmartsheetHelper";
@@ -304,18 +305,18 @@ export class SmartsheetService {
         let costCenterDataFromSimpro: SimproJobCostCenterType[] = [];
         const url = `/jobCostCenters/?Job.ID=${jobID}`;
         const costCenters: SimproJobCostCenterType[] = await fetchSimproPaginatedData(url, "ID,CostCenter,Name,Job,Section,DateModified,_href");
-        let fetchedChartOfAccounts = await axiosSimPRO.get('/setup/accounts/chartOfAccounts/?pageSize=250&columns=ID,Name,Number');
+        let fetchedChartOfAccounts = await axiosSimPROV2.get('/setup/accounts/chartOfAccounts/?pageSize=250&columns=ID,Name,Number');
             let chartOfAccountsArray: SimproAccountType[] = fetchedChartOfAccounts?.data;
             let foundCostCenters = 0;
             let notFoundCostCenters = 0;
-            const jobDataForSchedule = await axiosSimPRO.get(`/jobs/${jobID}?columns=ID,Type,Site,SiteContact,DateIssued,Status,Total,Customer,Name,ProjectManager,CustomFields,Totals,Stage`);
+            const jobDataForSchedule = await axiosSimPROV2.get(`/jobs/${jobID}?columns=ID,Type,Site,SiteContact,DateIssued,Status,Total,Customer,Name,ProjectManager,CustomFields,Totals,Stage`);
             let fetchedJobData: SimproJobType = jobDataForSchedule?.data;
         for (const jobCostCenter of costCenters) {
             console.dir(jobCostCenter, {depth: null})
             jobCostCenter.Job = fetchedJobData;
             try {
                 const ccRecordId = jobCostCenter?.CostCenter?.ID;
-                let fetchedSetupCostCenterData = await axiosSimPRO.get(`/setup/accounts/costCenters/${ccRecordId}?columns=ID,Name,IncomeAccountNo`);
+                let fetchedSetupCostCenterData = await axiosSimPROV2.get(`/setup/accounts/costCenters/${ccRecordId}?columns=ID,Name,IncomeAccountNo`);
                 let setupCostCenterData = fetchedSetupCostCenterData.data;
                 if (setupCostCenterData?.IncomeAccountNo) {
                     let incomeAccountName = chartOfAccountsArray?.find(account => account?.Number == setupCostCenterData?.IncomeAccountNo)?.Name;
@@ -323,7 +324,7 @@ export class SmartsheetService {
                         console.log("Roofing income  ", jobCostCenter?.ID, jobCostCenter?.Job?.ID);
                         try {
                             const jcUrl = jobCostCenter?._href?.substring(jobCostCenter?._href?.indexOf('jobs'), jobCostCenter?._href.length);
-                            let costCenterResponse = await axiosSimPRO.get(`${jcUrl}?columns=Name,ID,Claimed,Total,Totals`);
+                            let costCenterResponse = await axiosSimPROV2.get(`${jcUrl}?columns=Name,ID,Claimed,Total,Totals`);
                             if (costCenterResponse) {
                                 jobCostCenter.CostCenter = costCenterResponse.data;
                                 jobCostCenter.ccRecordId = ccRecordId;
