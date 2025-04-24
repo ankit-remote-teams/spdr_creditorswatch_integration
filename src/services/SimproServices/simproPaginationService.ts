@@ -81,10 +81,9 @@ export const fetchBatchSimproPaginatedData = async <T>(url: string, columns: str
                 break;
             }
 
-            callback(entity);
             totalPages = parseInt(response.headers['result-pages'], 10) || 1;
             pageNum++;
-
+            callback(entity, pageNum - 1, totalPages);
         } while (pageNum <= totalPages);
     } catch (error) {
         if (error instanceof AxiosError) {
