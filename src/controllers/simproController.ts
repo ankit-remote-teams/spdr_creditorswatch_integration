@@ -414,13 +414,12 @@ export const fetchJobCostCenterDetail = async (req: Request, res: Response) => {
             switch(incomeAccountName) {
                 case 'roofingincome': {
                     console.log(" JOBCARD detail SCHEDULER : Fetch started for new data")
-                    fetchDataCostCenters([], 'full', async (costCenterIdToMarkDeleted: string[], costCenterDataFromSimpro: SimproJobCostCenterType[] ) => {
-                        console.log(" JOBCARD detail SCHEDULER : fetch completed for new data")
-                        console.log(" JOBCARD SCHEDULER : Adding new records to smartsheet for sheet version 1 ")
+                    fetchDataCostCenters([], 'full', async (costCenterIdToMarkDeleted: string[], costCenterDataFromSimpro: SimproJobCostCenterType[], pageNum: number, totalPages: number ) => {
+                        console.log(` JOBCARD detail SCHEDULER : fetch completed for new data, page ${pageNum} of ${totalPages}`)
+                        console.log(" JOBCARD SCHEDULER : Adding new records to smartsheet for sheet roofing ")
                         addJobRoofingDetailsToSmartSheet(costCenterDataFromSimpro, jobCardRoofingDetailSheetId);
-                        res.status(200).json({ message: "Successfully fetched JOB CostCenter roofing income detail" });
                     });
-                    
+                    res.status(200).json({ message: "Successfully initiated JOB CostCenter roofing income detail" });
                     break;
                 }
                 default:
@@ -450,9 +449,10 @@ export const fetchDataCostCenters = async (costCenters: SimproJobCostCenterType[
             
             if(!costCenters || costCenters.length == 0) {
                 const url = `/jobCostCenters/?pageSize=250`;
-                fetchBatchSimproPaginatedData(url, "ID,CostCenter,Name,Job,Section,DateModified,_href", 5, (fetchedCostCenters: SimproJobCostCenterType[]) => {
+                fetchBatchSimproPaginatedData(url, "ID,CostCenter,Name,Job,Section,DateModified,_href", 5, (fetchedCostCenters: SimproJobCostCenterType[], pageNum: number, totalPages: number) => {
                     getCostCentersData(fetchedCostCenters, chartOfAccountsArray, (costCenterIdToMarkDeleted: string[], costCenterDataFromSimpro: SimproJobCostCenterType[]) => {
-                        callback(costCenterIdToMarkDeleted, costCenterDataFromSimpro);
+                        console.log(`Completed fetch of roofing job details for page ${pageNum} of ${totalPages}`)
+                        callback(costCenterIdToMarkDeleted, costCenterDataFromSimpro, pageNum, totalPages);
                     })
                 });
             } else {

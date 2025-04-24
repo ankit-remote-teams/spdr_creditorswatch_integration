@@ -424,8 +424,8 @@ export const convertSimproRoofingDataToSmartsheetFormat = (
             const customerName = row.Job?.Customer?.CompanyName && row.Job?.Customer?.CompanyName.length > 0 ? row.Job?.Customer?.CompanyName : (row.Job?.Customer?.GivenName + " " + row.Job?.Customer?.FamilyName)
             const totalIncTax = row?.CostCenter?.Total?.IncTax;
             const invoicedVal = row?.CostCenter?.Totals?.InvoicedValue;
-            let yetToInvoiceValue =  row?.CostCenter?.Claimed?.Remaining?.Amount?.ExTax ? (row?.CostCenter?.Totals?.InvoicePercentage == 100 && row?.CostCenter?.Claimed?.Remaining?.Amount?.ExTax < 0) ? `$0.00` : row?.CostCenter?.Claimed?.Remaining?.Amount?.ExTax : undefined;
-            yetToInvoiceValue = yetToInvoiceValue ?? '$'.concat((((totalIncTax != undefined && invoicedVal != undefined) ? (totalIncTax - invoicedVal) : 0) / 1.1).toFixed(2));
+            let yetToInvoiceValue =  row?.CostCenter?.Claimed?.Remaining?.Amount?.ExTax ? (row?.CostCenter?.Totals?.InvoicePercentage == 100 && row?.CostCenter?.Claimed?.Remaining?.Amount?.ExTax < 0) ? `$0.00` : '$'.concat(row?.CostCenter?.Claimed?.Remaining?.Amount?.ExTax.toString()) : undefined;
+            yetToInvoiceValue = yetToInvoiceValue ? '$'.concat(yetToInvoiceValue.toString()) : (((totalIncTax != undefined && invoicedVal != undefined) ? (totalIncTax - invoicedVal) : 0) / 1.1).toFixed(2);
             rowObj = {
                 JobID: row?.Job?.ID,
                 Customer: customerName,
