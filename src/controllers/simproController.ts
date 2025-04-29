@@ -2,7 +2,7 @@ import { AxiosError } from 'axios';
 import { Request, Response } from 'express';
 import { fetchBatchSimproPaginatedData, fetchSimproPaginatedData } from '../services/SimproServices/simproPaginationService';
 import moment from 'moment';
-import { SmartsheetService } from '../services/SmartsheetServices/SmartsheetServices';
+// import { SmartsheetService } from '../services/SmartsheetServices/SmartsheetServices';
 import {
     SimproAccountType,
     SimproCustomerType,
@@ -30,6 +30,22 @@ const jobCardReportSheetId = process.env.JOB_CARD_SHEET_ID ? process.env.JOB_CAR
 const jobCardV2SheetId = process.env.JOB_CARD_SHEET_V2_ID ? process.env.JOB_CARD_SHEET_V2_ID : "";
 const jobCardRoofingDetailSheetId = process.env.JOB_CARD_SHEET_ROOFING_DETAIL_ID ? process.env.JOB_CARD_SHEET_ROOFING_DETAIL_ID : "";
 let jobCardWebhookTestSheetId = 398991237795716;
+
+
+
+const validateSimproV2Token = async () => {
+    try {
+        await axiosSimPROV2.get('/setup/accounts/chartOfAccounts/?pageSize=1');
+        return true;
+    } catch (err) {
+        if (err instanceof AxiosError && err.response?.status === 401) {
+            console.error('SimPRO V2 token validation failed. Please check SIMPRO_ACCESS_TOKEN_V2');
+            return false;
+        }
+        throw err;
+    }
+};
+
 
 export const fetchScheduleDataForExistingScheduleIds = async (scheduleIds: number[], fetchType: string) => {
     try {
@@ -408,72 +424,87 @@ export const fetchJobCostCenterDetail = async (req: Request, res: Response) => {
     try {
         const startTime = moment().unix();
         console.log(`JOB CostCenter detail : Task executed at ${moment().format('YYYY-MM-DD HH:mm:ss')}`);
-        try {
-            console.log("JOB CostCenter detail SCHEDULER : Fetch started for new data")
-            const incomeAccountName = req.params.incomeAccount;
-            switch(incomeAccountName) {
-                case 'roofingincome': {
-                    console.log(" JOBCARD detail SCHEDULER : Fetch started for new data")
-                    fetchDataCostCenters([], 'full', async (costCenterIdToMarkDeleted: string[], costCenterDataFromSimpro: SimproJobCostCenterType[], pageNum: number, totalPages: number ) => {
-                        console.log(` JOBCARD detail SCHEDULER : fetch completed for new data, page ${pageNum} of ${totalPages}`)
-                        console.log(" JOBCARD SCHEDULER : Adding new records to smartsheet for sheet roofing ")
-                        addJobRoofingDetailsToSmartSheet(costCenterDataFromSimpro, jobCardRoofingDetailSheetId);
-                    });
-                    res.status(200).json({ message: "Successfully initiated JOB CostCenter roofing income detail" });
-                    break;
-                }
-                default:
-                    break;
+        
+        console.log("JOB CostCenter detail SCHEDULER : Fetch started for new data");
+        const incomeAccountName = req.params.incomeAccount;
+        
+        switch(incomeAccountName) {
+            case 'roofingincome': {
+                console.log(" JOBCARD detail SCHEDULER : Fetch started for new data");
+                await fetchDataCostCenters([], 'full', async (costCenterIdToMarkDeleted: string[], costCenterDataFromSimpro: SimproJobCostCenterType[], pageNum: number, totalPages: number ) => {
+                    console.log(` JOBCARD detail SCHEDULER : fetch completed for new data, page ${pageNum} of ${totalPages}`);
+                    console.log(" JOBCARD SCHEDULER : Adding new records to smartsheet for sheet roofing ");
+                    return addJobRoofingDetailsToSmartSheet(costCenterDataFromSimpro, jobCardRoofingDetailSheetId);
+                });
+                res.status(200).json({ message: "Successfully initiated JOB CostCenter roofing income detail" });
+                break;
             }
-            console.log("Time taken to fill the sheet in ms", (moment().unix() - startTime));
-        } catch (err) {
-            if (err instanceof AxiosError) {
-                console.log(" JOB CostCenter detail : Error in job card scheduler as AxiosError");
-                console.log(" JOB CostCenter detail : Error details: ", err.response?.data);
-            } else {
-                console.log(" JOB CostCenter detail : Error in job card scheduler as other error");
-                console.log(" JOB CostCenter detail : Error details: ", err);
-            }
+            default:
+                res.status(400).json({ message: "Invalid income account name" });
+                break;
         }
-    } catch (err: any) {
-        console.log('Error in job card scheduler. Error: ' + JSON.stringify(err));
+        console.log("Time taken to fill the sheet in ms", (moment().unix() - startTime));
+    } catch (err) {
+        console.error('Error in job card scheduler:', err);
+        if (err instanceof AxiosError) {
+            res.status(err.response?.status || 500).json({
+                message: "Error in job card scheduler",
+                error: err.response?.data
+            });
+        } else {
+            res.status(500).json({
+                message: "Error in job card scheduler",
+                error: err instanceof Error ? err.message : 'Unknown error'
+            });
+        }
     }
-}
+};
+
+console.log('process.env.SIMPRO_ACCESS_TOKEN_V2', process.env.SIMPRO_ACCESS_TOKEN_V2)
 
 export const fetchDataCostCenters = async (costCenters: SimproJobCostCenterType[], fetchType: string, callback: any) => {
-    
     try {
         if (fetchType == "full") {
+            const isTokenValid = await validateSimproV2Token();
+            if (!isTokenValid) {
+                throw new Error('Invalid or expired SimPRO V2 token - please check SIMPRO_ACCESS_TOKEN_V2');
+            }
             let fetchedChartOfAccounts = await axiosSimPROV2.get('/setup/accounts/chartOfAccounts/?pageSize=250&columns=ID,Name,Number');
             let chartOfAccountsArray: SimproAccountType[] = fetchedChartOfAccounts?.data;
-            
-            if(!costCenters || costCenters.length == 0) {
+
+            if (!costCenters || costCenters.length == 0) {
                 const url = `/jobCostCenters/?pageSize=250`;
-                fetchBatchSimproPaginatedData(url, "ID,CostCenter,Name,Job,Section,DateModified,_href", 5, (fetchedCostCenters: SimproJobCostCenterType[], pageNum: number, totalPages: number) => {
+                return fetchBatchSimproPaginatedData(url, "ID,CostCenter,Name,Job,Section,DateModified,_href", 5, (fetchedCostCenters: SimproJobCostCenterType[], pageNum: number, totalPages: number) => {
                     getCostCentersData(fetchedCostCenters, chartOfAccountsArray, (costCenterIdToMarkDeleted: string[], costCenterDataFromSimpro: SimproJobCostCenterType[]) => {
-                        console.log(`Completed fetch of roofing job details for page ${pageNum} of ${totalPages}`)
-                        callback(costCenterIdToMarkDeleted, costCenterDataFromSimpro, pageNum, totalPages);
-                    })
+                        console.log(`Completed fetch of roofing job details for page ${pageNum} of ${totalPages}`);
+                        return callback(costCenterIdToMarkDeleted, costCenterDataFromSimpro, pageNum, totalPages);
+                    });
                 });
             } else {
-                getCostCentersData(costCenters, chartOfAccountsArray, (costCenterIdToMarkDeleted: string[], costCenterDataFromSimpro: SimproJobCostCenterType[]) => {
-                    callback(costCenterIdToMarkDeleted, costCenterDataFromSimpro);
-                })
+                return getCostCentersData(costCenters, chartOfAccountsArray, (costCenterIdToMarkDeleted: string[], costCenterDataFromSimpro: SimproJobCostCenterType[]) => {
+                    return callback(costCenterIdToMarkDeleted, costCenterDataFromSimpro);
+                });
             }
         }
-        
+
     } catch (err) {
         if (err instanceof AxiosError) {
             console.log("Error in fetchScheduleData as AxiosError");
             console.log("Error details: ", err.response?.data);
-            throw { message: "Something went wrong while fetching schedule data : " + JSON.stringify(err.response) }
+            const errorResponse = {
+                status: err.response?.status,
+                data: err.response?.data,
+                message: err.message
+            };
+            throw new Error("Something went wrong while fetching schedule data : " + JSON.stringify(errorResponse));
         } else {
             console.log("Error in fetchScheduleData as other error");
             console.log("Error details: ", err);
-            throw { message: `Internal Server Error in fetching schedule data : ${JSON.stringify(err)}` }
+            const errorMessage = err instanceof Error ? err.message : 'Unknown error';
+            throw new Error(`Internal Server Error in fetching schedule data: ${errorMessage}`);
         }
     }
-}
+};
 
 export const getCostCentersData = async (costCenters: SimproJobCostCenterType[], chartOfAccountsArray: SimproAccountType[], callback: any) => {
     let costCenterIdToMarkDeleted: string[] = [];
@@ -486,7 +517,7 @@ export const getCostCentersData = async (costCenters: SimproJobCostCenterType[],
             const ccRecordId = jobCostCenter?.CostCenter?.ID;
             let fetchedSetupCostCenterData = await axiosSimPROV2.get(`/setup/accounts/costCenters/${ccRecordId}?columns=ID,Name,IncomeAccountNo`);
             let setupCostCenterData = fetchedSetupCostCenterData.data;
-            
+
             if (setupCostCenterData?.IncomeAccountNo) {
                 let incomeAccountName = chartOfAccountsArray?.find(account => account?.Number == setupCostCenterData?.IncomeAccountNo)?.Name;
                 if (incomeAccountName == "Roofing Income") {

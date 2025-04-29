@@ -11,7 +11,7 @@ const axiosSimPROV2: AxiosInstance = rateLimit(axios.create({
     },
     timeout: 600000,
 }), {
-    maxRequests: 2,
+    maxRequests: 1,
     perMilliseconds: 1000
   });
 
