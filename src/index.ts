@@ -26,19 +26,19 @@ const PORT: number = parseInt(process.env.PORT as string, 10) || 6001;
 console.log("ENV PATH", `.env.${process.env.NODE_ENV}`)
 
 if (process.env.NODE_ENV === 'production') {
-    const cronJobs = [
-        './cron/createUpdateContactsDataScheduler',
-        './cron/createUpdateInvoiceCreditNoteScheduler',
-        './cron/deleteDataScheduler',
-        './cron/updateLateFeeScheduler',
+    // const cronJobs = [
+        // './cron/createUpdateContactsDataScheduler',
+        // './cron/createUpdateInvoiceCreditNoteScheduler',
+        // './cron/deleteDataScheduler',
+        // './cron/updateLateFeeScheduler',
         // './cron/taskWorkingHourScheduler',
-        './cron/jobCardScheduler',
+        // './cron/jobCardScheduler',
         // './cron/jobCardMinimalUpdateScheduler',
-        './cron/ongoingQuotationsAndLeadsScheduler',
-    ];
-    cronJobs.forEach(job => {
-        require(job);
-    });
+        // './cron/ongoingQuotationsAndLeadsScheduler',
+    // ];
+    // cronJobs.forEach(job => {
+    //     require(job);
+    // });
 }
 
 // For local Development
