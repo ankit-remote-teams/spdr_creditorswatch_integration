@@ -52,10 +52,10 @@ if (process.env.NODE_ENV === 'production') {
 // }
 
 
-app.use('/admin/queues', serverAdapter.getRouter());
-app.use('/api/smartsheet', smartSheetRoutes);
-app.use('/api/creditorswatch', creditorsWatchRoutes);
-app.use('/api/simpro', simproRoutes);
+// app.use('/admin/queues', serverAdapter.getRouter());
+// app.use('/api/smartsheet', smartSheetRoutes);
+// app.use('/api/creditorswatch', creditorsWatchRoutes);
+// app.use('/api/simpro', simproRoutes);
 
 
 app.get('/', (req: Request, res: Response) => {
