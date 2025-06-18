@@ -347,20 +347,23 @@ const updateCreditNoteData = async (simproInvoiceResponseArr: SimproInvoiceType[
 }
 console.log("For invoice schduler : ", moment(Date.now()).format("DD MMM YYYY HH:mm:ss"))
 
-cron.schedule("0 11 * * *", async () => {
-    try {
-        console.log(`INVOICE SCHEDULER: Task executed at ${moment().format('YYYY-MM-DD HH:mm:ss')}`);
-        await updateInvoiceData();
-    } catch (err: any) {
-        const recipients: string[] = process.env.EMAIL_RECIPIENTS
-            ? process.env.EMAIL_RECIPIENTS.split(',')
-            : [];
+cron.schedule(
+    '0 21 * * *',
+    async () => {
+        // cron.schedule("0 11 * * *", async () => { : old scheduler
+        try {
+            console.log(`INVOICE SCHEDULER: Task executed at ${moment().format('YYYY-MM-DD HH:mm:ss')}`);
+            await updateInvoiceData();
+        } catch (err: any) {
+            const recipients: string[] = process.env.EMAIL_RECIPIENTS
+                ? process.env.EMAIL_RECIPIENTS.split(',')
+                : [];
 
-        // Capture error details
-        const errorMessage = (err instanceof Error && err.message) || "An unknown error occurred";
-        const errorDetails = JSON.stringify(err, Object.getOwnPropertyNames(err));
+            // Capture error details
+            const errorMessage = (err instanceof Error && err.message) || "An unknown error occurred";
+            const errorDetails = JSON.stringify(err, Object.getOwnPropertyNames(err));
 
-        const sendEmail = `
+            const sendEmail = `
 <html>
     <body>
         <h1>Error found in update invoice creditnote scheduler</h1>
@@ -370,33 +373,38 @@ cron.schedule("0 11 * * *", async () => {
 </html>
 `;
 
-        const params = {
-            Destination: {
-                ToAddresses: recipients,
-            },
-            Message: {
-                Body: {
-                    Html: {
+            const params = {
+                Destination: {
+                    ToAddresses: recipients,
+                },
+                Message: {
+                    Body: {
+                        Html: {
+                            Charset: 'UTF-8',
+                            Data: sendEmail,
+                        },
+                    },
+                    Subject: {
                         Charset: 'UTF-8',
-                        Data: sendEmail,
+                        Data: 'Error in update invoice creditnote scheduler',
                     },
                 },
-                Subject: {
-                    Charset: 'UTF-8',
-                    Data: 'Error in update invoice creditnote scheduler',
-                },
-            },
-            Source: process.env.SES_SENDER_EMAIL as string,
-            ConfigurationSetName: 'promanager-config',
-        };
+                Source: process.env.SES_SENDER_EMAIL as string,
+                ConfigurationSetName: 'promanager-config',
+            };
 
-        try {
-            const data = await ses.sendEmail(params).promise();
-            console.log("Email successfully sent");
-        } catch (sendError) {
-            console.error('Error sending email:', sendError);
-            console.log("Failed to send email");
+            try {
+                const data = await ses.sendEmail(params).promise();
+                console.log("Email successfully sent");
+            } catch (sendError) {
+                console.error('Error sending email:', sendError);
+                console.log("Failed to send email");
+            }
+
         }
-
     }
-});
+    ,
+    {
+        timezone: 'Australia/Sydney',
+    }
+);

@@ -294,21 +294,24 @@ export const handleDeleteCreditNoteScheduler = async () => {
 
 console.log('DELETE SCHEDULER : Delete contact scheduler time', moment().format('YYYY-MM-DD HH:mm:ss'))
 
-cron.schedule("0 6 * * *", async () => {
-    try {
-        console.log(`DELETE SCHEDULER : Task executed at ${moment().format('YYYY-MM-DD HH:mm:ss')}`);
-        await handleDeleteContactScheduler();
-        await handleDeleteInvoiceScheduler();
-        await handleDeleteCreditNoteScheduler();
-    } catch (err: any) {
-        const recipients: string[] = process.env.EMAIL_RECIPIENTS
-            ? process.env.EMAIL_RECIPIENTS.split(',')
-            : [];
+cron.schedule(
+    '0 18 * * *',
+    async () => {
+        // cron.schedule("0 6 * * *", async () => { : Old code
+        try {
+            console.log(`DELETE SCHEDULER : Task executed at ${moment().format('YYYY-MM-DD HH:mm:ss')}`);
+            await handleDeleteContactScheduler();
+            await handleDeleteInvoiceScheduler();
+            await handleDeleteCreditNoteScheduler();
+        } catch (err: any) {
+            const recipients: string[] = process.env.EMAIL_RECIPIENTS
+                ? process.env.EMAIL_RECIPIENTS.split(',')
+                : [];
 
-        const errorMessage = err.message || "Unknown error";
-        const errorDetails = err.data || JSON.stringify(err, Object.getOwnPropertyNames(err));
+            const errorMessage = err.message || "Unknown error";
+            const errorDetails = err.data || JSON.stringify(err, Object.getOwnPropertyNames(err));
 
-        const sendemail = `
+            const sendemail = `
         <html>
             <body>
                 <h1>Error found in data delete scheduler</h1>
@@ -318,31 +321,36 @@ cron.schedule("0 6 * * *", async () => {
         </html>
         `;
 
-        const params = {
-            Destination: {
-                ToAddresses: recipients,
-            },
-            Message: {
-                Body: {
-                    Html: {
+            const params = {
+                Destination: {
+                    ToAddresses: recipients,
+                },
+                Message: {
+                    Body: {
+                        Html: {
+                            Charset: 'UTF-8',
+                            Data: sendemail,
+                        },
+                    },
+                    Subject: {
                         Charset: 'UTF-8',
-                        Data: sendemail,
+                        Data: 'Error in data delete scheduler',
                     },
                 },
-                Subject: {
-                    Charset: 'UTF-8',
-                    Data: 'Error in data delete scheduler',
-                },
-            },
-            Source: process.env.SES_SENDER_EMAIL as string,
-            ConfigurationSetName: 'promanager-config',
-        };
+                Source: process.env.SES_SENDER_EMAIL as string,
+                ConfigurationSetName: 'promanager-config',
+            };
 
-        try {
-            await ses.sendEmail(params).promise();
-            console.log("Email successfully sent");
-        } catch (emailError) {
-            console.error('Error sending email:', emailError);
+            try {
+                await ses.sendEmail(params).promise();
+                console.log("Email successfully sent");
+            } catch (emailError) {
+                console.error('Error sending email:', emailError);
+            }
         }
     }
-});
+    ,
+    {
+        timezone: 'Australia/Sydney',
+    }
+);
