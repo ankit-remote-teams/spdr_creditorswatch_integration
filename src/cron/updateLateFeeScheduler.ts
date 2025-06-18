@@ -197,20 +197,25 @@ export const handleLateFeeUpdate = async () => {
     }
 }
 
-cron.schedule("0 9 * * *", async () => {
-    try {
-        console.log(`LATE FEE SCHEDULER :  : Task executed at ${moment().format('YYYY-MM-DD HH:mm:ss')}`);
-        await handleLateFeeUpdate();
-    } catch (err: any) {
-        const recipients: string[] = process.env.EMAIL_RECIPIENTS
-            ? process.env.EMAIL_RECIPIENTS.split(',')
-            : [];
 
-        // Ensure err is defined before using it
-        const errorMessage = (err instanceof Error && err.message) || "An unknown error occurred";
-        const errorDetails = JSON.stringify(err, Object.getOwnPropertyNames(err));
+cron.schedule(
+    '0 19 * * *',
+    async () => {
+        // cron.schedule("0 9 * * *", async () => { Old code
 
-        const sendEmail = `
+        try {
+            console.log(`LATE FEE SCHEDULER :  : Task executed at ${moment().format('YYYY-MM-DD HH:mm:ss')}`);
+            await handleLateFeeUpdate();
+        } catch (err: any) {
+            const recipients: string[] = process.env.EMAIL_RECIPIENTS
+                ? process.env.EMAIL_RECIPIENTS.split(',')
+                : [];
+
+            // Ensure err is defined before using it
+            const errorMessage = (err instanceof Error && err.message) || "An unknown error occurred";
+            const errorDetails = JSON.stringify(err, Object.getOwnPropertyNames(err));
+
+            const sendEmail = `
     <html>
         <body>
             <h1>Error found in update late fee scheduler</h1>
@@ -220,33 +225,38 @@ cron.schedule("0 9 * * *", async () => {
     </html>
     `;
 
-        const params = {
-            Destination: {
-                ToAddresses: recipients,
-            },
-            Message: {
-                Body: {
-                    Html: {
+            const params = {
+                Destination: {
+                    ToAddresses: recipients,
+                },
+                Message: {
+                    Body: {
+                        Html: {
+                            Charset: 'UTF-8',
+                            Data: sendEmail,
+                        },
+                    },
+                    Subject: {
                         Charset: 'UTF-8',
-                        Data: sendEmail,
+                        Data: 'Error in Update late fee scheduler',
                     },
                 },
-                Subject: {
-                    Charset: 'UTF-8',
-                    Data: 'Error in Update late fee scheduler',
-                },
-            },
-            Source: process.env.SES_SENDER_EMAIL as string,
-            ConfigurationSetName: 'promanager-config',
-        };
+                Source: process.env.SES_SENDER_EMAIL as string,
+                ConfigurationSetName: 'promanager-config',
+            };
 
-        try {
-            const data = await ses.sendEmail(params).promise();
-            console.log("Email successfully sent");
-        } catch (sendError) {
-            console.error('Error sending email:', sendError);
-            console.log("Failed to send email");
+            try {
+                const data = await ses.sendEmail(params).promise();
+                console.log("Email successfully sent");
+            } catch (sendError) {
+                console.error('Error sending email:', sendError);
+                console.log("Failed to send email");
+            }
+
         }
-
     }
-});
+    ,
+    {
+        timezone: 'Australia/Sydney',
+    }
+);
