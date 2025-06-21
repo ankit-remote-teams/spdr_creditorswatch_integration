@@ -12,10 +12,10 @@ export function chunkArray<T>(array: T[], size: number): T[][] {
     return result;
 }
 
-export const get30HoursAgoDate = (): string => {
+export const get45DaysAgo = (): string => {
     const now = new Date();
-    const thirtyHoursAgo = new Date(now.getTime() - 30 * 60 * 60 * 1000);
-    return thirtyHoursAgo.toUTCString();
+    const fortyFiveDaysAgo = new Date(now.getTime() - 45 * 24 * 60 * 60 * 1000);
+    return fortyFiveDaysAgo.toUTCString();
 };
 
 export const calculateLatePaymentFeeAndBalanceDue = (
