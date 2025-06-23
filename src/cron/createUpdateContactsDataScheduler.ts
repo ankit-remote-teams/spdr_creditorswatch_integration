@@ -7,12 +7,14 @@ import { CreditorsWatchContactType, MappingType } from '../types/creditorswatch.
 import { SimproCompanyType } from '../types/simpro.types';
 import { transformContactDataToCreditorsWatchArray } from '../utils/transformDataHelper';
 import { creditorsWatchPostWithRetry, creditorsWatchPutWithRetry } from '../services/CreditorsWatchServices/CreditorsWatchApiUtils';
-import { get45DaysAgo } from '../utils/helper';
+import { get30HoursAgo } from '../utils/helper';
 import { ses } from '../config/awsConfig';
+
+console.log("Running Contact Data scheduler from CreditorsWatch in Prod")
 
 export const updateContactsData = async () => {
     try {
-        const ifModifiedSinceHeader = get45DaysAgo();
+        const ifModifiedSinceHeader = get30HoursAgo();
         let simproCustomerResponseArr: SimproCompanyType[] = await fetchSimproPaginatedData('/customers/companies/?pageSize=100', "ID,CompanyName,Email,Archived,EIN,Phone,AltPhone", ifModifiedSinceHeader);
         let creditorWatchContactDataArray: CreditorsWatchContactType[] = transformContactDataToCreditorsWatchArray('Simpro', simproCustomerResponseArr);
 
