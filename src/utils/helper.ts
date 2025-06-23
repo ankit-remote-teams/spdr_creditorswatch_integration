@@ -12,9 +12,9 @@ export function chunkArray<T>(array: T[], size: number): T[][] {
     return result;
 }
 
-export const get45DaysAgo = (): string => {
+export const get30HoursAgo = (): string => {
     const now = new Date();
-    const fortyFiveDaysAgo = new Date(now.getTime() - 45 * 24 * 60 * 60 * 1000);
+    const fortyFiveDaysAgo = new Date(now.getTime() - 30 * 60 * 60 * 1000);
     return fortyFiveDaysAgo.toUTCString();
 };
 

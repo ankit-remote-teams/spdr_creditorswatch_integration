@@ -7,7 +7,7 @@ import { CreditorsWatchCreditNoteType, CreditorsWatchInvoiceType, InvoiceItemPay
 import { transformCreditNoteDataToCreditorsWatchArray, transformInvoiceDataToCreditorsWatchArray } from '../utils/transformDataHelper';
 import { SimproCreditNoteType, SimproCustomerPaymentsType, SimproInvoiceType } from '../types/simpro.types';
 import { creditorsWatchPostWithRetry, creditorsWatchPutWithRetry } from '../services/CreditorsWatchServices/CreditorsWatchApiUtils';
-import { calculateLatePaymentFeeAndBalanceDue, get45DaysAgo } from '../utils/helper';
+import { calculateLatePaymentFeeAndBalanceDue, get30HoursAgo } from '../utils/helper';
 import CreditNoteMappingModel from '../models/creditNotesMappingModel';
 import { ses } from '../config/awsConfig'
 
@@ -17,7 +17,7 @@ const defaultPercentageValueForLateFee: number = parseFloat(process.env.DEFAULT_
 export const updateInvoiceData = async () => {
     try {
         //Comment start 
-        const ifModifiedSinceHeader = get45DaysAgo();
+        const ifModifiedSinceHeader = get30HoursAgo();
         let simproInvoiceResponseArr: SimproInvoiceType[] = await fetchSimproPaginatedData<SimproInvoiceType>('/invoices/?pageSize=100', 'ID,Customer,Status,Stage,Total,IsPaid,DateIssued,DatePaid,DateCreated,PaymentTerms,LatePaymentFee,Type', ifModifiedSinceHeader);
         simproInvoiceResponseArr = simproInvoiceResponseArr.filter(invoice => invoice.Stage === "Approved" && invoice.Type != 'RequestForClaim')
 
@@ -233,7 +233,7 @@ export const updateInvoiceData = async () => {
 
 const updateCreditNoteData = async (simproInvoiceResponseArr: SimproInvoiceType[]) => {
     try {
-        const ifModifiedSinceHeader = get45DaysAgo();
+        const ifModifiedSinceHeader = get30HoursAgo();
         let simproCreditNoteResponseArr: SimproCreditNoteType[] = await fetchSimproPaginatedData<SimproCreditNoteType>('/creditNotes/', 'ID,Type,Customer,DateIssued,Stage,Total,InvoiceNo', ifModifiedSinceHeader);
 
         if (!simproCreditNoteResponseArr) {
