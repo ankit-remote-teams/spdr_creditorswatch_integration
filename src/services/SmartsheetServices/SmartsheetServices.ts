@@ -222,6 +222,7 @@ export class SmartsheetService {
     static async handleDeleteScheduleInSmartsheet(webhookData: SimproWebhookType) {
         try {
             const { scheduleID, jobID, sectionID } = webhookData.reference;
+            console.log('scheduleID, jobID, sectionID', scheduleID, jobID, sectionID)
 
             if (jobCardReportSheetId) {
                 const sheetInfo = await smartsheet.sheets.getSheet({ id: jobCardReportSheetId });
@@ -259,13 +260,16 @@ export class SmartsheetService {
 
             }
 
-
+            console.log('jobCardV2SheetId', jobCardV2SheetId)
 
             if (jobCardV2SheetId) {
                 const sheetInfo = await smartsheet.sheets.getSheet({ id: jobCardV2SheetId });
                 const columns = sheetInfo.columns;
                 const scheduleColumn = columns.find((col: SmartsheetColumnType) => col.title === "ScheduleID");
                 const scheduleIdColumnId = scheduleColumn.id;
+
+                console.log("schedule column in v2", scheduleColumn)
+                
                 const scheduleCommentColumn = columns.find((col: SmartsheetColumnType) => col.title === "ScheduleComment");
                 const scheduleCommentColumnId = scheduleCommentColumn.id;
                 let scheduleDataForSmartsheet: SmartsheetSheetRowsType | undefined;
@@ -282,6 +286,8 @@ export class SmartsheetService {
                         break;
                     }
                 }
+
+                console.log('scheduleDataForSmartsheet', scheduleDataForSmartsheet)
 
                 const rowsToUpdate = [{
                     id: scheduleDataForSmartsheet?.id,
