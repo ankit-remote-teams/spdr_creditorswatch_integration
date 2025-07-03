@@ -99,11 +99,13 @@ export class SmartsheetService {
 
             console.log('IsInvoiceAccountNameRoofing: ' + isInvoiceAccountNameRoofing, costCenterID, scheduleID)
             if (isInvoiceAccountNameRoofing) {
-
+                console.log('jobCardReportSheetId', jobCardReportSheetId)
                 if (jobCardReportSheetId) {
                     const sheetInfo = await smartsheet.sheets.getSheet({ id: jobCardReportSheetId });
                     const columns = sheetInfo.columns;
                     const column = columns.find((col: SmartsheetColumnType) => col.title === "ScheduleID");
+
+                    console.log("schedule column", column)
 
                     // console.log('convertedDataForSmartsheet', convertedDataForSmartsheet)
                     if (!column) {
@@ -152,22 +154,25 @@ export class SmartsheetService {
                     }
                 }
 
+                console.log('jobCardV2SheetId', jobCardV2SheetId)
+
                 if (jobCardV2SheetId) {
                     const sheetInfo = await smartsheet.sheets.getSheet({ id: jobCardV2SheetId });
                     const columns = sheetInfo.columns;
                     const column = columns.find((col: SmartsheetColumnType) => col.title === "ScheduleID");
 
-                    // console.log('convertedDataForSmartsheet', convertedDataForSmartsheet)
+                    console.log("schedule column in v2", column)
                     if (!column) {
                         throw {
                             message: "ScheduleID column not found in the sheet",
                             status: 400
                         }
                     }
+                    
                     const scheduleIdColumnId = column.id;
                     const existingRows: SmartsheetSheetRowsType[] = sheetInfo.rows;
                     let scheduleDataForSmartsheet: SmartsheetSheetRowsType | undefined;
-
+                    console.log('existingRows', existingRows.length)
                     for (let i = 0; i < existingRows.length; i++) {
                         let currentRow = existingRows[i];
                         const cellData = currentRow.cells.find(
@@ -179,6 +184,7 @@ export class SmartsheetService {
                         }
                     }
 
+                    console.log('scheduleDataForSmartsheet', scheduleDataForSmartsheet)
                     if (scheduleDataForSmartsheet) {
                         let rowIdMap: { [key: string]: string } = {};
                         rowIdMap = {
