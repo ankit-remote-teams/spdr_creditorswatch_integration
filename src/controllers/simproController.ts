@@ -231,13 +231,13 @@ export const getJobCardReport = async (req: Request, res: Response) => {
 
 
         console.log("Adding new records to smartsheet through manual api trigger for sheet v2")
-        // let responseTwoFromSmartsheet = await addJobCardDataToSmartsheet(fetchedSimproSchedulesData, jobCardV2SheetId);
+        let responseTwoFromSmartsheet = await addJobCardDataToSmartsheet(fetchedSimproSchedulesData, jobCardV2SheetId);
 
 
         console.log("Completed: Adding new records to smartsheet")
 
-        // if (responseOneFromSmartsheet?.status && responseTwoFromSmartsheet?.status) { // original code
-        if (responseOneFromSmartsheet?.status) {
+        if (responseOneFromSmartsheet?.status && responseTwoFromSmartsheet?.status) { // original code
+        // if (responseOneFromSmartsheet?.status) {
             res.status(200).json({ fetchedSimproSchedulesData });
         } else {
             throw {
