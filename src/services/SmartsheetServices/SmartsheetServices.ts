@@ -224,41 +224,41 @@ export class SmartsheetService {
             const { scheduleID, jobID, sectionID } = webhookData.reference;
             console.log('scheduleID, jobID, sectionID', scheduleID, jobID, sectionID)
 
-            if (jobCardReportSheetId) {
-                const sheetInfo = await smartsheet.sheets.getSheet({ id: jobCardReportSheetId });
-                const columns = sheetInfo.columns;
-                const scheduleColumn = columns.find((col: SmartsheetColumnType) => col.title === "ScheduleID");
-                const scheduleIdColumnId = scheduleColumn.id;
-                const scheduleCommentColumn = columns.find((col: SmartsheetColumnType) => col.title === "ScheduleComment");
-                const scheduleCommentColumnId = scheduleCommentColumn.id;
-                let scheduleDataForSmartsheet: SmartsheetSheetRowsType | undefined;
-                const existingRows: SmartsheetSheetRowsType[] = sheetInfo.rows;
+            // if (jobCardReportSheetId) {
+            //     const sheetInfo = await smartsheet.sheets.getSheet({ id: jobCardReportSheetId });
+            //     const columns = sheetInfo.columns;
+            //     const scheduleColumn = columns.find((col: SmartsheetColumnType) => col.title === "ScheduleID");
+            //     const scheduleIdColumnId = scheduleColumn.id;
+            //     const scheduleCommentColumn = columns.find((col: SmartsheetColumnType) => col.title === "ScheduleComment");
+            //     const scheduleCommentColumnId = scheduleCommentColumn.id;
+            //     let scheduleDataForSmartsheet: SmartsheetSheetRowsType | undefined;
+            //     const existingRows: SmartsheetSheetRowsType[] = sheetInfo.rows;
 
 
-                for (let i = 0; i < existingRows.length; i++) {
-                    let currentRow = existingRows[i];
-                    const cellData = currentRow.cells.find(
-                        (cell: { columnId: string; value: any }) => cell.columnId === scheduleIdColumnId
-                    );
-                    if (cellData?.value === scheduleID) {
-                        scheduleDataForSmartsheet = currentRow;
-                        break;
-                    }
-                }
+            //     for (let i = 0; i < existingRows.length; i++) {
+            //         let currentRow = existingRows[i];
+            //         const cellData = currentRow.cells.find(
+            //             (cell: { columnId: string; value: any }) => cell.columnId === scheduleIdColumnId
+            //         );
+            //         if (cellData?.value === scheduleID) {
+            //             scheduleDataForSmartsheet = currentRow;
+            //             break;
+            //         }
+            //     }
 
-                const rowsToUpdate = [{
-                    id: scheduleDataForSmartsheet?.id,
-                    cells: [{ columnId: scheduleCommentColumnId, value: "Deleted from Simpro" }],
-                }]
+            //     const rowsToUpdate = [{
+            //         id: scheduleDataForSmartsheet?.id,
+            //         cells: [{ columnId: scheduleCommentColumnId, value: "Deleted from Simpro" }],
+            //     }]
 
-                await smartsheet.sheets.updateRow({
-                    sheetId: jobCardReportSheetId,
-                    body: rowsToUpdate,
-                });
+            //     await smartsheet.sheets.updateRow({
+            //         sheetId: jobCardReportSheetId,
+            //         body: rowsToUpdate,
+            //     });
 
-                console.log('delete comment added to the schedule in smartsheet', jobCardReportSheetId)
+            //     console.log('delete comment added to the schedule in smartsheet', jobCardReportSheetId)
 
-            }
+            // }
 
             console.log('jobCardV2SheetId', jobCardV2SheetId)
 
@@ -268,7 +268,7 @@ export class SmartsheetService {
                 const scheduleColumn = columns.find((col: SmartsheetColumnType) => col.title === "ScheduleID");
                 const scheduleIdColumnId = scheduleColumn.id;
 
-                console.log("schedule column in v2", scheduleColumn)
+                console.log("schedule column in v2 for delete", scheduleColumn)
                 
                 const scheduleCommentColumn = columns.find((col: SmartsheetColumnType) => col.title === "ScheduleComment");
                 const scheduleCommentColumnId = scheduleCommentColumn.id;
