@@ -14,7 +14,7 @@ import {
     SimproWebhookType
 } from '../types/simpro.types';
 import axiosSimPRO from '../config/axiosSimProConfig';
-import axiosSimPROV2 from '../config/axiosSimProConfigV2';
+// import axiosSimPROV2 from '../config/axiosSimProConfigV2';
 import {
     addJobCardDataToSmartsheet,
     addOpenQuotesDataToSmartsheet,
