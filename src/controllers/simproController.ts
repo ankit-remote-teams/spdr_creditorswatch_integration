@@ -31,13 +31,10 @@ const jobCardV2SheetId = process.env.JOB_CARD_SHEET_V2_ID ? process.env.JOB_CARD
 const jobCardRoofingDetailSheetId = process.env.JOB_CARD_SHEET_ROOFING_DETAIL_ID ? process.env.JOB_CARD_SHEET_ROOFING_DETAIL_ID : "";
 let jobCardWebhookTestSheetId = 398991237795716;
 
-// test
-import axiosSimPROV3 from '../config/axiosSimProConfigV3';
-
 
 const validateSimproV3Token = async () => {
     try {
-        await axiosSimPROV3.get('/setup/accounts/chartOfAccounts/?pageSize=1');
+        await axiosSimPROV2.get('/setup/accounts/chartOfAccounts/?pageSize=1');
         return true;
     } catch (err) {
         if (err instanceof AxiosError && err.response?.status === 401) {
@@ -471,7 +468,7 @@ export const fetchDataCostCenters = async (costCenters: SimproJobCostCenterType[
             if (!isTokenValid) {
                 throw new Error('Invalid or expired SimPRO V2 token - please check SIMPRO_ACCESS_TOKEN_V2');
             }
-            let fetchedChartOfAccounts = await axiosSimPROV3.get('/setup/accounts/chartOfAccounts/?pageSize=250&columns=ID,Name,Number');
+            let fetchedChartOfAccounts = await axiosSimPROV2.get('/setup/accounts/chartOfAccounts/?pageSize=250&columns=ID,Name,Number');
             let chartOfAccountsArray: SimproAccountType[] = fetchedChartOfAccounts?.data;
 
             if (!costCenters || costCenters.length == 0) {
@@ -512,12 +509,12 @@ export const getCostCentersData = async (costCenters: SimproJobCostCenterType[],
     let costCenterIdToMarkDeleted: string[] = [];
     let costCenterDataFromSimpro: SimproJobCostCenterType[] = [];
     for (const jobCostCenter of costCenters) {
-        const jobDataForSchedule = await axiosSimPROV3.get(`/jobs/${jobCostCenter?.Job?.ID}?columns=ID,Type,Site,SiteContact,DateIssued,Status,Total,Customer,Name,ProjectManager,CustomFields,Totals,Stage`);
+        const jobDataForSchedule = await axiosSimPROV2.get(`/jobs/${jobCostCenter?.Job?.ID}?columns=ID,Type,Site,SiteContact,DateIssued,Status,Total,Customer,Name,ProjectManager,CustomFields,Totals,Stage`);
         let fetchedJobData: SimproJobType = jobDataForSchedule?.data;
         jobCostCenter.Job = fetchedJobData;
         try {
             const ccRecordId = jobCostCenter?.CostCenter?.ID;
-            let fetchedSetupCostCenterData = await axiosSimPROV3.get(`/setup/accounts/costCenters/${ccRecordId}?columns=ID,Name,IncomeAccountNo`);
+            let fetchedSetupCostCenterData = await axiosSimPROV2.get(`/setup/accounts/costCenters/${ccRecordId}?columns=ID,Name,IncomeAccountNo`);
             let setupCostCenterData = fetchedSetupCostCenterData.data;
 
             if (setupCostCenterData?.IncomeAccountNo) {
@@ -526,7 +523,7 @@ export const getCostCentersData = async (costCenters: SimproJobCostCenterType[],
                     console.log("Roofing income  ", jobCostCenter?.ID, jobCostCenter?.Job?.ID);
                     try {
                         const jcUrl = jobCostCenter?._href?.substring(jobCostCenter?._href?.indexOf('jobs'), jobCostCenter?._href.length);
-                        let costCenterResponse = await axiosSimPROV3.get(`${jcUrl}?columns=Name,ID,Claimed,Total,Totals`);
+                        let costCenterResponse = await axiosSimPROV2.get(`${jcUrl}?columns=Name,ID,Claimed,Total,Totals`);
                         if (costCenterResponse) {
                             jobCostCenter.CostCenter = costCenterResponse.data;
                             jobCostCenter.ccRecordId = ccRecordId;
