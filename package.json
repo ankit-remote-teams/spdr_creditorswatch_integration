@@ -21,6 +21,7 @@
     "aws-sdk": "^2.1691.0",
     "axios": "^1.7.7",
     "axios-rate-limit": "^1.4.0",
+    "axios-retry": "^4.5.0",
     "bull": "^4.16.5",
     "cross-env": "^7.0.3",
     "docker-compose": "^1.2.0",

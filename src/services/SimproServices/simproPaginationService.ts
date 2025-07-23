@@ -1,6 +1,6 @@
 import { AxiosError } from "axios";
 import axiosSimPRO from "../../config/axiosSimProConfig";
-import axiosSimPROV2 from "../../config/axiosSimProConfigV2";
+// import axiosSimPROV2 from "../../config/axiosSimProConfigV2";
 
 
 export const fetchSimproPaginatedData = async <T>(url: string, columns: string, ifModifiedSinceHeader?: string): Promise<T[]> => {
@@ -73,7 +73,7 @@ export const fetchBatchSimproPaginatedData = async <T>(url: string, columns: str
                 };
             }
 
-            const response = await axiosSimPROV2.get(url, requestOptions);
+            const response = await axiosSimPRO.get(url, requestOptions);
 
             const entity = response.data;
             if (!entity || entity.length === 0) {
@@ -120,7 +120,7 @@ export const fetchBatchSimproPaginatedDataV3 = async <T>(url: string, columns: s
                 };
             }
 
-            const response = await axiosSimPROV2.get(url, requestOptions);
+            const response = await axiosSimPRO.get(url, requestOptions);
 
             const entity = response.data;
             if (!entity || entity.length === 0) {
