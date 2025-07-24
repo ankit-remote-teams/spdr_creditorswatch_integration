@@ -204,7 +204,7 @@ export const addJobCardDataToSmartsheet = async (rows: SimproScheduleType[], sma
         if (rowsToAdd.length) {
             const rowsToAddToSmartSheet = convertSimproScheduleDataToSmartsheetFormat(rowsToAdd, columns, "full");
             if (rowsToAddToSmartSheet.length > 0) {
-                console.log('Adding the rows to sheet', rowsToAddToSmartSheet.length)
+                console.log('Adding the rows to sheet for jobcard', rowsToAddToSmartSheet.length)
                 const chunks = splitIntoChunks(rowsToAddToSmartSheet, 100);
 
                 for (const chunk of chunks) {
@@ -419,7 +419,7 @@ export const addOpenQuotesDataToSmartsheet = async (rows: SimproQuotationType[])
         if (rowsToAdd.length) {
             const rowsToAddToSmartSheet = convertSimproQuotationDataToSmartsheetFormat(rowsToAdd, columns,);
             if (rowsToAddToSmartSheet.length > 0) {
-                console.log('Adding the rows to sheet', rowsToAddToSmartSheet.length)
+                console.log('Adding the rows to sheet for quote data', rowsToAddToSmartSheet.length)
                 const chunks = splitIntoChunks(rowsToAddToSmartSheet, 100);
 
                 for (const chunk of chunks) {
@@ -557,7 +557,7 @@ export const addOpenLeadsDataToSmartsheet = async (rows: SimproLeadType[]) => {
         if (rowsToAdd.length) {
             const rowsToAddToSmartSheet = convertSimproLeadsDataToSmartsheetFormat(rowsToAdd, columns,);
             if (rowsToAddToSmartSheet.length > 0) {
-                console.log('Adding the rows to sheet', rowsToAddToSmartSheet.length)
+                console.log('Adding the rows to sheet open lead data', rowsToAddToSmartSheet.length)
                 const chunks = splitIntoChunks(rowsToAddToSmartSheet, 100);
 
                 for (const chunk of chunks) {
@@ -759,7 +759,7 @@ export const addMinimalJobCardDataToSmartsheet = async (rows: SimproScheduleType
             if (fetchedScheduleDataForAddNewData && fetchedScheduleDataForAddNewData?.scheduleDataFromSimpro?.length) {
                 rowsToAddToSmartSheet = convertSimproScheduleDataToSmartsheetFormat(fetchedScheduleDataForAddNewData.scheduleDataFromSimpro || [], columns, "full");
                 if (rowsToAddToSmartSheet.length > 0) {
-                    console.log('Minimal : Adding the rows to sheet', rowsToAddToSmartSheet.length)
+                    console.log('Minimal : Adding the rows to sheet for min job card', rowsToAddToSmartSheet.length)
                     const chunks = splitIntoChunks(rowsToAddToSmartSheet, 100);
 
                     for (const chunk of chunks) {
@@ -910,7 +910,7 @@ export const addJobRoofingDetailsToSmartSheet = async (rows: SimproJobCostCenter
         if (constCentersToAdd.length) {
             const rowsToAddToSmartSheet = convertSimproRoofingDataToSmartsheetFormat(constCentersToAdd, columns, "full");
             if (rowsToAddToSmartSheet.length > 0) {
-                console.log('Adding the rows to sheet', rowsToAddToSmartSheet.length)
+                console.log('Adding the rows to sheet for roofing details', rowsToAddToSmartSheet.length)
                 const chunks = splitIntoChunks(rowsToAddToSmartSheet, 100);
 
                 for (const chunk of chunks) {
