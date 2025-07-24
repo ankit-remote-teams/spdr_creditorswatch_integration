@@ -19,7 +19,7 @@ const baseAxios: AxiosInstance = axios.create({
 
 // Apply rate limiting: max 5 requests per 1000ms
 const axiosSimPRO: AxiosInstance = rateLimit(baseAxios, {
-  maxRequests: 3,
+  maxRequests: 5,
   perMilliseconds: 1000,
 });
 
