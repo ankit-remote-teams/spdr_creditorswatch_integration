@@ -420,14 +420,14 @@ export const fetchJobCostCenterDetail = async (req: Request, res: Response) => {
     try {
         const startTime = moment().unix();
         console.log(`JOB CostCenter detail : Task executed at ${moment().format('YYYY-MM-DD HH:mm:ss')}`);
-        
+
         console.log("JOB CostCenter detail SCHEDULER : Fetch started for new data");
         const incomeAccountName = req.params.incomeAccount;
-        
-        switch(incomeAccountName) {
+
+        switch (incomeAccountName) {
             case 'roofingincome': {
                 console.log(" JOBCARD detail SCHEDULER : Fetch started for new data");
-                await fetchDataCostCenters([], 'full', async (costCenterIdToMarkDeleted: string[], costCenterDataFromSimpro: SimproJobCostCenterType[], pageNum: number, totalPages: number ) => {
+                await fetchDataCostCenters([], 'full', async (costCenterIdToMarkDeleted: string[], costCenterDataFromSimpro: SimproJobCostCenterType[], pageNum: number, totalPages: number) => {
                     console.log(` JOBCARD detail SCHEDULER : fetch completed for new data, page ${pageNum} of ${totalPages}`);
                     console.log(" JOBCARD SCHEDULER : Adding new records to smartsheet for sheet roofing ");
                     return addJobRoofingDetailsToSmartSheet(costCenterDataFromSimpro, jobCardRoofingDetailSheetId);
@@ -549,7 +549,9 @@ export const getCostCentersData = async (costCenters: SimproJobCostCenterType[],
                             if (costCenterResponse) {
                                 jobCostCenter.CostCenter = costCenterResponse.data;
                                 jobCostCenter.ccRecordId = ccRecordId;
-                                if (costCenterResponse?.Claimed?.Remaining?.Amount?.ExTax > 0) {
+                                const exTax = parseFloat(costCenterResponse?.Claimed?.Remaining?.Amount?.ExTax);
+
+                                if (!isNaN(exTax) && exTax > 0) {
                                     costCenterDataFromSimpro.push(jobCostCenter);
                                 }
                             }
