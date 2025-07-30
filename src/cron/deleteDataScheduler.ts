@@ -7,7 +7,7 @@ import { creditorsWatchPutWithRetry } from "../services/CreditorsWatchServices/C
 import InvoiceMappingModel from '../models/invoiceMappingModel';
 import ContactMappingModel from '../models/contactMappingModel';
 import CreditNoteMappingModel from "../models/creditNotesMappingModel";
-import { ses } from '../config/awsConfig'
+import { sendEmailForNotification } from "../services/EmailService/emailService";
 
 // Delay function to pause execution for a given time in milliseconds
 const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
@@ -342,7 +342,7 @@ cron.schedule(
             };
 
             try {
-                await ses.sendEmail(params).promise();
+                await sendEmailForNotification(params);
                 console.log("Email successfully sent");
             } catch (emailError) {
                 console.error('Error sending email:', emailError);

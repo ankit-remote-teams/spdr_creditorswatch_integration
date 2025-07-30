@@ -7,8 +7,8 @@ import { creditorsWatchPostWithRetry, creditorsWatchPutWithRetry } from '../serv
 const cron = require('node-cron');
 import InvoiceMappingModel from '../models/invoiceMappingModel';
 import { AxiosError } from 'axios';
-import { ses } from '../config/awsConfig';
 import { SimproCustomerPaymentsType, SimproInvoiceType } from '../types/simpro.types';
+import { sendEmailForNotification } from '../services/EmailService/emailService';
 
 const defaultPercentageValueForLateFee: number = parseFloat(process.env.DEFAULT_LATE_FEE_PERCENTAGE_FOR_CUSTOMER_PER_YEAR || '0');
 
@@ -246,7 +246,7 @@ cron.schedule(
             };
 
             try {
-                const data = await ses.sendEmail(params).promise();
+                await sendEmailForNotification(params);
                 console.log("Email successfully sent");
             } catch (sendError) {
                 console.error('Error sending email:', sendError);

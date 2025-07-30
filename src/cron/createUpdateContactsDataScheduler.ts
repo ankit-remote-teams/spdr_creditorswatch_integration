@@ -8,7 +8,7 @@ import { SimproCompanyType } from '../types/simpro.types';
 import { transformContactDataToCreditorsWatchArray } from '../utils/transformDataHelper';
 import { creditorsWatchPostWithRetry, creditorsWatchPutWithRetry } from '../services/CreditorsWatchServices/CreditorsWatchApiUtils';
 import { get30HoursAgo } from '../utils/helper';
-import { ses } from '../config/awsConfig';
+import { sendEmailForNotification } from '../services/EmailService/emailService';
 
 console.log("Running Contact Data scheduler from CreditorsWatch in Prod")
 
@@ -153,7 +153,7 @@ cron.schedule(
             };
 
             try {
-                const data = await ses.sendEmail(params).promise();
+                await sendEmailForNotification(params);
                 console.log("Email successfully sent");
             } catch (sendError) {
                 console.error('Error sending email:', sendError);

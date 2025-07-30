@@ -12,9 +12,9 @@ import moment from 'moment';
 import { updateInvoiceData } from '../cron/createUpdateInvoiceCreditNoteScheduler';
 import { calculateLatePaymentFeeAndBalanceDue } from '../utils/helper';
 import { handleLateFeeUpdate } from '../cron/updateLateFeeScheduler';
-import { ses } from '../config/awsConfig';
 import { updateContactsData } from '../cron/createUpdateContactsDataScheduler';
 import { handleDeleteContactScheduler, handleDeleteCreditNoteScheduler, handleDeleteInvoiceScheduler } from '../cron/deleteDataScheduler';
+import { sendEmailForNotification } from '../services/EmailService/emailService';
 
 const defaultPercentageValueForLateFee: number = parseFloat(process.env.DEFAULT_LATE_FEE_PERCENTAGE_FOR_CUSTOMER_PER_YEAR || '0');
 console.log('SYNC CONTROLLER :SYNC CONTROLLER :  DEFAULT_LATE_FEE_PERCENTAGE_FOR_CUSTOMER_PER_YEAR', process.env.DEFAULT_LATE_FEE_PERCENTAGE_FOR_CUSTOMER_PER_YEAR)
@@ -315,7 +315,7 @@ export const updateInvoiceCreditorNoteDataToCreditorsWatch = async (req: Request
         };
 
         try {
-            await ses.sendEmail(params).promise();
+            await sendEmailForNotification(params)
             console.log("Email successfully sent");
         } catch (err) {
             console.log("Error sending email:", JSON.stringify(err, Object.getOwnPropertyNames(err)));
@@ -372,7 +372,7 @@ export const updateInvoiceLateFee = async (req: Request, res: Response): Promise
         };
 
         try {
-            await ses.sendEmail(params).promise();
+            await sendEmailForNotification(params) 
             console.log("Email successfully sent");
         } catch (emailError) {
             console.error("Error sending email:", JSON.stringify(emailError, Object.getOwnPropertyNames(emailError)));
@@ -432,7 +432,7 @@ export const updateContactsDetailsManually = async (req: Request, res: Response)
         };
 
         try {
-            await ses.sendEmail(params).promise();
+            await sendEmailForNotification(params) 
             console.log("Email successfully sent");
         } catch (sendError) {
             console.error("Error sending email:", sendError);
@@ -495,7 +495,7 @@ export const deleteDataManualTrigger = async (req: Request, res: Response): Prom
         };
 
         try {
-            await ses.sendEmail(params).promise();
+            await sendEmailForNotification(params) 
             console.log("Email successfully sent");
         } catch (sendError) {
             console.error("Error sending email:", sendError);
