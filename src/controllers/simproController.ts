@@ -549,7 +549,7 @@ export const getCostCentersData = async (costCenters: SimproJobCostCenterType[],
                             if (costCenterResponse) {
                                 jobCostCenter.CostCenter = costCenterResponse.data;
                                 jobCostCenter.ccRecordId = ccRecordId;
-                                if (costCenterResponse?.Claimed?.Remaining?.Remaining > 0) {
+                                if (costCenterResponse?.Claimed?.Remaining?.Amount?.ExTax > 0) {
                                     costCenterDataFromSimpro.push(jobCostCenter);
                                 }
                             }
