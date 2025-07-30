@@ -42,7 +42,7 @@ export const convertSimproScheduleDataToSmartsheetFormatForUpdate = (
             const jobLevelInvPercent = (element?.Job?.Totals?.InvoicePercentage ?? 0).toFixed(2);
             const totalIncTax = element?.CostCenter?.Total?.IncTax;
             const invoicedVal = element?.CostCenter?.Totals?.InvoicedValue;
-            let yetToInvoiceValue =  element?.CostCenter?.Claimed?.Remaining?.Amount?.ExTax ? (element?.CostCenter?.Totals?.InvoicePercentage == 100 && element?.CostCenter?.Claimed?.Remaining?.Amount?.ExTax < 0) ? `$0.00` : `$${element?.CostCenter?.Claimed?.Remaining?.Amount?.ExTax}` : undefined;
+            let yetToInvoiceValue = element?.CostCenter?.Claimed?.Remaining?.Amount?.ExTax ? (element?.CostCenter?.Totals?.InvoicePercentage == 100 && element?.CostCenter?.Claimed?.Remaining?.Amount?.ExTax < 0) ? `$0.00` : `$${element?.CostCenter?.Claimed?.Remaining?.Amount?.ExTax}` : undefined;
             yetToInvoiceValue = yetToInvoiceValue ?? '$'.concat((((totalIncTax != undefined && invoicedVal != undefined) ? (totalIncTax - invoicedVal) : 0) / 1.1).toFixed(2));
             rowObj = {
                 "ScheduleID": element.ID,
@@ -149,7 +149,7 @@ export const convertSimproScheduleDataToSmartsheetFormat = (
             const jobLevelInvPercent = (element?.Job?.Totals?.InvoicePercentage ?? 0).toFixed(2);
             const totalIncTax = element?.CostCenter?.Total?.IncTax;
             const invoicedVal = element?.CostCenter?.Totals?.InvoicedValue;
-            let yetToInvoiceValue =  element?.CostCenter?.Claimed?.Remaining?.Amount?.ExTax ? (element?.CostCenter?.Totals?.InvoicePercentage == 100 && element?.CostCenter?.Claimed?.Remaining?.Amount?.ExTax < 0) ? `$0.00` : `$${element?.CostCenter?.Claimed?.Remaining?.Amount?.ExTax}` : undefined;
+            let yetToInvoiceValue = element?.CostCenter?.Claimed?.Remaining?.Amount?.ExTax ? (element?.CostCenter?.Totals?.InvoicePercentage == 100 && element?.CostCenter?.Claimed?.Remaining?.Amount?.ExTax < 0) ? `$0.00` : `$${element?.CostCenter?.Claimed?.Remaining?.Amount?.ExTax}` : undefined;
             yetToInvoiceValue = yetToInvoiceValue ?? '$'.concat((((totalIncTax != undefined && invoicedVal != undefined) ? (totalIncTax - invoicedVal) : 0) / 1.1).toFixed(2));
             rowObj = {
                 "ScheduleID": element.ID,
@@ -447,6 +447,7 @@ export const convertSimproRoofingDataToSmartsheetFormat = (
                 "Cost_Center.Name": row?.CostCenter?.Name,
                 "Remainingamount_Ex.Tax": yetToInvoiceValue,
                 "CostCentre_Total_Ex.Tax": row?.CostCenter?.Total?.ExTax,
+                "Remaining_Invoice_Percentage": row?.CostCenter?.Claimed?.Remaining?.Percent
             }
             console.dir(rowObj, { depth: null })
             const options: SmartsheetSheetRowsType = {
@@ -501,6 +502,7 @@ export const convertSimprocostCenterDataToSmartsheetFormatForUpdate = (
                 "Cost_Center.Name": row?.CostCenter?.Name,
                 "Remainingamount_Ex.Tax": yetToInvoiceValue,
                 "CostCentre_Total_Ex.Tax": row?.CostCenter?.Total?.ExTax,
+                "Remaining_Invoice_Percentage": row?.CostCenter?.Claimed?.Remaining?.Percent
             }
             console.dir(rowObj, { depth: null })
             const options: SmartsheetSheetRowsType = {
