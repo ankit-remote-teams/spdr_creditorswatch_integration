@@ -9,7 +9,7 @@ import { SimproCreditNoteType, SimproCustomerPaymentsType, SimproInvoiceType } f
 import { creditorsWatchPostWithRetry, creditorsWatchPutWithRetry } from '../services/CreditorsWatchServices/CreditorsWatchApiUtils';
 import { calculateLatePaymentFeeAndBalanceDue, get30HoursAgo } from '../utils/helper';
 import CreditNoteMappingModel from '../models/creditNotesMappingModel';
-import { ses } from '../config/awsConfig'
+import { sendEmailForNotification } from '../services/EmailService/emailService';
 
 
 const defaultPercentageValueForLateFee: number = parseFloat(process.env.DEFAULT_LATE_FEE_PERCENTAGE_FOR_CUSTOMER_PER_YEAR || '0');
@@ -394,7 +394,7 @@ cron.schedule(
             };
 
             try {
-                const data = await ses.sendEmail(params).promise();
+                 await sendEmailForNotification(params);
                 console.log("Email successfully sent");
             } catch (sendError) {
                 console.error('Error sending email:', sendError);

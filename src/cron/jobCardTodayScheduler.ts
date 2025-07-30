@@ -1,7 +1,6 @@
 const cron = require('node-cron');
 import { AxiosError } from "axios";
 import moment from "moment";
-// import { ses } from '../config/awsConfig'
 import { SimproScheduleType } from "../types/simpro.types";
 import { fetchCurrentDateScheduleData } from "../services/SimproServices/simproScheduleService";
 import { addJobCardDataToSmartsheet } from "../controllers/smartSheetController";

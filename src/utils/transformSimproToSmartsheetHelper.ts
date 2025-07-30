@@ -424,8 +424,18 @@ export const convertSimproRoofingDataToSmartsheetFormat = (
             const customerName = row.Job?.Customer?.CompanyName && row.Job?.Customer?.CompanyName.length > 0 ? row.Job?.Customer?.CompanyName : (row.Job?.Customer?.GivenName + " " + row.Job?.Customer?.FamilyName)
             const totalIncTax = row?.CostCenter?.Total?.IncTax;
             const invoicedVal = row?.CostCenter?.Totals?.InvoicedValue;
-            let yetToInvoiceValue =  row?.CostCenter?.Claimed?.Remaining?.Amount?.ExTax ? (row?.CostCenter?.Totals?.InvoicePercentage == 100 && row?.CostCenter?.Claimed?.Remaining?.Amount?.ExTax < 0) ? `$0.00` : '$'.concat(row?.CostCenter?.Claimed?.Remaining?.Amount?.ExTax.toString()) : undefined;
-            yetToInvoiceValue = yetToInvoiceValue ? '$'.concat(yetToInvoiceValue.toString()) : (((totalIncTax != undefined && invoicedVal != undefined) ? (totalIncTax - invoicedVal) : 0) / 1.1).toFixed(2);
+            let yetToInvoiceValue = row?.CostCenter?.Claimed?.Remaining?.Amount?.ExTax
+                ? (row?.CostCenter?.Totals?.InvoicePercentage === 100 &&
+                    row?.CostCenter?.Claimed?.Remaining?.Amount?.ExTax < 0)
+                    ? "$0.00"
+                    : `$${row?.CostCenter?.Claimed?.Remaining?.Amount?.ExTax}`
+                : null;
+
+            // Use fallback only if value is null/undefined
+            if (yetToInvoiceValue == null) {
+                yetToInvoiceValue = `$${(((totalIncTax ?? 0) - (invoicedVal ?? 0)) / 1.1).toFixed(2)}`;
+            }
+
             rowObj = {
                 JobID: row?.Job?.ID,
                 Customer: customerName,
@@ -436,8 +446,9 @@ export const convertSimproRoofingDataToSmartsheetFormat = (
                 "Cost_Center.ID": row?.CostCenter?.ID,
                 "Cost_Center.Name": row?.CostCenter?.Name,
                 "Remainingamount_Ex.Tax": yetToInvoiceValue,
+                "CostCentre_Total_Ex.Tax": row?.CostCenter?.Total?.ExTax,
             }
-            console.dir(rowObj, {depth: null})
+            console.dir(rowObj, { depth: null })
             const options: SmartsheetSheetRowsType = {
                 cells: (Object.keys(rowObj) as (keyof SimproJobRoofingDetailType)[]).map(columnName => {
                     const column = columns.find(i => i.title === columnName);
@@ -467,8 +478,18 @@ export const convertSimprocostCenterDataToSmartsheetFormatForUpdate = (
             const customerName = row.Job?.Customer?.CompanyName && row.Job?.Customer?.CompanyName.length > 0 ? row.Job?.Customer?.CompanyName : (row.Job?.Customer?.GivenName + " " + row.Job?.Customer?.FamilyName)
             const totalIncTax = row?.CostCenter?.Total?.IncTax;
             const invoicedVal = row?.CostCenter?.Totals?.InvoicedValue;
-            let yetToInvoiceValue =  row?.CostCenter?.Claimed?.Remaining?.Amount?.ExTax ? (row?.CostCenter?.Totals?.InvoicePercentage == 100 && row?.CostCenter?.Claimed?.Remaining?.Amount?.ExTax < 0) ? `$0.00` : `$${row?.CostCenter?.Claimed?.Remaining?.Amount?.ExTax}` : undefined;
-            yetToInvoiceValue = yetToInvoiceValue ?? '$'.concat((((totalIncTax != undefined && invoicedVal != undefined) ? (totalIncTax - invoicedVal) : 0) / 1.1).toFixed(2));
+            let yetToInvoiceValue = row?.CostCenter?.Claimed?.Remaining?.Amount?.ExTax
+                ? (row?.CostCenter?.Totals?.InvoicePercentage === 100 &&
+                    row?.CostCenter?.Claimed?.Remaining?.Amount?.ExTax < 0)
+                    ? "$0.00"
+                    : `$${row?.CostCenter?.Claimed?.Remaining?.Amount?.ExTax}`
+                : null;
+
+            // Use fallback only if value is null/undefined
+            if (yetToInvoiceValue == null) {
+                yetToInvoiceValue = `$${(((totalIncTax ?? 0) - (invoicedVal ?? 0)) / 1.1).toFixed(2)}`;
+            }
+
             rowObj = {
                 JobID: row?.Job?.ID,
                 Customer: customerName,
@@ -479,8 +500,9 @@ export const convertSimprocostCenterDataToSmartsheetFormatForUpdate = (
                 "Cost_Center.ID": row?.CostCenter?.ID,
                 "Cost_Center.Name": row?.CostCenter?.Name,
                 "Remainingamount_Ex.Tax": yetToInvoiceValue,
+                "CostCentre_Total_Ex.Tax": row?.CostCenter?.Total?.ExTax,
             }
-            console.dir(rowObj, {depth: null})
+            console.dir(rowObj, { depth: null })
             const options: SmartsheetSheetRowsType = {
                 cells: (Object.keys(rowObj) as (keyof SimproJobRoofingDetailType)[]).map(columnName => {
                     const column = columns.find(i => i.title === columnName);

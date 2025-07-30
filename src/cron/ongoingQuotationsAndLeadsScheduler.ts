@@ -4,7 +4,7 @@ import { SimproLeadType, SimproQuotationType } from "../types/simpro.types";
 import { fetchSimproQuotationData } from "../services/SimproServices/simproQuotationService";
 import { fetchSimproLeadsData } from "../services/SimproServices/simproLeadsService";
 import { addOpenLeadsDataToSmartsheet, addOpenQuotesDataToSmartsheet } from "../controllers/smartSheetController";
-import { ses } from "../config/awsConfig";
+import { sendEmailForNotification } from "../services/EmailService/emailService";
 
 console.log('Current time in austarlia : ', moment().format(" DD-MMM-YYYY HH:mm:ss"))
 cron.schedule("0 8,12,18 * * *", async () => {
@@ -69,7 +69,7 @@ cron.schedule("0 8,12,18 * * *", async () => {
         };
 
         try {
-            await ses.sendEmail(params).promise();
+            await sendEmailForNotification(params);
             console.log("Email successfully sent");
         } catch (emailError) {
             console.error('Error sending email:', emailError);

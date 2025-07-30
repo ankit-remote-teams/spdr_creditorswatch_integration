@@ -6,8 +6,8 @@ import { SimproWebhookType } from '../types/simpro.types';
 // Create a Bull queue
 const simproWebhookQueue = new Queue('simproWebhookQueue', {
     redis: {
-        host: 'localhost', 
-        port: 6379, 
+        host: 'localhost',
+        port: 6379,
     },
 });
 
@@ -15,20 +15,51 @@ const simproWebhookQueue = new Queue('simproWebhookQueue', {
 simproWebhookQueue.process(async (job) => {
     const { webhookData } = job.data;
 
-    if (webhookData.ID === "job.schedule.created" || webhookData.ID === "job.schedule.updated") {
-        console.log("Schedule Create/Update ", webhookData);
-        await SmartsheetService.handleAddUpdateScheduleToSmartsheet(webhookData);
-    } else if (webhookData.ID === "job.schedule.deleted") {
-        console.log("Schedule Deleted ", webhookData);
-        await SmartsheetService.handleDeleteScheduleInSmartsheet(webhookData);
-    } else if(webhookData.ID === "job.created" || webhookData.ID === "job.updated") {
-        await SmartsheetService.handleAddUpdateCostcenterRoofingToSmartSheet(webhookData);
+    console.log("Processing Simpro webhook job:", webhookData);
+
+    try {
+        switch (webhookData.ID) {
+            case "job.schedule.created":
+            case "job.schedule.updated":
+                console.log("Schedule Create/Update ", webhookData);
+                await SmartsheetService.handleAddUpdateScheduleToSmartsheet(webhookData);
+                break;
+
+            case "job.schedule.deleted":
+                console.log("Schedule Deleted ", webhookData);
+                await SmartsheetService.handleDeleteScheduleInSmartsheet(webhookData);
+                break;
+
+            case "job.created":
+            case "job.updated":
+                console.log("Job Created/Updated ", webhookData);
+                await SmartsheetService.handleAddUpdateCostcenterRoofingToSmartSheet(webhookData);
+                console.log("Job processed successfully");
+                break;
+
+            default:
+                console.warn("Unhandled webhook ID:", webhookData.ID);
+        }
+    } catch (error) {
+        console.error("Error processing job:", {
+            jobId: job.id,
+            webhookID: webhookData.ID,
+            error: error instanceof Error ? error.message : JSON.stringify(error),
+            stack: error instanceof Error ? error.stack : undefined,
+        });
+
+        // Optionally rethrow so the job is marked as failed and retried if configured
+        throw error;
     }
 });
 
-// Handle errors in the queue
+// Handle errors in the queue globally
 simproWebhookQueue.on('failed', (job, err) => {
-    console.error(`Job ${job.id} failed with error:`, err);
+    console.error(`Job ${job.id} failed with error:`, {
+        message: err.message,
+        stack: err.stack,
+        data: job.data,
+    });
 });
 
 // Export the queue for use in other files
