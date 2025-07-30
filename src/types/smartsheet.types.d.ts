@@ -154,7 +154,7 @@ export type SimproJobRoofingDetailType = {
     "Cost_Center.Name": string | null | undefined;
     "Remainingamount_Ex.Tax": string | number | undefined;
     "CostCentre_Total_Ex.Tax": string | number | undefined;
-    "Remaining_Invoice_Percentage"?: string | number | undefined;
+    "Remaining_Invoice_Percentage": string | number | undefined;
 }
 
 export type ExistingIncomeType = {
