@@ -52,12 +52,17 @@ export const fetchSimproPaginatedData = async <T>(url: string, columns: string, 
     }
 };
 
-export const fetchBatchSimproPaginatedData = async <T>(url: string, columns: string,  callback: any, ifModifiedSinceHeader?: string): Promise<void> => {
+export const fetchBatchSimproPaginatedData = async <T>(
+    url: string,
+    columns: string,
+    callback: (entity: T[], pageNum: number, totalPages: number) => any,
+    ifModifiedSinceHeader?: string
+): Promise<void> => {
     try {
-
         console.log('Batch fetching data from SimPRO:', url);
-        let pageNum: number = 1;
-        let totalPages: number = 1;
+        let pageNum = 1;
+        let totalPages = 1;
+
         do {
             const requestOptions: any = {
                 params: {
@@ -73,17 +78,24 @@ export const fetchBatchSimproPaginatedData = async <T>(url: string, columns: str
             }
 
             const response = await axiosSimPRO.get(url, requestOptions);
-
             const entity = response.data;
+
             if (!entity || entity.length === 0) {
                 console.warn(`No entity found on page ${pageNum}`);
                 break;
             }
 
             totalPages = parseInt(response.headers['result-pages'], 10) || 1;
+
+            // 🔹 Backward compatible: If callback is async, await it
+            const result = callback(entity, pageNum, totalPages);
+            if (result instanceof Promise) {
+                await result;
+            }
+
             pageNum++;
-            callback(entity, pageNum - 1, totalPages);
         } while (pageNum <= totalPages);
+
     } catch (error) {
         if (error instanceof AxiosError) {
             console.log('Error fetching paginated data:', error.response?.data || error.message);

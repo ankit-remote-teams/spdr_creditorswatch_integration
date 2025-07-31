@@ -426,13 +426,14 @@ export const fetchJobCostCenterDetail = async (req: Request, res: Response) => {
 
         switch (incomeAccountName) {
             case 'roofingincome': {
-                console.log(" JOBCARD detail SCHEDULER : Fetch started for new data");
+                console.log("JOBCARD detail SCHEDULER : Fetch started for new data");
+                // Await the whole process, including all batches and Smartsheet writes
                 await fetchDataCostCenters([], 'full', async (costCenterIdToMarkDeleted: string[], costCenterDataFromSimpro: SimproJobCostCenterType[], pageNum: number, totalPages: number) => {
-                    console.log(` JOBCARD detail SCHEDULER : fetch completed for new data, page ${pageNum} of ${totalPages}`);
-                    console.log(" JOBCARD SCHEDULER : Adding new records to smartsheet for sheet roofing ");
-                    return addJobRoofingDetailsToSmartSheet(costCenterDataFromSimpro, jobCardRoofingDetailSheetId);
+                    console.log(`JOBCARD detail SCHEDULER : fetch completed for new data, page ${pageNum} of ${totalPages}`);
+                    console.log("JOBCARD SCHEDULER : Adding new records to smartsheet for sheet roofing, batch:", pageNum);
+                    await addJobRoofingDetailsToSmartSheet(costCenterDataFromSimpro, jobCardRoofingDetailSheetId);
                 });
-                res.status(200).json({ message: "Successfully initiated JOB CostCenter roofing income detail" });
+                res.status(200).json({ message: "Successfully updated JOB CostCenter roofing income detail" });
                 break;
             }
             default:
@@ -462,7 +463,7 @@ export const fetchActiveJobs = async (): Promise<SimproJobType[]> => {
     try {
         console.log("Fetching active jobs from SimPRO");
 
-        const url = `/jobs/?$filter=Stage ne 'Archived'&pageSize=250`;
+        const url = `/jobs/?Stage=ne(Archived)&pageSize=250`;
         const columns = "ID,Type,Site,SiteContact,DateIssued,Status,Total,Customer,Name,ProjectManager,CustomFields,Totals,Stage";
 
         const allJobs: SimproJobType[] = await fetchSimproPaginatedData(url, columns);
@@ -478,8 +479,11 @@ export const fetchActiveJobs = async (): Promise<SimproJobType[]> => {
     }
 };
 
-
-export const fetchDataCostCenters = async (costCenters: SimproJobCostCenterType[], fetchType: string, callback: any) => {
+export const fetchDataCostCenters = async (
+    costCenters: SimproJobCostCenterType[],
+    fetchType: string,
+    callback: (costCenterIdToMarkDeleted: string[], costCenterDataFromSimpro: SimproJobCostCenterType[], pageNum: number, totalPages: number) => Promise<void>
+) => {
     try {
         if (fetchType == "full") {
             const isTokenValid = await validateSimproToken();
@@ -492,19 +496,35 @@ export const fetchDataCostCenters = async (costCenters: SimproJobCostCenterType[
 
             if (!costCenters || costCenters.length == 0) {
                 const url = `/jobCostCenters/?pageSize=250`;
-                return fetchBatchSimproPaginatedData(url, "ID,CostCenter,Name,Job,Section,DateModified,_href", (fetchedCostCenters: SimproJobCostCenterType[], pageNum: number, totalPages: number) => {
-                    getCostCentersData(fetchedCostCenters, chartOfAccountsArray, validJobs, (costCenterIdToMarkDeleted: string[], costCenterDataFromSimpro: SimproJobCostCenterType[]) => {
-                        console.log(`Completed fetch of roofing job details for page ${pageNum} of ${totalPages}`);
-                        return callback(costCenterIdToMarkDeleted, costCenterDataFromSimpro, pageNum, totalPages);
-                    });
-                });
+                // Sequentially process each batch and await the callback
+                return fetchBatchSimproPaginatedData(
+                    url,
+                    "ID,CostCenter,Name,Job,Section,DateModified,_href",
+                    async (fetchedCostCenters: SimproJobCostCenterType[], pageNum: number, totalPages: number) => {
+                        await getCostCentersData(
+                            fetchedCostCenters,
+                            chartOfAccountsArray,
+                            validJobs,
+                            async (costCenterIdToMarkDeleted: string[], costCenterDataFromSimpro: SimproJobCostCenterType[]) => {
+                                console.log(`Completed fetch of roofing job details for page ${pageNum} of ${totalPages}`);
+                                // Await the callback for each batch
+                                await callback(costCenterIdToMarkDeleted, costCenterDataFromSimpro, pageNum, totalPages);
+                            }
+                        );
+                    }
+                );
             } else {
-                return getCostCentersData(costCenters, chartOfAccountsArray, validJobs, (costCenterIdToMarkDeleted: string[], costCenterDataFromSimpro: SimproJobCostCenterType[]) => {
-                    return callback(costCenterIdToMarkDeleted, costCenterDataFromSimpro);
-                });
+                // If costCenters are provided, process them as a single batch
+                return getCostCentersData(
+                    costCenters,
+                    chartOfAccountsArray,
+                    validJobs,
+                    async (costCenterIdToMarkDeleted: string[], costCenterDataFromSimpro: SimproJobCostCenterType[]) => {
+                        await callback(costCenterIdToMarkDeleted, costCenterDataFromSimpro, 1, 1);
+                    }
+                );
             }
         }
-
     } catch (err) {
         if (err instanceof AxiosError) {
             console.log("Error in fetchScheduleData as AxiosError");
@@ -527,7 +547,9 @@ export const fetchDataCostCenters = async (costCenters: SimproJobCostCenterType[
 export const getCostCentersData = async (costCenters: SimproJobCostCenterType[], chartOfAccountsArray: SimproAccountType[], validJobs: SimproJobType[], callback: any) => {
     let costCenterIdToMarkDeleted: string[] = [];
     let costCenterDataFromSimpro: SimproJobCostCenterType[] = [];
+    let index = 0;
     for (const jobCostCenter of costCenters) {
+        console.log("Processing job cost center: ", jobCostCenter?.ID, " at index ", index, " of ", costCenters.length);
         const jobDataForCostCenter = validJobs.find(job => job.ID === jobCostCenter.Job.ID);
         // const jobDataForCostCenter = await axiosSimPRO.get(`/jobs/${jobCostCenter?.Job?.ID}?columns=ID,Type,Site,SiteContact,DateIssued,Status,Total,Customer,Name,ProjectManager,CustomFields,Totals,Stage`);
         // let fetchedJobData: SimproJobType = jobDataForCostCenter?.data;
@@ -549,11 +571,17 @@ export const getCostCentersData = async (costCenters: SimproJobCostCenterType[],
                             if (costCenterResponse) {
                                 jobCostCenter.CostCenter = costCenterResponse.data;
                                 jobCostCenter.ccRecordId = ccRecordId;
-                                const exTax = parseFloat(costCenterResponse?.Claimed?.Remaining?.Amount?.ExTax);
 
-                                if (!isNaN(exTax) && exTax > 0) {
+                                let exTaxAmount = 0;
+                                if (costCenterResponse?.Claimed?.Remaining?.Amount?.ExTax) {
+                                    exTaxAmount = parseFloat(costCenterResponse?.Claimed?.Remaining?.Amount?.ExTax);
+                                }
+
+                                if (!costCenterResponse?.Claimed || (!isNaN(exTaxAmount) && exTaxAmount > 0)) {
+                                    console.log("Adding job cost center to data array: ", jobCostCenter?.ID, " at index ", index, " of ", costCenters.length);
                                     costCenterDataFromSimpro.push(jobCostCenter);
                                 }
+
                             }
                         } catch (error) {
                             console.log("Error in costCenterFetch : ", error)
@@ -572,6 +600,7 @@ export const getCostCentersData = async (costCenters: SimproJobCostCenterType[],
                 }
             }
         }
+        index++;
     }
     callback(costCenterIdToMarkDeleted, costCenterDataFromSimpro);
 }
