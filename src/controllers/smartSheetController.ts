@@ -131,7 +131,7 @@ const getColumnIdForColumnName = async (columnName: string, sheetId: string): Pr
     console.log('Get column id for column name', columnName);
     try {
         const columns = await smartsheet.sheets.getColumns({ sheetId });
-        console.log('columns ', columns.length)
+        console.log('columns ', columns?.data?.length)
         // Specify the type of 'col' as 'Column' in the 'find' method callback
         const column = columns.data.find((col: SmartsheetColumnType) => col.title === columnName);
         console.log('column:', column)
@@ -864,45 +864,45 @@ export const addJobRoofingDetailsToSmartSheet = async (rows: SimproJobCostCenter
             .filter((value: number | string | null) => value !== null);
 
         let constCentersToUpdate = Array.isArray(existingCostcenterIdsInSheet)
-            ? 
-            fetchedCostCenters.filter(fetched => 
-                existingCostcenterIdsInSheet.some(existing => 
+            ?
+            fetchedCostCenters.filter(fetched =>
+                existingCostcenterIdsInSheet.some(existing =>
                     existing.CostCenterID == fetched.CostCenter.ID
                     && existing.JobID == fetched.Job.ID
                     && existing.SectionID == fetched.Section.ID))
-             : [];
+            : [];
 
         let constCentersNotPartOfSimproResponse: SimproJobCostCenterType[] = [];
         existingCostcenterIdsInSheet.forEach(existing => {
-                if(!fetchedCostCenters.some(costCenter => 
-                    costCenter.CostCenter.ID == existing.CostCenterID 
-                    && costCenter.Job.ID == existing.JobID 
-                    && costCenter.Section.ID == existing.SectionID))
-                    constCentersNotPartOfSimproResponse.push({
-                        CostCenter: {
-                            ID: existing.CostCenterID,
-                            Name: ''
-                        },
-                        Job: {
-                            ID: existing.JobID,
-                            Type: ''
-                        },
-                        Section: {
-                            ID: existing.SectionID,
-                            Name: ''
-                        },
-                        ID: 0,
-                        ccRecordId: 0,
-                        Name: '',
-                        DateModified: '',
-                        _href: ''
-                    })
-            })
+            if (!fetchedCostCenters.some(costCenter =>
+                costCenter.CostCenter.ID == existing.CostCenterID
+                && costCenter.Job.ID == existing.JobID
+                && costCenter.Section.ID == existing.SectionID))
+                constCentersNotPartOfSimproResponse.push({
+                    CostCenter: {
+                        ID: existing.CostCenterID,
+                        Name: ''
+                    },
+                    Job: {
+                        ID: existing.JobID,
+                        Type: ''
+                    },
+                    Section: {
+                        ID: existing.SectionID,
+                        Name: ''
+                    },
+                    ID: 0,
+                    ccRecordId: 0,
+                    Name: '',
+                    DateModified: '',
+                    _href: ''
+                })
+        })
 
-        let constCentersToAdd = Array.isArray(existingCostcenterIdsInSheet) ? fetchedCostCenters.filter(costCenter => 
-            !existingCostcenterIdsInSheet.some(existing => 
-                costCenter.CostCenter.ID == existing.CostCenterID 
-                && costCenter.Job.ID == existing.JobID 
+        let constCentersToAdd = Array.isArray(existingCostcenterIdsInSheet) ? fetchedCostCenters.filter(costCenter =>
+            !existingCostcenterIdsInSheet.some(existing =>
+                costCenter.CostCenter.ID == existing.CostCenterID
+                && costCenter.Job.ID == existing.JobID
                 && costCenter.Section.ID == existing.SectionID)) : [];
 
         
