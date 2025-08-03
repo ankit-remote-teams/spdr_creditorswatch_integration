@@ -66,6 +66,7 @@ export type SimproScheduleRowObjectType = {
     SiteName?: string | undefined;
     SiteContact?: string | undefined;
     CostCenterName?: string | undefined;
+    Cost_center_ID?: string | number | undefined;
     CustomerPhone?: string | undefined;
     CustomerEmail?: string | undefined;
     JobName?: string | undefined;
