@@ -310,8 +310,51 @@ export class SmartsheetService {
 
     }
 
+    static async handleAddUpdateRoofingCostcenterForInvoiceSmartsheet(webhookData: SimproWebhookType) {
+        try {
+            const { invoiceID } = webhookData.reference;
+            if (invoiceID) {
+                console.log("Invoice ID: ", invoiceID);
+                const url = `/invoices/${invoiceID}?columns=ID,Jobs`;
+                const invoiceData = await axiosSimPRO.get(url);
+                const invoice = invoiceData.data;
+                console.log("Invoice Data: ", invoice);
+                let jobIDsForInvoice: number[] = invoice?.Jobs?.map((job: any) => job.ID) || [];
+
+                for (const jobID of jobIDsForInvoice) {
+                    console.log("Processing Job ID for invoice id: ", jobID);
+                    await SmartsheetService.handleAddUpdateCostcenterRoofingToSmartSheet({
+                        ID: webhookData.ID,
+                        build: webhookData.build,
+                        description: webhookData.description,
+                        name: webhookData.name,
+                        action: webhookData.action,
+                        reference: {
+                            companyID: webhookData.reference?.companyID||0,
+                            scheduleID: webhookData.reference?.scheduleID||0,
+                            jobID: jobID,
+                            sectionID: webhookData.reference?.sectionID||0,
+                            costCenterID: webhookData.reference?.costCenterID||0,
+                            invoiceID: webhookData.reference?.invoiceID||0,
+                        },
+                        date_triggered: new Date().toISOString()
+                    });
+                }
+            }
+
+        }
+        catch (err) {
+            console.log("Error in the update roofing cost center simpro webhook", err);
+            throw {
+                message: "Error in the update roofing cost center simpro webhook"
+            }
+        }
+    }
+
+
     static async handleAddUpdateCostcenterRoofingToSmartSheet(webhookData: SimproWebhookType) {
         const { jobID } = webhookData.reference;
+        console.log("Processing Job ID in handleAddUpdateCostcenterRoofingToSmartSheet: ", jobID);
         let costCenterIdToMarkDeleted: string[] = [];
         let costCenterDataFromSimpro: SimproJobCostCenterType[] = [];
         const url = `/jobCostCenters/?Job.ID=${jobID}`;
@@ -382,7 +425,7 @@ export class SmartsheetService {
             }
 
             let archivedJobSheetInfo: any;
-            let archivedJobSheetColumns:any;
+            let archivedJobSheetColumns: any;
 
             const activeJobSheetInfo = await smartsheet.sheets.getSheet({ id: jobCardRoofingDetailSheetId });
             const activeJobSheetColumns = activeJobSheetInfo.columns;

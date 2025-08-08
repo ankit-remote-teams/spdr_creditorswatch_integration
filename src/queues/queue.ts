@@ -37,6 +37,13 @@ simproWebhookQueue.process(async (job) => {
                 console.log("Job processed successfully");
                 break;
 
+            case "invoice.created":
+            case "invoice.updated":
+                console.log("Invoice Created/Updated ", webhookData);
+                await SmartsheetService.handleAddUpdateRoofingCostcenterForInvoiceSmartsheet(webhookData);
+                console.log("Invoice processed successfully");
+                break;
+
             default:
                 console.warn("Unhandled webhook ID:", webhookData.ID);
         }
