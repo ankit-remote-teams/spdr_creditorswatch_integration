@@ -300,6 +300,7 @@ type SimproWebhookReference = {
     jobID: number;
     sectionID: number;
     costCenterID: number;
+    invoiceID?:number
   };
   
   type SimproWebhookType = {
