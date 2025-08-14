@@ -167,7 +167,7 @@ export class SmartsheetService {
                             status: 400
                         }
                     }
-                    
+
                     const scheduleIdColumnId = column.id;
                     const existingRows: SmartsheetSheetRowsType[] = sheetInfo.rows;
                     let scheduleDataForSmartsheet: SmartsheetSheetRowsType | undefined;
@@ -183,7 +183,7 @@ export class SmartsheetService {
                         }
                     }
 
-                    console.log('scheduleDataForSmartsheet', scheduleDataForSmartsheet)
+                    // console.log('scheduleDataForSmartsheet', scheduleDataForSmartsheet)
                     if (scheduleDataForSmartsheet) {
                         let rowIdMap: { [key: string]: string } = {};
                         rowIdMap = {
@@ -268,13 +268,14 @@ export class SmartsheetService {
                 const scheduleIdColumnId = scheduleColumn.id;
 
                 console.log("schedule column in v2 for delete", scheduleColumn)
-                
+
                 const scheduleCommentColumn = columns.find((col: SmartsheetColumnType) => col.title === "ScheduleComment");
+                console.log("schedule comment column in v2 for delete", scheduleCommentColumn)
                 const scheduleCommentColumnId = scheduleCommentColumn.id;
                 let scheduleDataForSmartsheet: SmartsheetSheetRowsType | undefined;
                 const existingRows: SmartsheetSheetRowsType[] = sheetInfo.rows;
 
-
+                console.log("Scheudle ID", scheduleID)
                 for (let i = 0; i < existingRows.length; i++) {
                     let currentRow = existingRows[i];
                     const cellData = currentRow.cells.find(
@@ -286,19 +287,22 @@ export class SmartsheetService {
                     }
                 }
 
-                console.log('scheduleDataForSmartsheet', scheduleDataForSmartsheet)
+                // console.log('scheduleDataForSmartsheet for delete', scheduleDataForSmartsheet)
 
-                const rowsToUpdate = [{
-                    id: scheduleDataForSmartsheet?.id,
-                    cells: [{ columnId: scheduleCommentColumnId, value: "Deleted from Simpro" }],
-                }]
+                if (scheduleDataForSmartsheet) {
+                    const rowsToUpdate = [{
+                        id: scheduleDataForSmartsheet?.id,
+                        cells: [{ columnId: scheduleCommentColumnId, value: "Deleted from Simpro" }],
+                    }]
 
-                await smartsheet.sheets.updateRow({
-                    sheetId: jobCardV2SheetId,
-                    body: rowsToUpdate,
-                });
+                    await smartsheet.sheets.updateRow({
+                        sheetId: jobCardV2SheetId,
+                        body: rowsToUpdate,
+                    });
 
-                console.log('delete comment added to the schedule in smartsheet', jobCardV2SheetId)
+                    console.log('delete comment added to the schedule in smartsheet', jobCardV2SheetId)
+                }
+
             }
 
         } catch (err) {
@@ -330,12 +334,12 @@ export class SmartsheetService {
                         name: webhookData.name,
                         action: webhookData.action,
                         reference: {
-                            companyID: webhookData.reference?.companyID||0,
-                            scheduleID: webhookData.reference?.scheduleID||0,
+                            companyID: webhookData.reference?.companyID || 0,
+                            scheduleID: webhookData.reference?.scheduleID || 0,
                             jobID: jobID,
-                            sectionID: webhookData.reference?.sectionID||0,
-                            costCenterID: webhookData.reference?.costCenterID||0,
-                            invoiceID: webhookData.reference?.invoiceID||0,
+                            sectionID: webhookData.reference?.sectionID || 0,
+                            costCenterID: webhookData.reference?.costCenterID || 0,
+                            invoiceID: webhookData.reference?.invoiceID || 0,
                         },
                         date_triggered: new Date().toISOString()
                     });
