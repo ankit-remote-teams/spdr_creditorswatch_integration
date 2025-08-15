@@ -11,6 +11,7 @@ const jobCardReportSheetId = process.env.JOB_CARD_SHEET_ID ? process.env.JOB_CAR
 const jobCardV2SheetId = process.env.JOB_CARD_SHEET_V2_ID ? process.env.JOB_CARD_SHEET_V2_ID : "";
 const jobCardRoofingDetailSheetId = process.env.JOB_CARD_SHEET_ROOFING_DETAIL_ID ?? "";
 const wipJobArchivedSheetId = process.env.WIP_JOB_ARCHIVED_SHEET_ID ?? "";
+const jobCardV2MovePastSheetId = process.env.JOB_CARD_V2_MOVE_PAST_SHEET_ID ?? "";
 console.log('jobCardReportSheetId', jobCardReportSheetId)
 
 
@@ -98,60 +99,60 @@ export class SmartsheetService {
 
             console.log('IsInvoiceAccountNameRoofing: ' + isInvoiceAccountNameRoofing, costCenterID, scheduleID)
             if (isInvoiceAccountNameRoofing) {
-                console.log('jobCardReportSheetId', jobCardReportSheetId)
-                if (jobCardReportSheetId) {
-                    const sheetInfo = await smartsheet.sheets.getSheet({ id: jobCardReportSheetId });
-                    const columns = sheetInfo.columns;
-                    const column = columns.find((col: SmartsheetColumnType) => col.title === "ScheduleID");
+                // console.log('jobCardReportSheetId', jobCardReportSheetId)
+                // if (jobCardReportSheetId) {
+                //     const sheetInfo = await smartsheet.sheets.getSheet({ id: jobCardReportSheetId });
+                //     const columns = sheetInfo.columns;
+                //     const column = columns.find((col: SmartsheetColumnType) => col.title === "ScheduleID");
 
-                    console.log("schedule column", column)
+                //     console.log("schedule column", column)
 
-                    // console.log('convertedDataForSmartsheet', convertedDataForSmartsheet)
-                    if (!column) {
-                        throw {
-                            message: "ScheduleID column not found in the sheet",
-                            status: 400
-                        }
-                    }
-                    const scheduleIdColumnId = column.id;
-                    const existingRows: SmartsheetSheetRowsType[] = sheetInfo.rows;
-                    let scheduleDataForSmartsheet: SmartsheetSheetRowsType | undefined;
+                //     // console.log('convertedDataForSmartsheet', convertedDataForSmartsheet)
+                //     if (!column) {
+                //         throw {
+                //             message: "ScheduleID column not found in the sheet",
+                //             status: 400
+                //         }
+                //     }
+                //     const scheduleIdColumnId = column.id;
+                //     const existingRows: SmartsheetSheetRowsType[] = sheetInfo.rows;
+                //     let scheduleDataForSmartsheet: SmartsheetSheetRowsType | undefined;
 
-                    for (let i = 0; i < existingRows.length; i++) {
-                        let currentRow = existingRows[i];
-                        const cellData = currentRow.cells.find(
-                            (cell: { columnId: string; value: any }) => cell.columnId === scheduleIdColumnId
-                        );
-                        if (cellData?.value === schedule.ID) {
-                            scheduleDataForSmartsheet = currentRow;
-                            break;
-                        }
-                    }
+                //     for (let i = 0; i < existingRows.length; i++) {
+                //         let currentRow = existingRows[i];
+                //         const cellData = currentRow.cells.find(
+                //             (cell: { columnId: string; value: any }) => cell.columnId === scheduleIdColumnId
+                //         );
+                //         if (cellData?.value === schedule.ID) {
+                //             scheduleDataForSmartsheet = currentRow;
+                //             break;
+                //         }
+                //     }
 
-                    if (scheduleDataForSmartsheet) {
-                        let rowIdMap: { [key: string]: string } = {};
-                        rowIdMap = {
-                            [schedule.ID.toString()]: scheduleDataForSmartsheet?.id?.toString() || "",
-                        };
-                        const convertedData = convertSimproScheduleDataToSmartsheetFormatForUpdate([schedule], columns, rowIdMap, 'full');
+                //     if (scheduleDataForSmartsheet) {
+                //         let rowIdMap: { [key: string]: string } = {};
+                //         rowIdMap = {
+                //             [schedule.ID.toString()]: scheduleDataForSmartsheet?.id?.toString() || "",
+                //         };
+                //         const convertedData = convertSimproScheduleDataToSmartsheetFormatForUpdate([schedule], columns, rowIdMap, 'full');
 
-                        await smartsheet.sheets.updateRow({
-                            sheetId: jobCardReportSheetId,
-                            body: convertedData,
-                        });
-                        // console.log('Updated row in smartsheet')
-                        console.log('Updated row in smartsheet in sheet ', jobCardReportSheetId)
+                //         await smartsheet.sheets.updateRow({
+                //             sheetId: jobCardReportSheetId,
+                //             body: convertedData,
+                //         });
+                //         // console.log('Updated row in smartsheet')
+                //         console.log('Updated row in smartsheet in sheet ', jobCardReportSheetId)
 
-                    } else {
-                        const convertedDataForSmartsheet = convertSimproScheduleDataToSmartsheetFormat([schedule], columns, 'full');
-                        const newRow = convertedDataForSmartsheet[0];
-                        await smartsheet.sheets.addRows({
-                            sheetId: jobCardReportSheetId,
-                            body: convertedDataForSmartsheet,
-                        });
-                        console.log('Added row in smartsheet in sheeet', jobCardReportSheetId)
-                    }
-                }
+                //     } else {
+                //         const convertedDataForSmartsheet = convertSimproScheduleDataToSmartsheetFormat([schedule], columns, 'full');
+                //         const newRow = convertedDataForSmartsheet[0];
+                //         await smartsheet.sheets.addRows({
+                //             sheetId: jobCardReportSheetId,
+                //             body: convertedDataForSmartsheet,
+                //         });
+                //         console.log('Added row in smartsheet in sheeet', jobCardReportSheetId)
+                //     }
+                // }
 
                 console.log('jobCardV2SheetId', jobCardV2SheetId)
 
@@ -167,7 +168,7 @@ export class SmartsheetService {
                             status: 400
                         }
                     }
-                    
+
                     const scheduleIdColumnId = column.id;
                     const existingRows: SmartsheetSheetRowsType[] = sheetInfo.rows;
                     let scheduleDataForSmartsheet: SmartsheetSheetRowsType | undefined;
@@ -183,7 +184,7 @@ export class SmartsheetService {
                         }
                     }
 
-                    console.log('scheduleDataForSmartsheet', scheduleDataForSmartsheet)
+                    // console.log('scheduleDataForSmartsheet', scheduleDataForSmartsheet)
                     if (scheduleDataForSmartsheet) {
                         let rowIdMap: { [key: string]: string } = {};
                         rowIdMap = {
@@ -197,13 +198,48 @@ export class SmartsheetService {
                         });
                         console.log('Updated row in smartsheet in sheet ', jobCardV2SheetId)
                     } else {
-                        const convertedDataForSmartsheet = convertSimproScheduleDataToSmartsheetFormat([schedule], columns, 'full');
-                        const newRow = convertedDataForSmartsheet[0];
-                        await smartsheet.sheets.addRows({
-                            sheetId: jobCardV2SheetId,
-                            body: convertedDataForSmartsheet,
-                        });
-                        console.log('Added row in smartsheet in sheeet', jobCardV2SheetId)
+                        // Add logic to check the row in  move past sheet
+                        console.log("Schedule not found in the main sheet, checking Move Past Sheet",schedule.ID)
+                        let movePastSheetInfo = await smartsheet.sheets.getSheet({ id: jobCardV2MovePastSheetId });
+                        const movePastSheetColumns = movePastSheetInfo.columns;
+                        const movePastScheduleColumn = movePastSheetColumns.find((col: SmartsheetColumnType) => col.title === "ScheduleID");
+                        const movePastScheduleIdColumnId = movePastScheduleColumn.id;
+                        let movePastScheduleDataForSmartsheet: SmartsheetSheetRowsType | undefined;
+                        const existingMovePastRows: SmartsheetSheetRowsType[] = movePastSheetInfo.rows;
+                        for (let i = 0; i < existingMovePastRows.length; i++) {
+                            let currentRow = existingMovePastRows[i];
+                            const cellData = currentRow.cells.find(
+                                (cell: { columnId: string; value: any }) => cell.columnId === movePastScheduleIdColumnId
+                            );
+                            if (cellData?.value === schedule.ID) {
+                                movePastScheduleDataForSmartsheet = currentRow;
+                                break;
+                            }
+                        }
+
+                        if (movePastScheduleDataForSmartsheet) {
+                            let rowIdMap: { [key: string]: string } = {};
+                            rowIdMap = {
+                                [schedule.ID.toString()]: movePastScheduleDataForSmartsheet?.id?.toString() || "",
+                            };
+                            const convertedData = convertSimproScheduleDataToSmartsheetFormatForUpdate([schedule], movePastSheetColumns, rowIdMap, 'full');
+
+                            await smartsheet.sheets.updateRow({
+                                sheetId: jobCardV2MovePastSheetId,
+                                body: convertedData,
+                            });
+                            console.log('Updated row in smartsheet in Move Past Sheet ', jobCardV2MovePastSheetId)
+                        } else {
+                            console.log("Schedule not found in Move Past Sheet, adding new row for schedule ",schedule.ID)
+                            const convertedDataForSmartsheet = convertSimproScheduleDataToSmartsheetFormat([schedule], columns, 'full');
+                            await smartsheet.sheets.addRows({
+                                sheetId: jobCardV2SheetId,
+                                body: convertedDataForSmartsheet,
+                            });
+                            console.log('Added row in smartsheet in sheeet', jobCardV2SheetId)
+                        }
+
+
 
                     }
                 }
@@ -268,13 +304,14 @@ export class SmartsheetService {
                 const scheduleIdColumnId = scheduleColumn.id;
 
                 console.log("schedule column in v2 for delete", scheduleColumn)
-                
+
                 const scheduleCommentColumn = columns.find((col: SmartsheetColumnType) => col.title === "ScheduleComment");
+                console.log("schedule comment column in v2 for delete", scheduleCommentColumn)
                 const scheduleCommentColumnId = scheduleCommentColumn.id;
                 let scheduleDataForSmartsheet: SmartsheetSheetRowsType | undefined;
                 const existingRows: SmartsheetSheetRowsType[] = sheetInfo.rows;
 
-
+                console.log("Scheudle ID", scheduleID)
                 for (let i = 0; i < existingRows.length; i++) {
                     let currentRow = existingRows[i];
                     const cellData = currentRow.cells.find(
@@ -286,19 +323,56 @@ export class SmartsheetService {
                     }
                 }
 
-                console.log('scheduleDataForSmartsheet', scheduleDataForSmartsheet)
+                // console.log('scheduleDataForSmartsheet for delete', scheduleDataForSmartsheet)
 
-                const rowsToUpdate = [{
-                    id: scheduleDataForSmartsheet?.id,
-                    cells: [{ columnId: scheduleCommentColumnId, value: "Deleted from Simpro" }],
-                }]
+                if (scheduleDataForSmartsheet) {
+                    const rowsToUpdate = [{
+                        id: scheduleDataForSmartsheet?.id,
+                        cells: [{ columnId: scheduleCommentColumnId, value: "Deleted from Simpro" }],
+                    }]
 
-                await smartsheet.sheets.updateRow({
-                    sheetId: jobCardV2SheetId,
-                    body: rowsToUpdate,
-                });
+                    await smartsheet.sheets.updateRow({
+                        sheetId: jobCardV2SheetId,
+                        body: rowsToUpdate,
+                    });
 
-                console.log('delete comment added to the schedule in smartsheet', jobCardV2SheetId)
+                    console.log('delete comment added to the schedule in smartsheet', jobCardV2SheetId)
+                }else {
+                    // Logic to check the row in move past sheet
+                    console.log("Schedule not found in the main sheet, checking Move Past Sheet",scheduleID)
+                    let movePastSheetInfo = await smartsheet.sheets.getSheet({ id: jobCardV2MovePastSheetId });
+                    const movePastSheetColumns = movePastSheetInfo.columns;
+                    const movePastScheduleColumn = movePastSheetColumns.find((col: SmartsheetColumnType) => col.title === "ScheduleID");
+                    const movePastScheduleIdColumnId = movePastScheduleColumn.id;
+                    const movePastScheduleCommentColumn = movePastSheetColumns.find((col: SmartsheetColumnType) => col.title === "ScheduleComment");
+                    const movePastScheduleCommentColumnId = movePastScheduleCommentColumn.id;
+                    let movePastScheduleDataForSmartsheet: SmartsheetSheetRowsType | undefined;
+                    const existingMovePastRows: SmartsheetSheetRowsType[] = movePastSheetInfo.rows;
+                    for (let i = 0; i < existingMovePastRows.length; i++) {
+                        let currentRow = existingMovePastRows[i];
+                        const cellData = currentRow.cells.find(
+                            (cell: { columnId: string; value: any }) => cell.columnId === movePastScheduleIdColumnId
+                        );
+                        if (cellData?.value === scheduleID) {
+                            movePastScheduleDataForSmartsheet = currentRow;
+                            break;
+                        }
+                    }
+                    if (movePastScheduleDataForSmartsheet) {
+                        const rowsToUpdate = [{
+                            id: movePastScheduleDataForSmartsheet?.id,
+                            cells: [{ columnId: movePastScheduleCommentColumnId, value: "Deleted from Simpro" }],
+                        }]
+
+                        await smartsheet.sheets.updateRow({
+                            sheetId: jobCardV2MovePastSheetId,
+                            body: rowsToUpdate,
+                        });
+
+                        console.log('delete comment added to the schedule in smartsheet in Move Past Sheet', jobCardV2MovePastSheetId)
+                    }
+                }
+
             }
 
         } catch (err) {
@@ -330,12 +404,12 @@ export class SmartsheetService {
                         name: webhookData.name,
                         action: webhookData.action,
                         reference: {
-                            companyID: webhookData.reference?.companyID||0,
-                            scheduleID: webhookData.reference?.scheduleID||0,
+                            companyID: webhookData.reference?.companyID || 0,
+                            scheduleID: webhookData.reference?.scheduleID || 0,
                             jobID: jobID,
-                            sectionID: webhookData.reference?.sectionID||0,
-                            costCenterID: webhookData.reference?.costCenterID||0,
-                            invoiceID: webhookData.reference?.invoiceID||0,
+                            sectionID: webhookData.reference?.sectionID || 0,
+                            costCenterID: webhookData.reference?.costCenterID || 0,
+                            invoiceID: webhookData.reference?.invoiceID || 0,
                         },
                         date_triggered: new Date().toISOString()
                     });
