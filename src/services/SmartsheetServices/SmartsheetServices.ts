@@ -199,7 +199,7 @@ export class SmartsheetService {
                         console.log('Updated row in smartsheet in sheet ', jobCardV2SheetId)
                     } else {
                         // Add logic to check the row in  move past sheet
-                        console.log("Schedule not found in the main sheet, checking Move Past Sheet",schedule.ID)
+                        console.log("Schedule not found in the main sheet, checking Move Past Sheet", schedule.ID)
                         let movePastSheetInfo = await smartsheet.sheets.getSheet({ id: jobCardV2MovePastSheetId });
                         const movePastSheetColumns = movePastSheetInfo.columns;
                         const movePastScheduleColumn = movePastSheetColumns.find((col: SmartsheetColumnType) => col.title === "ScheduleID");
@@ -230,7 +230,7 @@ export class SmartsheetService {
                             });
                             console.log('Updated row in smartsheet in Move Past Sheet ', jobCardV2MovePastSheetId)
                         } else {
-                            console.log("Schedule not found in Move Past Sheet, adding new row for schedule ",schedule.ID)
+                            console.log("Schedule not found in Move Past Sheet, adding new row for schedule ", schedule.ID)
                             const convertedDataForSmartsheet = convertSimproScheduleDataToSmartsheetFormat([schedule], columns, 'full');
                             await smartsheet.sheets.addRows({
                                 sheetId: jobCardV2SheetId,
@@ -337,9 +337,9 @@ export class SmartsheetService {
                     });
 
                     console.log('delete comment added to the schedule in smartsheet', jobCardV2SheetId)
-                }else {
+                } else {
                     // Logic to check the row in move past sheet
-                    console.log("Schedule not found in the main sheet, checking Move Past Sheet",scheduleID)
+                    console.log("Schedule not found in the main sheet, checking Move Past Sheet", scheduleID)
                     let movePastSheetInfo = await smartsheet.sheets.getSheet({ id: jobCardV2MovePastSheetId });
                     const movePastSheetColumns = movePastSheetInfo.columns;
                     const movePastScheduleColumn = movePastSheetColumns.find((col: SmartsheetColumnType) => col.title === "ScheduleID");
@@ -387,6 +387,7 @@ export class SmartsheetService {
     static async handleAddUpdateRoofingCostcenterForInvoiceSmartsheet(webhookData: SimproWebhookType) {
         try {
             const { invoiceID } = webhookData.reference;
+            const {ID, date_triggered} = webhookData;
             if (invoiceID) {
                 console.log("Invoice ID: ", invoiceID);
                 const url = `/invoices/${invoiceID}?columns=ID,Jobs`;
@@ -396,6 +397,28 @@ export class SmartsheetService {
                 let jobIDsForInvoice: number[] = invoice?.Jobs?.map((job: any) => job.ID) || [];
 
                 for (const jobID of jobIDsForInvoice) {
+                    if (ID === "invoice.updated") {
+                        // implement the tolerance check here 
+                        const toleranceMs = 60000; // 1 minute
+                        const webhookTriggerDate = new Date(date_triggered);
+                        // Fetch job logs
+                        const jobLogsResponse = await axiosSimPRO.get(`/logs/jobs/?jobID=${jobID}`);
+                        const jobLogs = jobLogsResponse?.data || [];
+                        if (jobLogs.length > 0) {
+                            // Check if any log falls within ± tolerance
+                            const logsWithinTolerance = jobLogs.some((log: any) => {
+                                const logDate = new Date(log.DateLogged);
+                                const diff = Math.abs(webhookTriggerDate.getTime() - logDate.getTime());
+                                return diff <= toleranceMs; // log within 1 min before/after webhook
+                            });
+
+                            if (!logsWithinTolerance) {
+                                console.log(`Skipping job ${jobID} — no matching log within 1 minute before/after`);
+                                continue; // Skip this job if no matching log found
+                            }
+                        }
+                    }
+
                     console.log("Processing Job ID for invoice id: ", jobID);
                     await SmartsheetService.handleAddUpdateCostcenterRoofingToSmartSheet({
                         ID: webhookData.ID,
@@ -411,7 +434,7 @@ export class SmartsheetService {
                             costCenterID: webhookData.reference?.costCenterID || 0,
                             invoiceID: webhookData.reference?.invoiceID || 0,
                         },
-                        date_triggered: new Date().toISOString()
+                        date_triggered: webhookData?.date_triggered || new Date().toISOString(),
                     });
                 }
             }
@@ -428,6 +451,33 @@ export class SmartsheetService {
 
     static async handleAddUpdateCostcenterRoofingToSmartSheet(webhookData: SimproWebhookType) {
         const { jobID } = webhookData.reference;
+        const { date_triggered, ID } = webhookData;
+
+        if (ID === "job.updated") {
+            const toleranceMs = 60000; // 1 minute
+            const webhookTriggerDate = new Date(date_triggered);
+
+            // Fetch job logs
+            const jobLogsResponse = await axiosSimPRO.get(`/logs/jobs/?jobID=${jobID}`);
+            const jobLogs = jobLogsResponse?.data || [];
+
+            if (jobLogs.length > 0) {
+                // Check if any log falls within ± tolerance
+                const logsWithinTolerance = jobLogs.some((log: any) => {
+                    const logDate = new Date(log.DateLogged);
+                    const diff = Math.abs(webhookTriggerDate.getTime() - logDate.getTime());
+
+                    return diff <= toleranceMs; // log within 1 min before/after webhook
+                });
+
+                if (!logsWithinTolerance) {
+                    console.log(`Skipping job ${jobID} — no matching log within 1 minute before/after`);
+                    return;
+                }
+            }
+        }
+
+
         console.log("Processing Job ID in handleAddUpdateCostcenterRoofingToSmartSheet: ", jobID);
         let costCenterIdToMarkDeleted: string[] = [];
         let costCenterDataFromSimpro: SimproJobCostCenterType[] = [];
