@@ -7,6 +7,7 @@ import {
     SimproQuotationRowObjectType,
     SimproLeadRowObjectType,
     SimproJobRoofingDetailType,
+    SimproContractorWorkOrderType,
 } from '../types/smartsheet.types';
 import {
     SimproScheduleType,
@@ -171,7 +172,7 @@ export const convertSimproScheduleDataToSmartsheetFormat = (
                             ? element.Job?.Customer?.CompanyName
                             : `${element.Job?.Customer?.GivenName} ${element.Job?.Customer?.FamilyName}`),
                 "CostCenterName": element.CostCenter?.Name || "",
-                "Cost_center_ID":element.CostCenter?.ID || "",
+                "Cost_center_ID": element.CostCenter?.ID || "",
                 "CustomerEmail": element.Job?.Customer?.Email || "",
                 "JobName": element.Job?.Name || "",
                 "ProjectManager": element.Job?.ProjectManager?.Name || "",
@@ -527,3 +528,57 @@ export const convertSimprocostCenterDataToSmartsheetFormatForUpdate = (
     }
     return convertedData;
 }
+
+export const convertSimproContractorJobDataToSmartsheetFormatForUpdate = (
+    rows: SimproContractorWorkOrderType[],
+    columns: SmartsheetColumnType[],
+    workOrderLineItemIdRowIdMap: { [key: string]: string },
+) => {
+    let convertedData: SmartsheetSheetRowsType[] = [];
+
+    for (const element of rows) {
+        let elementAtIndex: SimproContractorWorkOrderType = element;
+        const options: SmartsheetSheetRowsType = {
+            cells: (Object.keys(elementAtIndex) as (keyof SimproContractorWorkOrderType)[]).map(columnName => {
+                const column = columns.find(i => i.title === columnName);
+                return {
+                    columnId: column?.id || null,
+                    value: elementAtIndex[columnName] || null,
+                };
+            }).filter(cell => cell.columnId !== null),
+        };
+
+        if (workOrderLineItemIdRowIdMap && elementAtIndex.LineItemID !== undefined) {
+            const rowId = workOrderLineItemIdRowIdMap[elementAtIndex.LineItemID.toString()];
+            if (rowId) {
+                options.id = parseInt(rowId, 10);
+                convertedData.push(options);
+            }
+        }
+    }
+    return convertedData;
+};
+
+export const convertSimproContractorDataToSmartsheetFormat = (
+    rows: SimproContractorWorkOrderType[],
+    columns: SmartsheetColumnType[],
+) => {
+    let convertedData: SmartsheetSheetRowsType[] = [];
+    // console.log('rows', rows)
+    for (const element of rows) {
+        let elementAtIndex: SimproContractorWorkOrderType = element;
+        // console.log('elementAtIndex', elementAtIndex)
+        const options: SmartsheetSheetRowsType = {
+            cells: (Object.keys(elementAtIndex) as (keyof SimproContractorWorkOrderType)[]).map(columnName => {
+                const column = columns.find(i => i.title === columnName);
+                return {
+                    columnId: column?.id || null,
+                    value: elementAtIndex[columnName] || null,
+                };
+            }).filter(cell => cell.columnId !== null),
+        };
+
+        convertedData.push(options);
+    }
+    return convertedData;
+};
