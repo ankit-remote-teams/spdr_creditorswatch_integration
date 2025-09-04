@@ -47,7 +47,7 @@ export type SimproCostCenterType = {
         }
     };
     Total?: SimproTotalType;
-    Totals?:SimproTotalsType;
+    Totals?: SimproTotalsType;
 }
 
 export type SimproScheduleType = {
@@ -211,7 +211,7 @@ export type SimproJobType = {
     Name?: string;
     ProjectManager?: SimproManagerType | null;
     CustomFields?: SimproCustomFieldWithValue[];
-    Totals?:SimproTotalsType;
+    Totals?: SimproTotalsType;
     Stage?: string;
 }
 
@@ -300,10 +300,10 @@ type SimproWebhookReference = {
     jobID: number;
     sectionID: number;
     costCenterID: number;
-    invoiceID?:number
-  };
-  
-  type SimproWebhookType = {
+    invoiceID?: number
+};
+
+type SimproWebhookType = {
     ID: string;
     build: string;
     description: string;
@@ -311,9 +311,9 @@ type SimproWebhookReference = {
     action: 'created' | 'updated' | 'deleted';
     reference: SimproWebhookReference;
     date_triggered: string; // ISO 8601 date string
-  };
+};
 
-  type SimproJobCostCenterType = {
+type SimproJobCostCenterType = {
     ID: number;
     ccRecordId: number;
     CostCenter: SimproCostCenterType;
@@ -325,4 +325,50 @@ type SimproWebhookReference = {
     };
     DateModified: string; // ISO 8601 date string 
     _href: string;
-  };
+};
+
+export type SimproLineItemAmountType = {
+    ExTax: number;
+    IncTax: number;
+    ReverseChargeTax?: number;
+}
+
+export type SimproClaimedType = {
+    ToDate: {
+        Qty: number;
+        Amount: SimproLineItemAmountType;
+    };
+    Remaining: {
+        Qty: number;
+        Amount: SimproLineItemAmountType;
+    };
+}
+
+export type SimproItemClassType = {
+    ID: number;
+    PartNo?: string;
+    Name?: string;
+}
+
+export type SimproLineItemType = {
+    ID: number;
+    Total: SimproLineItemAmountType;
+    Claimed: SimproClaimedType;
+    Prebuild?: SimproItemClassType;
+    Catalog?: SimproItemClassType;
+    Qty:{ Assigned: number; Remaining: number; } ;
+    Price:{ Labor: number; Material: number; } ;
+};
+
+export type SimproItemType = {
+    Prebuilds?: SimproLineItemType[];
+    Catalogs?: SimproLineItemType[];
+}
+
+export type SimproContractorJobType = {
+    ID: number;
+    Status: string;
+    DateIssued: string;
+    Items: SimproItemType;
+    Total: SimproLineItemAmountType;
+}

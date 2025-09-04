@@ -163,3 +163,19 @@ export type ExistingIncomeType = {
     CostCenterID: number;
     SectionID: number;
 }
+
+export type SimproContractorWorkOrderType ={
+    JobID: string | number | undefined;
+    CostCenterID: string | number | undefined;
+    CostCenterName: string | null | undefined;
+    WorkOrderID: string | number | undefined;
+    ContractorName: string | null | undefined;
+    ContractorJobStatus: string | null | undefined;
+    ContractorJobTotal: string | number | undefined;
+    DateIssued: string | null | undefined;
+    LineItemType: string | null | undefined;
+    LineItemID: string | number | undefined;
+    LineItemName : string | null | undefined;
+    LineItemQty: string | number | undefined;
+    LineItemAmount: string | number | undefined;
+}
