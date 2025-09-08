@@ -1,6 +1,6 @@
 import { AxiosError } from "axios";
 import axiosSimPRO from "../../config/axiosSimProConfig";
-import { SimproAccountType, SimproContractorJobType, SimproJobCostCenterType, SimproJobType, SimproScheduleType, SimproWebhookType } from "../../types/simpro.types";
+import { SimproAccountType, SimproContractorJobType, SimproCostCenterType, SimproJobCostCenterType, SimproJobType, SimproScheduleType, SimproWebhookType } from "../../types/simpro.types";
 import { SimproContractorWorkOrderType, SmartsheetColumnType, SmartsheetSheetRowsType } from "../../types/smartsheet.types";
 import { convertSimproContractorDataToSmartsheetFormat, convertSimproContractorJobDataToSmartsheetFormatForUpdate, convertSimprocostCenterDataToSmartsheetFormatForUpdate, convertSimproRoofingDataToSmartsheetFormat, convertSimproScheduleDataToSmartsheetFormat, convertSimproScheduleDataToSmartsheetFormatForUpdate } from "../../utils/transformSimproToSmartsheetHelper";
 import { fetchSimproPaginatedData } from "../SimproServices/simproPaginationService";
@@ -669,7 +669,23 @@ export class SmartsheetService {
     static async handleAddUpdateWorkOrderLineItemsToSmartsheet(webhookData: SimproWebhookType) {
         try {
             let isInvoiceAccountNameRoofing = false;
-            const { scheduleID, jobID, sectionID, costCenterID } = webhookData.reference;
+            const { contractorJobID } = webhookData.reference;
+            const contractorJobResponse = await axiosSimPRO.get(`/contractorJobs/${contractorJobID}`);
+            // console.log('contractorJobResponse', contractorJobResponse.data)
+            const contractorJobData: any = contractorJobResponse?.data;
+            const href = contractorJobData._href;
+            const regex = /companies\/(\d+)\/jobs\/(\d+)\/sections\/(\d+)\/costCenters\/(\d+)\/contractorJobs\/(\d+)/;
+            const matches = href?.match(regex);
+            if (!matches) {
+                throw {
+                    message: "Invalid _href format in contractor job data",
+                    status: 400
+                }
+            }
+            const jobID = parseInt(matches[2]);
+            const sectionID = parseInt(matches[3]);
+            const costCenterID = parseInt(matches[4]);
+
             // console.log('scheduleID, jobID, sectionID, costCenterID', scheduleID, jobID, sectionID, costCenterID)
             const costCenterDataForSchedule = await axiosSimPRO.get(`/jobCostCenters/?ID=${costCenterID}&columns=ID,Name,Job,Section,CostCenter`);
             let setupCostCenterID = costCenterDataForSchedule.data[0]?.CostCenter?.ID;
@@ -689,95 +705,88 @@ export class SmartsheetService {
             }
 
             if (isInvoiceAccountNameRoofing) {
-                let simPROScheduleUpdateUrl = `/schedules/${scheduleID}`;
-                // console.log('simPROScheduleUpdateUrl', simPROScheduleUpdateUrl)
-                let individualScheduleResponse = await axiosSimPRO(`${simPROScheduleUpdateUrl}?columns=ID,Staff`)
-                let schedule: SimproScheduleType = individualScheduleResponse?.data;
-                // console.log('Shceuld Data', schedule)
-                if (schedule.Staff.Type === 'contractor') {
-                    let contractorWorkOrderResponse = await axiosSimPRO(`/jobs/${jobID}/sections/${sectionID}/costCenters/${costCenterID}/contractorJobs/?columns=ID,Items,Status,DateIssued,Total`);
-                    let contractorWorkOrderData: SimproContractorJobType[] = contractorWorkOrderResponse?.data;
-                    console.log('contractorWorkOrderData', contractorWorkOrderData)
-                    let costCenterResponse = await axiosSimPRO.get(`jobs/${jobID}/sections/${sectionID}/costCenters/${costCenterID}?columns=Name,ID,Claimed,Total,Totals`);
-                    if (costCenterResponse) {
-                        schedule.CostCenter = costCenterResponse.data;
-                    }
+                let contractorWorkOrderResponse = await axiosSimPRO(`/jobs/${jobID}/sections/${sectionID}/costCenters/${costCenterID}/contractorJobs/?columns=ID,Items,Status,DateIssued,Total`);
+                let contractorWorkOrderData: SimproContractorJobType[] = contractorWorkOrderResponse?.data;
+                console.log('contractorWorkOrderData', contractorWorkOrderData)
+                let costCenterResponse = await axiosSimPRO.get(`jobs/${jobID}/sections/${sectionID}/costCenters/${costCenterID}?columns=Name,ID,Claimed,Total,Totals`);
+                if (!costCenterResponse) {
+                    throw new Error("Cost center data not found");
+                }
+                const costCenterData: SimproCostCenterType = costCenterResponse.data;
 
-                    // console.log('schedule', schedule)
+                for (let index = 0; index < contractorWorkOrderData.length; index++) {
+                    let contractorWorkOrderDataItem = contractorWorkOrderData[index];
+                    let convertedContractorJobDataArray: SimproContractorWorkOrderType[] = extractLineItemsDataFromContractorJob({
+                        jobID,
+                        contractorJob: contractorWorkOrderDataItem,
+                        costCenterData,
+                        contractorName:contractorJobData?.Contractor?.Name || ''
+                    })
+                    // console.log('convertedContractorJobDataArray', convertedContractorJobDataArray)
 
-                    for (let index = 0; index < contractorWorkOrderData.length; index++) {
-                        let contractorWorkOrderDataItem = contractorWorkOrderData[index];
-                        let convertedContractorJobDataArray: SimproContractorWorkOrderType[] = extractLineItemsDataFromContractorJob({
-                            jobID,
-                            contractorJob: contractorWorkOrderDataItem,
-                            scheduleData: schedule
-                        })
-                        // console.log('convertedContractorJobDataArray', convertedContractorJobDataArray)
+                    for (let i = 0; i < convertedContractorJobDataArray.length; i++) {
+                        const currentLineItem = convertedContractorJobDataArray[i];
+                        // console.log('workOrderLineItemsSheetId', workOrderLineItemsSheetId)
+                        if (
+                            workOrderLineItemsSheetId &&
+                            currentLineItem?.LineItemID !== undefined
+                        ) {
+                            const sheetInfo = await smartsheet.sheets.getSheet({ id: workOrderLineItemsSheetId });
 
-                        for (let i = 0; i < convertedContractorJobDataArray.length; i++) {
-                            const currentLineItem = convertedContractorJobDataArray[i];
-                            // console.log('workOrderLineItemsSheetId', workOrderLineItemsSheetId)
-                            if (
-                                workOrderLineItemsSheetId &&
-                                currentLineItem?.LineItemID !== undefined
-                            ) {
-                                const sheetInfo = await smartsheet.sheets.getSheet({ id: workOrderLineItemsSheetId });
+                            const columnsForWorkOrderSheet = sheetInfo.columns;
+                            const columnForLineItemID = columnsForWorkOrderSheet.find((col: SmartsheetColumnType) => col.title === "LineItemID");
 
-                                const columnsForWorkOrderSheet = sheetInfo.columns;
-                                const columnForLineItemID = columnsForWorkOrderSheet.find((col: SmartsheetColumnType) => col.title === "LineItemID");
-
-                                // console.log("LineItem ID column in  work order sheet", columnForLineItemID)
-                                if (!columnForLineItemID) {
-                                    throw {
-                                        message: "LineItemID column not found in the sheet",
-                                        status: 400
-                                    }
-                                }
-
-                                const lineItemIdColumnId = columnForLineItemID.id;
-                                const existingRows: SmartsheetSheetRowsType[] = sheetInfo.rows;
-                                let workOrderItemDataForSmartsheet: SmartsheetSheetRowsType | undefined;
-                                console.log('existingRows', existingRows.length)
-                                for (let i = 0; i < existingRows.length; i++) {
-                                    let currentRow = existingRows[i];
-                                    const cellData = currentRow.cells.find(
-                                        (cell: { columnId: string; value: any }) => cell.columnId === lineItemIdColumnId
-                                    );
-                                    if (cellData?.value === currentLineItem.LineItemID) {
-                                        workOrderItemDataForSmartsheet = currentRow;
-                                        break;
-                                    }
-                                }
-                                // console.log('scheduleDataForSmartsheet', scheduleDataForSmartsheet)
-                                if (workOrderItemDataForSmartsheet) {
-                                    const rowIdMap: { [key: string]: string } = {
-                                        [currentLineItem.LineItemID.toString()]:
-                                            workOrderItemDataForSmartsheet.id?.toString() || "",
-                                    };
-
-                                    const convertedData = convertSimproContractorJobDataToSmartsheetFormatForUpdate([currentLineItem], columnsForWorkOrderSheet, rowIdMap);
-                                    // console.log('convertedDataForSmartsheet', convertedData)
-
-                                    await smartsheet.sheets.updateRow({
-                                        sheetId: workOrderLineItemsSheetId,
-                                        body: convertedData,
-                                    });
-                                    console.log('Updated row in smartsheet in sheet for contractor job work order line item ', workOrderLineItemsSheetId)
-                                } else {
-                                    console.log("Schedule not found, adding new row for line item ", currentLineItem)
-                                    const convertedDataForSmartsheet = convertSimproContractorDataToSmartsheetFormat([currentLineItem], columnsForWorkOrderSheet);
-
-                                    // console.log('convertedDataForSmartsheet', convertedDataForSmartsheet)
-                                    await smartsheet.sheets.addRows({
-                                        sheetId: workOrderLineItemsSheetId,
-                                        body: convertedDataForSmartsheet,
-                                    });
-                                    console.log('Added row in smartsheet in sheeet for contractor job work order line item ', workOrderLineItemsSheetId)
+                            // console.log("LineItem ID column in  work order sheet", columnForLineItemID)
+                            if (!columnForLineItemID) {
+                                throw {
+                                    message: "LineItemID column not found in the sheet",
+                                    status: 400
                                 }
                             }
-                        }
 
+                            const lineItemIdColumnId = columnForLineItemID.id;
+                            const existingRows: SmartsheetSheetRowsType[] = sheetInfo.rows;
+                            let workOrderItemDataForSmartsheet: SmartsheetSheetRowsType | undefined;
+                            console.log('existingRows', existingRows.length)
+                            for (let i = 0; i < existingRows.length; i++) {
+                                let currentRow = existingRows[i];
+                                const cellData = currentRow.cells.find(
+                                    (cell: { columnId: string; value: any }) => cell.columnId === lineItemIdColumnId
+                                );
+                                if (cellData?.value === currentLineItem.LineItemID) {
+                                    workOrderItemDataForSmartsheet = currentRow;
+                                    break;
+                                }
+                            }
+                            // console.log('scheduleDataForSmartsheet', scheduleDataForSmartsheet)
+                            if (workOrderItemDataForSmartsheet) {
+                                const rowIdMap: { [key: string]: string } = {
+                                    [currentLineItem.LineItemID.toString()]:
+                                        workOrderItemDataForSmartsheet.id?.toString() || "",
+                                };
+
+                                const convertedData = convertSimproContractorJobDataToSmartsheetFormatForUpdate([currentLineItem], columnsForWorkOrderSheet, rowIdMap);
+                                // console.log('convertedDataForSmartsheet', convertedData)
+
+                                await smartsheet.sheets.updateRow({
+                                    sheetId: workOrderLineItemsSheetId,
+                                    body: convertedData,
+                                });
+                                console.log('Updated row in smartsheet in sheet for contractor job work order line item ', workOrderLineItemsSheetId)
+                            } else {
+                                console.log("Schedule not found, adding new row for line item ", currentLineItem)
+                                const convertedDataForSmartsheet = convertSimproContractorDataToSmartsheetFormat([currentLineItem], columnsForWorkOrderSheet);
+
+                                // console.log('convertedDataForSmartsheet', convertedDataForSmartsheet)
+                                await smartsheet.sheets.addRows({
+                                    sheetId: workOrderLineItemsSheetId,
+                                    body: convertedDataForSmartsheet,
+                                });
+                                console.log('Added row in smartsheet in sheeet for contractor job work order line item ', workOrderLineItemsSheetId)
+                            }
+                        }
                     }
+
                 }
 
             }

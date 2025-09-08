@@ -2,8 +2,8 @@ import moment from "moment";
 import { CreditorsWatchInvoiceType, PaymentInfoType } from "../types/creditorswatch.types";
 import {
     SimproContractorJobType,
+    SimproCostCenterType,
     SimproLineItemType,
-    SimproScheduleType,
 } from "../types/simpro.types";
 import { SimproContractorWorkOrderType } from "../types/smartsheet.types";
 
@@ -91,11 +91,13 @@ export const splitIntoChunks = <T>(array: T[], chunkSize: number): T[][] => {
 export const extractLineItemsDataFromContractorJob = ({
     jobID,
     contractorJob,
-    scheduleData,
+    costCenterData,
+    contractorName
 }: {
     jobID: string | number;
     contractorJob: SimproContractorJobType;
-    scheduleData: SimproScheduleType;
+    costCenterData: SimproCostCenterType;
+    contractorName?: string;
 }): SimproContractorWorkOrderType[] => {
 
     let resultArray: SimproContractorWorkOrderType[] = [];
@@ -105,10 +107,10 @@ export const extractLineItemsDataFromContractorJob = ({
             let lineItem: SimproLineItemType = item;
             let convertedObj: SimproContractorWorkOrderType = {
                 JobID: jobID,
-                CostCenterID: scheduleData?.CostCenter?.ID || '',
-                CostCenterName: scheduleData?.CostCenter?.Name || '',
+                CostCenterID: costCenterData?.ID || '',
+                CostCenterName: costCenterData?.Name || '',
                 WorkOrderID: contractorJob.ID,
-                ContractorName: scheduleData.Staff?.Name || '',
+                ContractorName: contractorName || '',
                 ContractorJobStatus: contractorJob.Status || '',
                 ContractorJobTotal: contractorJob.Total?.IncTax || 0,
                 DateIssued: contractorJob.DateIssued || '',
@@ -129,13 +131,13 @@ export const extractLineItemsDataFromContractorJob = ({
     if (contractorJob && contractorJob.Items && Array.isArray(contractorJob.Items?.Prebuilds)) {
         for (let item of contractorJob.Items?.Prebuilds) {
             let lineItem: SimproLineItemType = item;
-            console.log('lineItem', lineItem)
+            // console.log('lineItem', lineItem)
             let convertedObj: SimproContractorWorkOrderType = {
                 JobID: jobID,
-                CostCenterID: scheduleData?.CostCenter?.ID || '',
-                CostCenterName: scheduleData?.CostCenter?.Name || '',
+                CostCenterID:  costCenterData?.ID || '',
+                CostCenterName:  costCenterData?.Name || '',
                 WorkOrderID: contractorJob.ID,
-                ContractorName: scheduleData.Staff?.Name || '',
+                ContractorName: contractorName || '',
                 ContractorJobStatus: contractorJob.Status || '',
                 ContractorJobTotal: contractorJob.Total?.IncTax || 0,
                 DateIssued: contractorJob.DateIssued || '',
