@@ -107,6 +107,7 @@ export const extractLineItemsDataFromContractorJob = ({
             let lineItem: SimproLineItemType = item;
             let convertedObj: SimproContractorWorkOrderType = {
                 JobID: jobID,
+                SiteName: costCenterData?.Site?.Name || '',
                 CostCenterID: costCenterData?.ID || '',
                 CostCenterName: costCenterData?.Name || '',
                 WorkOrderID: contractorJob.ID,
@@ -134,8 +135,9 @@ export const extractLineItemsDataFromContractorJob = ({
             // console.log('lineItem', lineItem)
             let convertedObj: SimproContractorWorkOrderType = {
                 JobID: jobID,
-                CostCenterID:  costCenterData?.ID || '',
-                CostCenterName:  costCenterData?.Name || '',
+                SiteName: costCenterData?.Site?.Name || '',
+                CostCenterID: costCenterData?.ID || '',
+                CostCenterName: costCenterData?.Name || '',
                 WorkOrderID: contractorJob.ID,
                 ContractorName: contractorName || '',
                 ContractorJobStatus: contractorJob.Status || '',

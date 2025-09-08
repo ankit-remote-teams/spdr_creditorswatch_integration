@@ -48,6 +48,7 @@ export type SimproCostCenterType = {
     };
     Total?: SimproTotalType;
     Totals?: SimproTotalsType;
+    Site?: SimproSiteType;
 }
 
 export type SimproScheduleType = {

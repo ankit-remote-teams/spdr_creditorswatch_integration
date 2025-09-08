@@ -708,7 +708,7 @@ export class SmartsheetService {
                 let contractorWorkOrderResponse = await axiosSimPRO(`/jobs/${jobID}/sections/${sectionID}/costCenters/${costCenterID}/contractorJobs/?columns=ID,Items,Status,DateIssued,Total`);
                 let contractorWorkOrderData: SimproContractorJobType[] = contractorWorkOrderResponse?.data;
                 console.log('contractorWorkOrderData', contractorWorkOrderData)
-                let costCenterResponse = await axiosSimPRO.get(`jobs/${jobID}/sections/${sectionID}/costCenters/${costCenterID}?columns=Name,ID,Claimed,Total,Totals`);
+                let costCenterResponse = await axiosSimPRO.get(`jobs/${jobID}/sections/${sectionID}/costCenters/${costCenterID}?columns=Name,ID,Claimed,Total,Totals,Site`);
                 if (!costCenterResponse) {
                     throw new Error("Cost center data not found");
                 }

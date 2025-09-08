@@ -166,6 +166,7 @@ export type ExistingIncomeType = {
 
 export type SimproContractorWorkOrderType ={
     JobID: string | number | undefined;
+    SiteName: string | null | undefined;
     CostCenterID: string | number | undefined;
     CostCenterName: string | null | undefined;
     WorkOrderID: string | number | undefined;
