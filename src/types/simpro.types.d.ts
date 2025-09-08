@@ -300,7 +300,8 @@ type SimproWebhookReference = {
     jobID: number;
     sectionID: number;
     costCenterID: number;
-    invoiceID?: number
+    invoiceID?: number;
+    contractorJobID?: number;
 };
 
 type SimproWebhookType = {
@@ -356,8 +357,8 @@ export type SimproLineItemType = {
     Claimed: SimproClaimedType;
     Prebuild?: SimproItemClassType;
     Catalog?: SimproItemClassType;
-    Qty:{ Assigned: number; Remaining: number; } ;
-    Price:{ Labor: number; Material: number; } ;
+    Qty: { Assigned: number; Remaining: number; };
+    Price: { Labor: number; Material: number; };
 };
 
 export type SimproItemType = {
@@ -371,4 +372,5 @@ export type SimproContractorJobType = {
     DateIssued: string;
     Items: SimproItemType;
     Total: SimproLineItemAmountType;
+    _href?: string;
 }

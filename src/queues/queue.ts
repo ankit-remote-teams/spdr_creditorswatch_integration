@@ -23,6 +23,10 @@ simproWebhookQueue.process(async (job) => {
             case "job.schedule.updated":
                 console.log("Schedule Create/Update ", webhookData);
                 await SmartsheetService.handleAddUpdateScheduleToSmartsheet(webhookData);
+                break;
+            
+            case "contractor.job.updated":
+            case "contractor.job.created":
                 await SmartsheetService.handleAddUpdateWorkOrderLineItemsToSmartsheet(webhookData);
                 break;
 
