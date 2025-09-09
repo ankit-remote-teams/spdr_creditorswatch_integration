@@ -558,17 +558,33 @@ export class SmartsheetService {
 
             const costCenterIdColumnId = costCenterIdColumn.id;
             const existingRowInActiveJobsSheet: SmartsheetSheetRowsType[] = activeJobSheetInfo.rows;
+            const existingCostCenterIdsDataInActiveJobSheet: any[] = existingRowInActiveJobsSheet
+                .map((row: SmartsheetSheetRowsType) => {
+                    const costCenterId = row.cells.find(cell => cell.columnId === costCenterIdColumnId)?.value;
+                    return costCenterId ? { costCenterId: Number(costCenterId), rowId: row.id } : null;
+
+                })
+                .filter(Boolean);
+            console.log('existingCostCenterIdsDataInActiveJobSheet', existingCostCenterIdsDataInActiveJobSheet)
 
             let costCenterIdNotPresentInSimproResponse: string[] = SmartsheetService.filterTheCostCenterIdNotInSimproResponse(costCenterIdColumnId, existingRowInActiveJobsSheet, costCenterDataFromSimpro);
             console.log('costCenterIdNotPresentInSimproResponse', costCenterIdNotPresentInSimproResponse);
-            let rowIdsToMarkDeleted: string[] = [];
+            let costCenterIdToBeMarkedAsDeleted: string[] = [];
             if (costCenterIdNotPresentInSimproResponse.length > 0) {
-                rowIdsToMarkDeleted = await SmartsheetService.validateCostCentersBatch(costCenterIdNotPresentInSimproResponse);
+                costCenterIdToBeMarkedAsDeleted = await SmartsheetService.validateCostCentersBatch(costCenterIdNotPresentInSimproResponse);
                 const simproCommentColumn = activeJobSheetColumns.find((col: SmartsheetColumnType) => col.title === "SIMPROComment");
                 const simproCommentColumnId = simproCommentColumn.id;
-                if (rowIdsToMarkDeleted.length > 0) {
-                    console.log('rowIdsToMarkDeleted', rowIdsToMarkDeleted);
-                    const chunks = splitIntoChunks(rowIdsToMarkDeleted, 300);
+                if (costCenterIdToBeMarkedAsDeleted.length > 0) {
+                    console.log('costCenterIdToBeMarkedAsDeleted', costCenterIdToBeMarkedAsDeleted);
+                    const rowsIdsToMarkDeleted = existingCostCenterIdsDataInActiveJobSheet
+                        .filter(item => costCenterIdToBeMarkedAsDeleted.includes(item.costCenterId))
+                        .map(item => item.rowId);
+
+                    console.log('rowsIdsToMarkDeleted', rowsIdsToMarkDeleted)
+
+                    const chunks = splitIntoChunks(rowsIdsToMarkDeleted, 300);
+                    console.log('Total chunks to update for deletion:', chunks.length);
+
                     for (const chunk of chunks) {
                         // Prepare rows for batch update
                         const rowsToUpdate = chunk.map(rowId => ({
@@ -582,7 +598,7 @@ export class SmartsheetService {
                             body: rowsToUpdate,
                         });
 
-                        console.log('JOb CArd: Updated chunk with', chunk.length, 'rows');
+                        console.log('WIP mark as delete  in active sheet', chunk.length, 'rows');
                     }
                 }
             }
@@ -614,6 +630,52 @@ export class SmartsheetService {
 
                         const costCenterIdColumnIdInArchivedSheet = costCenterIdColumnInArchivedSheet.id;
                         const existingRowInArchivedJobsSheet: SmartsheetSheetRowsType[] = archivedJobSheetInfo.rows;
+
+                        const existingCostCenterIdsDataInArchievedJobSheet: any[] = existingRowInArchivedJobsSheet
+                            .map((row: SmartsheetSheetRowsType) => {
+                                const costCenterId = row.cells.find(cell => cell.columnId === costCenterIdColumnIdInArchivedSheet)?.value;
+                                return costCenterId ? { costCenterId: Number(costCenterId), rowId: row.id } : null;
+
+                            })
+                            .filter(Boolean);
+                        console.log('existingCostCenterIdsDataInArchievedJobSheet', existingCostCenterIdsDataInArchievedJobSheet)
+                        let costCenterIdNotPresentInSimproResponseForArchivedJobSheet: string[] = SmartsheetService.filterTheCostCenterIdNotInSimproResponse(costCenterIdColumnIdInArchivedSheet, existingRowInArchivedJobsSheet, costCenterDataFromSimpro);
+                        console.log('costCenterIdNotPresentInSimproResponseForArchivedJobSheet', costCenterIdNotPresentInSimproResponseForArchivedJobSheet);
+                        let costCenterIdToBeMarkedAsDeletedinArchievedJobSheet: string[] = [];
+                        if (costCenterIdNotPresentInSimproResponseForArchivedJobSheet.length > 0) {
+                            costCenterIdToBeMarkedAsDeletedinArchievedJobSheet = await SmartsheetService.validateCostCentersBatch(costCenterIdNotPresentInSimproResponseForArchivedJobSheet);
+                            const simproCommentColumnInArchivedJobSheet = archivedJobSheetColumns.find((col: SmartsheetColumnType) => col.title === "SIMPROComment");
+                            const simproCommentColumnIdInArchivedSheet = simproCommentColumnInArchivedJobSheet.id;
+                            if (costCenterIdToBeMarkedAsDeletedinArchievedJobSheet.length > 0) {
+                                console.log('costCenterIdToBeMarkedAsDeletedinArchievedJobSheet', costCenterIdToBeMarkedAsDeletedinArchievedJobSheet);
+                                const rowsIdsToMarkDeletedInArchivedSheet = existingCostCenterIdsDataInArchievedJobSheet
+                                    .filter(item => costCenterIdToBeMarkedAsDeletedinArchievedJobSheet.includes(item.costCenterId))
+                                    .map(item => item.rowId);
+
+                                console.log('rowsIdsToMarkDeletedInArchivedSheet', rowsIdsToMarkDeletedInArchivedSheet)
+
+                                const chunks = splitIntoChunks(rowsIdsToMarkDeletedInArchivedSheet, 300);
+                                console.log('Total chunks to update for deletion:', chunks.length);
+
+                                for (const chunk of chunks) {
+                                    // Prepare rows for batch update
+                                    const rowsToUpdate = chunk.map(rowId => ({
+                                        id: rowId,
+                                        cells: [{ columnId: simproCommentColumnIdInArchivedSheet, value: "Deleted from Simpro" }],
+                                    }));
+
+                                    // Batch update rows
+                                    await smartsheet.sheets.updateRow({
+                                        sheetId: wipJobArchivedSheetId,
+                                        body: rowsToUpdate,
+                                    });
+
+                                    console.log('WIP mark as delete  in archeived sheet', chunk.length, 'rows');
+                                }
+                            }
+                        }
+
+
                         for (const element of existingRowInArchivedJobsSheet) {
                             const costCenterCellData = element.cells.find(
                                 (cell: { columnId: string; value: any }) => cell.columnId === costCenterIdColumnIdInArchivedSheet
@@ -697,7 +759,7 @@ export class SmartsheetService {
 
         // Build query like ID=in(1234,5678,91011)
         const idQuery = `in(${costCenterIdNotPresentInSimproResponse.join(",")})`;
-        const url = `/jobCostCenters?ID=${idQuery}`;
+        const url = `/jobCostCenters/?ID=${idQuery}`;
 
         // Fetch from Simpro (utility already adds /companies/{companyId})
         const response = await fetchSimproPaginatedData<SimproCostCenter>(url, "ID");
