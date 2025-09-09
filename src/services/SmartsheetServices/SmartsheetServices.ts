@@ -751,26 +751,35 @@ export class SmartsheetService {
     }
 
     static async validateCostCentersBatch(
-        costCenterIdNotPresentInSimproResponse: string[]
+        costCenterIdNotPresentInSimproResponse: string[],
+        chunkSize = 50 // adjust if SimPRO allows fewer
     ): Promise<string[]> {
         if (costCenterIdNotPresentInSimproResponse.length === 0) {
             return [];
         }
 
-        // Build query like ID=in(1234,5678,91011)
-        const idQuery = `in(${costCenterIdNotPresentInSimproResponse.join(",")})`;
-        const url = `/jobCostCenters/?ID=${idQuery}`;
+        const allResponses: SimproCostCenter[] = [];
 
-        // Fetch from Simpro (utility already adds /companies/{companyId})
-        const response = await fetchSimproPaginatedData<SimproCostCenter>(url, "ID");
+        // Split IDs into chunks
+        for (let i = 0; i < costCenterIdNotPresentInSimproResponse.length; i += chunkSize) {
+            const chunk = costCenterIdNotPresentInSimproResponse.slice(i, i + chunkSize);
+            const idQuery = `in(${chunk.join(",")})`;
+            const url = `/jobCostCenters/?ID=${idQuery}`;
 
-        const simproIds = new Set(response.map((r) => r.ID.toString()));
+            // fetchSimproPaginatedData already handles pagination
+            const response = await fetchSimproPaginatedData<SimproCostCenter>(url, "ID");
+            allResponses.push(...response);
+        }
 
-        // Filter out IDs not returned by Simpro
+        // Build a set of all IDs returned by SimPRO
+        const simproIds = new Set(allResponses.map((r) => r.ID.toString()));
+
+        // Filter out IDs not returned by SimPRO
         return costCenterIdNotPresentInSimproResponse.filter(
-            (id) => !simproIds.has(id)
+            (id) => !simproIds.has(id.toString())
         );
     }
+
 
 
     static filterTheCostCenterIdNotInSimproResponse(costCenterColumnID: string, existingRowInActiveJobsSheet: SmartsheetSheetRowsType[], costCenterDataFromSimpro: SimproJobCostCenterType[]): string[] {
