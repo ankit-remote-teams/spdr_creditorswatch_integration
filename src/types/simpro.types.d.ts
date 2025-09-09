@@ -375,3 +375,8 @@ export type SimproContractorJobType = {
     Total: SimproLineItemAmountType;
     _href?: string;
 }
+
+
+export type SimproCostCenter= {
+  ID: number;
+}
