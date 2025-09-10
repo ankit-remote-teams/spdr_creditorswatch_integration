@@ -527,11 +527,12 @@ export class SmartsheetService {
                 }
             }
         }
-        await SmartsheetService.updateCostcenterRoofingToSmartSheet(costCenterDataFromSimpro);
+        await SmartsheetService.updateCostcenterRoofingToSmartSheet(jobID, costCenterDataFromSimpro);
         console.log(`Completed processing for job ${jobID}`);
     }
 
     static async updateCostcenterRoofingToSmartSheet(
+        jobID: number,
         costCenterDataFromSimpro: SimproJobCostCenterType[]
     ) {
         try {
@@ -551,12 +552,14 @@ export class SmartsheetService {
             const activeJobSheetInfo = await smartsheet.sheets.getSheet({ id: jobCardRoofingDetailSheetId });
             const activeJobSheetColumns = activeJobSheetInfo.columns;
             const costCenterIdColumn = activeJobSheetColumns.find((col: SmartsheetColumnType) => col.title === "Cost_Center.ID");
+            const jobIdColumnInActiveJobsSheet = activeJobSheetColumns.find((col: SmartsheetColumnType) => col.title === "JobID");
 
             if (!costCenterIdColumn) {
                 throw new Error("Cost_Center.ID column not found in the sheet");
             }
 
             const costCenterIdColumnId = costCenterIdColumn.id;
+            const jobIdColumnIdInActiveJobsSheet = jobIdColumnInActiveJobsSheet.id;
             const existingRowInActiveJobsSheet: SmartsheetSheetRowsType[] = activeJobSheetInfo.rows;
             const existingCostCenterIdsDataInActiveJobSheet: any[] = existingRowInActiveJobsSheet
                 .map((row: SmartsheetSheetRowsType) => {
@@ -565,9 +568,18 @@ export class SmartsheetService {
 
                 })
                 .filter(Boolean);
-            console.log('existingCostCenterIdsDataInActiveJobSheet', existingCostCenterIdsDataInActiveJobSheet)
+            console.log('existingCostCenterIdsDataInActiveJobSheet', existingCostCenterIdsDataInActiveJobSheet);
 
-            let costCenterIdNotPresentInSimproResponse: string[] = SmartsheetService.filterTheCostCenterIdNotInSimproResponse(costCenterIdColumnId, existingRowInActiveJobsSheet, costCenterDataFromSimpro);
+            let existingCostCenterIdsDataForJobinActiveJobSheet =
+                existingRowInActiveJobsSheet?.filter((row: SmartsheetSheetRowsType) => {
+                    const jobIdCell = row.cells.find(
+                        (cell) => cell.columnId === jobIdColumnIdInActiveJobsSheet
+                    );
+                    return jobIdCell?.value != null && jobIdCell.value == jobID; // loose equality
+                });
+
+
+            let costCenterIdNotPresentInSimproResponse: string[] = SmartsheetService.filterTheCostCenterIdNotInSimproResponse(costCenterIdColumnId, existingCostCenterIdsDataForJobinActiveJobSheet, costCenterDataFromSimpro);
             console.log('costCenterIdNotPresentInSimproResponse', costCenterIdNotPresentInSimproResponse);
             let costCenterIdToBeMarkedAsDeleted: string[] = [];
             if (costCenterIdNotPresentInSimproResponse.length > 0) {
@@ -623,12 +635,13 @@ export class SmartsheetService {
                         archivedJobSheetInfo = await smartsheet.sheets.getSheet({ id: wipJobArchivedSheetId });
                         archivedJobSheetColumns = archivedJobSheetInfo.columns;
                         const costCenterIdColumnInArchivedSheet = archivedJobSheetColumns.find((col: SmartsheetColumnType) => col.title === "Cost_Center.ID");
-
+                        const jobIdColumnInArchivedJobsSheet = archivedJobSheetColumns.find((col: SmartsheetColumnType) => col.title === "JobID");
                         if (!costCenterIdColumnInArchivedSheet) {
                             throw new Error("Cost_Center.ID column not found in the Archived Job sheet");
                         }
 
                         const costCenterIdColumnIdInArchivedSheet = costCenterIdColumnInArchivedSheet.id;
+                        const jobIdColumnIdInArchivedJobsSheet = jobIdColumnInArchivedJobsSheet.id;
                         const existingRowInArchivedJobsSheet: SmartsheetSheetRowsType[] = archivedJobSheetInfo.rows;
 
                         const existingCostCenterIdsDataInArchievedJobSheet: any[] = existingRowInArchivedJobsSheet
@@ -639,7 +652,17 @@ export class SmartsheetService {
                             })
                             .filter(Boolean);
                         console.log('existingCostCenterIdsDataInArchievedJobSheet', existingCostCenterIdsDataInArchievedJobSheet)
-                        let costCenterIdNotPresentInSimproResponseForArchivedJobSheet: string[] = SmartsheetService.filterTheCostCenterIdNotInSimproResponse(costCenterIdColumnIdInArchivedSheet, existingRowInArchivedJobsSheet, costCenterDataFromSimpro);
+
+                        let existingCostCenterIdsDataForJobinArchivedJobSheet =
+                            existingRowInArchivedJobsSheet?.filter((row: SmartsheetSheetRowsType) => {
+                                const jobIdCell = row.cells.find(
+                                    (cell) => cell.columnId === jobIdColumnIdInArchivedJobsSheet
+                                );
+                                return jobIdCell?.value != null && jobIdCell.value == jobID; // loose equality
+                            });
+
+
+                        let costCenterIdNotPresentInSimproResponseForArchivedJobSheet: string[] = SmartsheetService.filterTheCostCenterIdNotInSimproResponse(costCenterIdColumnIdInArchivedSheet, existingCostCenterIdsDataForJobinArchivedJobSheet, costCenterDataFromSimpro);
                         console.log('costCenterIdNotPresentInSimproResponseForArchivedJobSheet', costCenterIdNotPresentInSimproResponseForArchivedJobSheet);
                         let costCenterIdToBeMarkedAsDeletedinArchievedJobSheet: string[] = [];
                         if (costCenterIdNotPresentInSimproResponseForArchivedJobSheet.length > 0) {
