@@ -97,6 +97,22 @@ export type SimproTotalType = {
 export type SimproTotalsType = {
     InvoicedValue: number;
     InvoicePercentage?: number;
+    MaterialsCost?: SimproCostType;
+    MaterialsMarkup?: SimproCostType;
+    ResourcesCost ?: {
+        Total?: SimproCostType;
+        Labor?: SimproCostType;
+        LaborHours?: SimproCostType;
+        PlantAndEquipment?: SimproCostType;
+        PlantAndEquipmentHours?: SimproCostType;
+        Commission?: SimproCostType;
+        Overhead?: SimproCostType;
+    };
+    ResourcesMarkup?: {
+        Total?: SimproCostType;
+        Labor?: SimproCostType;
+        PlantAndEquipment?: SimproCostType;
+    };
 };
 
 export type SimproInvoiceType = {
@@ -232,6 +248,7 @@ export type SimproCostType = {
     Estimate: number;
     Revised: number;
     Revized: number;
+    Actual?: number;
 }
 
 export type SimproQuotationTotalsType = {

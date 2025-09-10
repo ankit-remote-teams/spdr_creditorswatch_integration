@@ -449,7 +449,9 @@ export const convertSimproRoofingDataToSmartsheetFormat = (
                 "Cost_Center.Name": row?.CostCenter?.Name,
                 "Remainingamount_Ex.Tax": yetToInvoiceValue,
                 "CostCentre_Total_Ex.Tax": row?.CostCenter?.Total?.ExTax,
-                "Remaining_Invoice_Percentage": row?.CostCenter?.Claimed?.Remaining?.Percent || (!row?.CostCenter?.Claimed ? 100 : 0)
+                "Remaining_Invoice_Percentage": row?.CostCenter?.Claimed?.Remaining?.Percent || (!row?.CostCenter?.Claimed ? 100 : 0),
+                "CC_Material_Cost": ((row?.CostCenter?.Totals?.MaterialsCost?.Actual ?? 0) + (row?.CostCenter?.Totals?.MaterialsMarkup?.Actual ?? 0)).toFixed(2),
+                "CC_Resource_Cost": ((row?.CostCenter?.Totals?.ResourcesCost?.Total?.Actual ?? 0) + (row?.CostCenter?.Totals?.ResourcesMarkup?.Total?.Actual ?? 0)).toFixed(2),
             }
             console.dir(rowObj, { depth: null })
             const options: SmartsheetSheetRowsType = {
@@ -504,7 +506,9 @@ export const convertSimprocostCenterDataToSmartsheetFormatForUpdate = (
                 "Cost_Center.Name": row?.CostCenter?.Name,
                 "Remainingamount_Ex.Tax": yetToInvoiceValue,
                 "CostCentre_Total_Ex.Tax": row?.CostCenter?.Total?.ExTax,
-                "Remaining_Invoice_Percentage": row?.CostCenter?.Claimed?.Remaining?.Percent || (!row?.CostCenter?.Claimed ? 100 : 0)
+                "Remaining_Invoice_Percentage": row?.CostCenter?.Claimed?.Remaining?.Percent || (!row?.CostCenter?.Claimed ? 100 : 0),
+                "CC_Material_Cost": ((row?.CostCenter?.Totals?.MaterialsCost?.Actual ?? 0) + (row?.CostCenter?.Totals?.MaterialsMarkup?.Actual ?? 0)).toFixed(2),
+                "CC_Resource_Cost": ((row?.CostCenter?.Totals?.ResourcesCost?.Total?.Actual ?? 0) + (row?.CostCenter?.Totals?.ResourcesMarkup?.Total?.Actual ?? 0)).toFixed(2),
             }
             console.dir(rowObj, { depth: null })
             const options: SmartsheetSheetRowsType = {
