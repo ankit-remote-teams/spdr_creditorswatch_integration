@@ -8,15 +8,12 @@ import { extractLineItemsDataFromContractorJob, splitIntoChunks } from "../../ut
 const SmartsheetClient = require('smartsheet');
 const smartSheetAccessToken: string | undefined = process.env.SMARTSHEET_ACCESS_TOKEN;
 const smartsheet = SmartsheetClient.createClient({ accessToken: smartSheetAccessToken });
-const jobCardReportSheetId = process.env.JOB_CARD_SHEET_ID ? process.env.JOB_CARD_SHEET_ID : "";
 const jobCardV2SheetId = process.env.JOB_CARD_SHEET_V2_ID ? process.env.JOB_CARD_SHEET_V2_ID : "";
 const jobCardRoofingDetailSheetId = process.env.JOB_CARD_SHEET_ROOFING_DETAIL_ID ?? "";
 const wipJobArchivedSheetId = process.env.WIP_JOB_ARCHIVED_SHEET_ID ?? "";
 const jobCardV2MovePastSheetId = process.env.JOB_CARD_V2_MOVE_PAST_SHEET_ID ?? "";
-const workOrderLineItemsSheetId = process.env.WORKORDER_LINE_ITEMS_SHEET_ID ?? "";
-console.log('jobCardReportSheetId', jobCardReportSheetId)
-
-
+const workOrderLineItemsActiveSheetId = process.env.WORKORDER_LINE_ITEMS_ACTIVE_SHEET_ID ?? "";
+const workOrderLineItemsArchivedSheetId = process.env.WORKORDER_LINE_ITEMS_ARCHIVED_SHEET_ID ?? "";
 export class SmartsheetService {
 
 
@@ -450,7 +447,6 @@ export class SmartsheetService {
         }
     }
 
-
     static async handleAddUpdateCostcenterRoofingToSmartSheet(webhookData: SimproWebhookType) {
         const { jobID } = webhookData.reference;
         const { date_triggered, ID } = webhookData;
@@ -803,8 +799,6 @@ export class SmartsheetService {
         );
     }
 
-
-
     static filterTheCostCenterIdNotInSimproResponse(costCenterColumnID: string, existingRowInActiveJobsSheet: SmartsheetSheetRowsType[], costCenterDataFromSimpro: SimproJobCostCenterType[]): string[] {
         let costCenterIdNotPresentInSimproResponse: string[] = [];
         if (costCenterColumnID) {
@@ -821,8 +815,6 @@ export class SmartsheetService {
         }
         return costCenterIdNotPresentInSimproResponse;
     }
-
-
 
     static async handleAddUpdateWorkOrderLineItemsToSmartsheet(webhookData: SimproWebhookType) {
         try {
@@ -884,63 +876,105 @@ export class SmartsheetService {
 
                     for (let i = 0; i < convertedContractorJobDataArray.length; i++) {
                         const currentLineItem = convertedContractorJobDataArray[i];
-                        // console.log('workOrderLineItemsSheetId', workOrderLineItemsSheetId)
+                        // console.log('workOrderLineItemsActiveSheetId', workOrderLineItemsActiveSheetId)
                         if (
-                            workOrderLineItemsSheetId &&
+                            workOrderLineItemsActiveSheetId &&
                             currentLineItem?.LineItemID !== undefined
                         ) {
-                            const sheetInfo = await smartsheet.sheets.getSheet({ id: workOrderLineItemsSheetId });
+                            const activeWorkOrdersheetInfo = await smartsheet.sheets.getSheet({ id: workOrderLineItemsActiveSheetId });
 
-                            const columnsForWorkOrderSheet = sheetInfo.columns;
-                            const columnForLineItemID = columnsForWorkOrderSheet.find((col: SmartsheetColumnType) => col.title === "LineItemID");
+                            const columnsForActiveWorkOrderSheet = activeWorkOrdersheetInfo.columns;
+                            const activeOrdercolumnForLineItemID = columnsForActiveWorkOrderSheet.find((col: SmartsheetColumnType) => col.title === "LineItemID");
 
-                            // console.log("LineItem ID column in  work order sheet", columnForLineItemID)
-                            if (!columnForLineItemID) {
+                            // console.log("LineItem ID column in  work order sheet", activeOrdercolumnForLineItemID)
+                            if (!activeOrdercolumnForLineItemID) {
                                 throw {
                                     message: "LineItemID column not found in the sheet",
                                     status: 400
                                 }
                             }
 
-                            const lineItemIdColumnId = columnForLineItemID.id;
-                            const existingRows: SmartsheetSheetRowsType[] = sheetInfo.rows;
-                            let workOrderItemDataForSmartsheet: SmartsheetSheetRowsType | undefined;
-                            console.log('existingRows', existingRows.length)
-                            for (let i = 0; i < existingRows.length; i++) {
-                                let currentRow = existingRows[i];
+                            const activeSheetlineItemIdColumnId = activeOrdercolumnForLineItemID.id;
+                            const existingRowsInActiveWoSheet: SmartsheetSheetRowsType[] = activeWorkOrdersheetInfo.rows;
+                            let activeWorkOrderItemDataForSmartsheet: SmartsheetSheetRowsType | undefined;
+                            console.log('existingRowsInActiveWoSheet', existingRowsInActiveWoSheet.length)
+                            for (let i = 0; i < existingRowsInActiveWoSheet.length; i++) {
+                                let currentRow = existingRowsInActiveWoSheet[i];
                                 const cellData = currentRow.cells.find(
-                                    (cell: { columnId: string; value: any }) => cell.columnId === lineItemIdColumnId
+                                    (cell: { columnId: string; value: any }) => cell.columnId === activeSheetlineItemIdColumnId
                                 );
                                 if (cellData?.value === currentLineItem.LineItemID) {
-                                    workOrderItemDataForSmartsheet = currentRow;
+                                    activeWorkOrderItemDataForSmartsheet = currentRow;
                                     break;
                                 }
                             }
                             // console.log('scheduleDataForSmartsheet', scheduleDataForSmartsheet)
-                            if (workOrderItemDataForSmartsheet) {
+                            if (activeWorkOrderItemDataForSmartsheet) {
                                 const rowIdMap: { [key: string]: string } = {
                                     [currentLineItem.LineItemID.toString()]:
-                                        workOrderItemDataForSmartsheet.id?.toString() || "",
+                                        activeWorkOrderItemDataForSmartsheet.id?.toString() || "",
                                 };
 
-                                const convertedData = convertSimproContractorJobDataToSmartsheetFormatForUpdate([currentLineItem], columnsForWorkOrderSheet, rowIdMap);
-                                // console.log('convertedDataForSmartsheet', convertedData)
+                                const convertedDataForActiveSheet = convertSimproContractorJobDataToSmartsheetFormatForUpdate([currentLineItem], columnsForActiveWorkOrderSheet, rowIdMap);
+                                // console.log('convertedDataForSmartsheet', convertedDataForActiveSheet)
 
                                 await smartsheet.sheets.updateRow({
-                                    sheetId: workOrderLineItemsSheetId,
-                                    body: convertedData,
+                                    sheetId: workOrderLineItemsActiveSheetId,
+                                    body: convertedDataForActiveSheet,
                                 });
-                                console.log('Updated row in smartsheet in sheet for contractor job work order line item ', workOrderLineItemsSheetId)
+                                console.log('Updated row in smartsheet in sheet for contractor job work order line item ', workOrderLineItemsActiveSheetId)
                             } else {
-                                console.log("Schedule not found, adding new row for line item ", currentLineItem)
-                                const convertedDataForSmartsheet = convertSimproContractorDataToSmartsheetFormat([currentLineItem], columnsForWorkOrderSheet);
+                                console.log("Line item not found in actvie sheet, checking archived sheet for work order line item")
 
-                                // console.log('convertedDataForSmartsheet', convertedDataForSmartsheet)
-                                await smartsheet.sheets.addRows({
-                                    sheetId: workOrderLineItemsSheetId,
-                                    body: convertedDataForSmartsheet,
-                                });
-                                console.log('Added row in smartsheet in sheeet for contractor job work order line item ', workOrderLineItemsSheetId)
+                                const archivedWorkOrdersheetInfo = await smartsheet.sheets.getSheet({ id: workOrderLineItemsArchivedSheetId });
+                                const columnsForArchivedWorkOrderSheet = archivedWorkOrdersheetInfo.columns;
+                                const archivedOrdercolumnForLineItemID = columnsForArchivedWorkOrderSheet.find((col: SmartsheetColumnType) => col.title === "LineItemID");
+                                if (!archivedOrdercolumnForLineItemID) {
+                                    throw {
+                                        message: "LineItemID column not found in the archived work order sheet",
+                                        status: 400
+                                    }
+                                }
+                                const archivedSheetlineItemIdColumnId = archivedOrdercolumnForLineItemID.id;
+                                const existingRowsInArchivedWoSheet: SmartsheetSheetRowsType[] = archivedWorkOrdersheetInfo.rows;
+                                let archivedWorkOrderItemDataForSmartsheet: SmartsheetSheetRowsType | undefined;
+                                console.log('existingRowsInArchivedWoSheet', existingRowsInArchivedWoSheet.length)
+                                for (let i = 0; i < existingRowsInArchivedWoSheet.length; i++) {
+                                    let currentRow = existingRowsInArchivedWoSheet[i];
+                                    const cellData = currentRow.cells.find(
+                                        (cell: { columnId: string; value: any }) => cell.columnId === archivedSheetlineItemIdColumnId
+                                    );
+                                    if (cellData?.value === currentLineItem.LineItemID) {
+                                        archivedWorkOrderItemDataForSmartsheet = currentRow;
+                                        break;
+                                    }
+                                }
+                                if (archivedWorkOrderItemDataForSmartsheet) {
+                                    const rowIdMap: { [key: string]: string } = {
+                                        [currentLineItem.LineItemID.toString()]:
+                                            archivedWorkOrderItemDataForSmartsheet.id?.toString() || "",
+                                    };
+                                    const convertedDataForArchivedSheet = convertSimproContractorJobDataToSmartsheetFormatForUpdate([currentLineItem], columnsForArchivedWorkOrderSheet, rowIdMap);
+                                    // console.log('convertedDataForSmartsheet', convertedDataForArchivedSheet)
+                                    await smartsheet.sheets.updateRow({
+                                        sheetId: workOrderLineItemsArchivedSheetId,
+                                        body: convertedDataForArchivedSheet,
+                                    });
+                                    console.log('Updated row in smartsheet in archived sheet for contractor job work order line item ', workOrderLineItemsArchivedSheetId)
+                                } else {
+                                    console.log('Line Item not found in smartsheet, adding new row')
+                                    console.log("Schedule not found, adding new row for line item ", currentLineItem)
+                                    const convertedDataForSmartsheet = convertSimproContractorDataToSmartsheetFormat([currentLineItem], columnsForActiveWorkOrderSheet);
+
+                                    // console.log('convertedDataForSmartsheet', convertedDataForSmartsheet)
+                                    await smartsheet.sheets.addRows({
+                                        sheetId: workOrderLineItemsActiveSheetId,
+                                        body: convertedDataForSmartsheet,
+                                    });
+                                }
+
+
+                                console.log('Added row in smartsheet in sheeet for contractor job work order line item ', workOrderLineItemsActiveSheetId)
                             }
                         }
                     }
@@ -956,8 +990,6 @@ export class SmartsheetService {
             }
         }
     }
-
-
 
 
 }
