@@ -14,6 +14,7 @@ import {
     SimproQuotationType,
     SimproLeadType,
     SimproJobCostCenterType,
+    SimproJobCostCenterTypeForAmountUpdate,
 
 } from '../types/simpro.types';
 import moment from 'moment';
@@ -319,7 +320,6 @@ export const convertSimproQuotationDataToSmartsheetFormatForUpdate = (
     return convertedData;
 };
 
-
 export const convertSimproLeadsDataToSmartsheetFormat = (rows: SimproLeadType[], columns: SmartsheetColumnType[]) => {
     let convertedData: SmartsheetSheetRowsType[] = [];
     for (let i = 0; i < rows.length; i++) {
@@ -426,22 +426,39 @@ export const convertSimproRoofingDataToSmartsheetFormat = (
             const customerName = row.Job?.Customer?.CompanyName && row.Job?.Customer?.CompanyName.length > 0 ? row.Job?.Customer?.CompanyName : (row.Job?.Customer?.GivenName + " " + row.Job?.Customer?.FamilyName)
             const totalIncTax = row?.CostCenter?.Total?.IncTax;
             const invoicedVal = row?.CostCenter?.Totals?.InvoicedValue;
+
+            // Old code
+            // let yetToInvoiceValue = row?.CostCenter?.Claimed?.Remaining?.Amount?.ExTax
+            //     ? (row?.CostCenter?.Totals?.InvoicePercentage === 100 &&
+            //         row?.CostCenter?.Claimed?.Remaining?.Amount?.ExTax < 0)
+            //         ? "$0.00"
+            //         : `$${row?.CostCenter?.Claimed?.Remaining?.Amount?.ExTax}`
+            //     : null;
+
+            // // Use fallback only if value is null/undefined
+            // if (yetToInvoiceValue == null) {
+            //     yetToInvoiceValue = `$${(((totalIncTax ?? 0) - (invoicedVal ?? 0)) / 1.1).toFixed(2)}`;
+            // }
+
             let yetToInvoiceValue = row?.CostCenter?.Claimed?.Remaining?.Amount?.ExTax
                 ? (row?.CostCenter?.Totals?.InvoicePercentage === 100 &&
                     row?.CostCenter?.Claimed?.Remaining?.Amount?.ExTax < 0)
-                    ? "$0.00"
-                    : `$${row?.CostCenter?.Claimed?.Remaining?.Amount?.ExTax}`
+                    ? 0
+                    : row?.CostCenter?.Claimed?.Remaining?.Amount?.ExTax
                 : null;
 
             // Use fallback only if value is null/undefined
             if (yetToInvoiceValue == null) {
-                yetToInvoiceValue = `$${(((totalIncTax ?? 0) - (invoicedVal ?? 0)) / 1.1).toFixed(2)}`;
+                yetToInvoiceValue = ((totalIncTax ?? 0) - (invoicedVal ?? 0)) / 1.1;
+                yetToInvoiceValue = Number(yetToInvoiceValue.toFixed(2)); // keeps it numeric
             }
+
 
             rowObj = {
                 JobID: row?.Job?.ID,
                 Customer: customerName,
                 "Job.SiteName": row?.Job?.Site?.Name,
+                "Site.Suburb": row?.Site?.Address?.City,
                 "Job.Name": row?.Job?.Name,
                 "Job.Stage": row?.Job?.Stage,
                 "Job_Section.ID": row?.Section?.ID,
@@ -450,8 +467,8 @@ export const convertSimproRoofingDataToSmartsheetFormat = (
                 "Remainingamount_Ex.Tax": yetToInvoiceValue,
                 "CostCentre_Total_Ex.Tax": row?.CostCenter?.Total?.ExTax,
                 "Remaining_Invoice_Percentage": row?.CostCenter?.Claimed?.Remaining?.Percent || (!row?.CostCenter?.Claimed ? 100 : 0),
-                "CC_Material_Cost": ((row?.CostCenter?.Totals?.MaterialsCost?.Actual ?? 0) + (row?.CostCenter?.Totals?.MaterialsMarkup?.Actual ?? 0)).toFixed(2),
-                "CC_Resource_Cost": ((row?.CostCenter?.Totals?.ResourcesCost?.Total?.Actual ?? 0) + (row?.CostCenter?.Totals?.ResourcesMarkup?.Total?.Actual ?? 0)).toFixed(2),
+                "CC_Material_Cost": Number(((row?.CostCenter?.Totals?.MaterialsCost?.Actual ?? 0)).toFixed(2)),
+                "CC_Resource_Cost": Number(((row?.CostCenter?.Totals?.ResourcesCost?.Total?.Actual ?? 0)).toFixed(2)),
             }
             console.dir(rowObj, { depth: null })
             const options: SmartsheetSheetRowsType = {
@@ -483,22 +500,41 @@ export const convertSimprocostCenterDataToSmartsheetFormatForUpdate = (
             const customerName = row.Job?.Customer?.CompanyName && row.Job?.Customer?.CompanyName.length > 0 ? row.Job?.Customer?.CompanyName : (row.Job?.Customer?.GivenName + " " + row.Job?.Customer?.FamilyName)
             const totalIncTax = row?.CostCenter?.Total?.IncTax;
             const invoicedVal = row?.CostCenter?.Totals?.InvoicedValue;
+
+            // Previous code
+
+            // let yetToInvoiceValue = row?.CostCenter?.Claimed?.Remaining?.Amount?.ExTax
+            //     ? (row?.CostCenter?.Totals?.InvoicePercentage === 100 &&
+            //         row?.CostCenter?.Claimed?.Remaining?.Amount?.ExTax < 0)
+            //         ? "$0.00"
+            //         : `$${row?.CostCenter?.Claimed?.Remaining?.Amount?.ExTax}`
+            //     : null;
+
+            // // Use fallback only if value is null/undefined
+            // if (yetToInvoiceValue == null) {
+            //     yetToInvoiceValue = `$${(((totalIncTax ?? 0) - (invoicedVal ?? 0)) / 1.1).toFixed(2)}`;
+            // }
+
             let yetToInvoiceValue = row?.CostCenter?.Claimed?.Remaining?.Amount?.ExTax
                 ? (row?.CostCenter?.Totals?.InvoicePercentage === 100 &&
                     row?.CostCenter?.Claimed?.Remaining?.Amount?.ExTax < 0)
-                    ? "$0.00"
-                    : `$${row?.CostCenter?.Claimed?.Remaining?.Amount?.ExTax}`
+                    ? 0
+                    : row?.CostCenter?.Claimed?.Remaining?.Amount?.ExTax
                 : null;
 
             // Use fallback only if value is null/undefined
             if (yetToInvoiceValue == null) {
-                yetToInvoiceValue = `$${(((totalIncTax ?? 0) - (invoicedVal ?? 0)) / 1.1).toFixed(2)}`;
+                yetToInvoiceValue = ((totalIncTax ?? 0) - (invoicedVal ?? 0)) / 1.1;
+                // If you want to round to 2 decimals but still keep it a number:
+                yetToInvoiceValue = Number(yetToInvoiceValue.toFixed(2));
             }
+
 
             rowObj = {
                 JobID: row?.Job?.ID,
                 Customer: customerName,
                 "Job.SiteName": row?.Job?.Site?.Name,
+                "Site.Suburb": row?.Site?.Address?.City,
                 "Job.Name": row?.Job?.Name,
                 "Job.Stage": row?.Job?.Stage,
                 "Job_Section.ID": row?.Section?.ID,
@@ -507,8 +543,8 @@ export const convertSimprocostCenterDataToSmartsheetFormatForUpdate = (
                 "Remainingamount_Ex.Tax": yetToInvoiceValue,
                 "CostCentre_Total_Ex.Tax": row?.CostCenter?.Total?.ExTax,
                 "Remaining_Invoice_Percentage": row?.CostCenter?.Claimed?.Remaining?.Percent || (!row?.CostCenter?.Claimed ? 100 : 0),
-                "CC_Material_Cost": ((row?.CostCenter?.Totals?.MaterialsCost?.Actual ?? 0) + (row?.CostCenter?.Totals?.MaterialsMarkup?.Actual ?? 0)).toFixed(2),
-                "CC_Resource_Cost": ((row?.CostCenter?.Totals?.ResourcesCost?.Total?.Actual ?? 0) + (row?.CostCenter?.Totals?.ResourcesMarkup?.Total?.Actual ?? 0)).toFixed(2),
+                "CC_Material_Cost": Number(((row?.CostCenter?.Totals?.MaterialsCost?.Actual ?? 0)).toFixed(2)),
+                "CC_Resource_Cost": Number(((row?.CostCenter?.Totals?.ResourcesCost?.Total?.Actual ?? 0)).toFixed(2)),
             }
             console.dir(rowObj, { depth: null })
             const options: SmartsheetSheetRowsType = {
@@ -584,5 +620,58 @@ export const convertSimproContractorDataToSmartsheetFormat = (
 
         convertedData.push(options);
     }
+    return convertedData;
+};
+
+
+export const convertSimproCostCenterAmountUpdateToSmartsheetFormat = (
+    rows: SimproJobCostCenterTypeForAmountUpdate[],
+    columns: SmartsheetColumnType[],
+    costCenterIdRowIdMap: { [key: string]: string }
+): SmartsheetSheetRowsType[] => {
+    const convertedData: SmartsheetSheetRowsType[] = [];
+
+    for (const row of rows) {
+        const totalIncTax = row?.CostCenter?.Total?.IncTax;
+        const invoicedVal = row?.CostCenter?.Totals?.InvoicedValue;
+        let yetToInvoiceValue = row?.CostCenter?.Claimed?.Remaining?.Amount?.ExTax
+            ? (row?.CostCenter?.Totals?.InvoicePercentage === 100 &&
+                row?.CostCenter?.Claimed?.Remaining?.Amount?.ExTax < 0)
+                ? 0
+                : row?.CostCenter?.Claimed?.Remaining?.Amount?.ExTax
+            : null;
+
+        // Use fallback only if value is null/undefined
+        if (yetToInvoiceValue == null) {
+            yetToInvoiceValue = ((totalIncTax ?? 0) - (invoicedVal ?? 0)) / 1.1;
+            // If you want to round to 2 decimals but still keep it a number:
+            yetToInvoiceValue = Number(yetToInvoiceValue.toFixed(2));
+        }
+        const rowObj = {
+            "Cost_Center.ID": row.CostCenter.ID,
+            "Remainingamount_Ex.Tax": yetToInvoiceValue,
+            "CostCentre_Total_Ex.Tax": row.CostCenter.Total?.ExTax ?? null,
+            "CC_Material_Cost": Number(((row?.CostCenter?.Totals?.MaterialsCost?.Actual ?? 0)).toFixed(2)),
+            "CC_Resource_Cost": Number(((row?.CostCenter?.Totals?.ResourcesCost?.Total?.Actual ?? 0)).toFixed(2)),
+            "Site.Suburb": row.Site.Address?.City
+        };
+
+        const options: SmartsheetSheetRowsType = {
+            cells: (Object.keys(rowObj) as (keyof typeof rowObj)[]).map(columnName => {
+                const column = columns.find(i => i.title === columnName);
+                return {
+                    columnId: column?.id ?? null,
+                    value: rowObj[columnName] ?? null,
+                };
+            }).filter(cell => cell.columnId !== null),
+        };
+
+        const rowId = costCenterIdRowIdMap[row.CostCenter.ID.toString()];
+        if (rowId) {
+            options.id = parseInt(rowId, 10);
+            convertedData.push(options);
+        }
+    }
+
     return convertedData;
 };

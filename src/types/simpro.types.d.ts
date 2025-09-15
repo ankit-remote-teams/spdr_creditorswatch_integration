@@ -344,6 +344,7 @@ type SimproJobCostCenterType = {
     };
     DateModified: string; // ISO 8601 date string 
     _href: string;
+    Site?: SimproSiteType
 };
 
 export type SimproLineItemAmountType = {
@@ -397,3 +398,15 @@ export type SimproContractorJobType = {
 export type SimproCostCenter= {
   ID: number;
 }
+
+
+export type CostCenterJobInfo = {
+    costCenterId: number | string;
+    sectionId: number | string;
+    cellDataJobId: number | string;
+};
+
+type SimproJobCostCenterTypeForAmountUpdate = {
+    CostCenter: SimproCostCenterType;
+    Site: SimproSiteType
+};
