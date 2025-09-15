@@ -17,7 +17,9 @@ import {
     SimproScheduleType,
     SimproQuotationType,
     SimproLeadType,
-    SimproJobCostCenterType
+    SimproJobCostCenterType,
+    CostCenterJobInfo,
+    SimproJobCostCenterTypeForAmountUpdate
 } from '../types/simpro.types';
 import { splitIntoChunks } from '../utils/helper';
 import moment from 'moment';
@@ -32,8 +34,10 @@ import {
     convertSimproLeadsDataToSmartsheetFormatForUpdate,
     convertSimproRoofingDataToSmartsheetFormat,
     convertSimprocostCenterDataToSmartsheetFormatForUpdate,
+    convertSimproCostCenterAmountUpdateToSmartsheetFormat,
 } from '../utils/transformSimproToSmartsheetHelper';
 import axiosSimPRO from '../config/axiosSimProConfig';
+import { SmartsheetService } from '../services/SmartsheetServices/SmartsheetServices';
 
 
 const smartSheetAccessToken: string | undefined = process.env.SMARTSHEET_ACCESS_TOKEN;
@@ -42,7 +46,8 @@ const jobTrackerSheetId = process.env.TASK_TRACKER_SHEET_ID ? process.env.TASK_T
 const ongoingQuotationSheetId = process.env.SIMPRO_ONGOING_QUOTE_SHEET_ID ? process.env.SIMPRO_ONGOING_QUOTE_SHEET_ID : "";
 const ongoingLeadsSheetId = process.env.SIMPRO_ONGOING_LEADS_SHEET_ID ? process.env.SIMPRO_ONGOING_LEADS_SHEET_ID : "";
 const jobCardSheetId = process.env.JOB_CARD_SHEET_ID ? process.env.JOB_CARD_SHEET_ID : "";
-
+const jobCardRoofingDetailSheetId = process.env.JOB_CARD_SHEET_ROOFING_DETAIL_ID ?? "";
+const wipJobArchivedSheetId = process.env.WIP_JOB_ARCHIVED_SHEET_ID ?? "";
 
 // Define interfaces for Smartsheet events and cells
 interface ISmartsheetEvent {
@@ -905,7 +910,7 @@ export const addJobRoofingDetailsToSmartSheet = async (rows: SimproJobCostCenter
                 && costCenter.Job.ID == existing.JobID
                 && costCenter.Section.ID == existing.SectionID)) : [];
 
-        
+
 
         if (constCentersToAdd.length) {
             const rowsToAddToSmartSheet = convertSimproRoofingDataToSmartsheetFormat(constCentersToAdd, columns, "full");
@@ -986,8 +991,8 @@ export const updateJobRoofingDetailsToSmartSheet = async (rowsToUpdate: SimproJo
                 await updateSimproRoofingJobData(updatedSimproData, columns, existingcostCenterIdsData, smartsheetId, 'full');
             }
         });
-        
-        
+
+
     } catch (err) {
         console.log("Error ", err)
         if (err instanceof AxiosError) {
@@ -1076,3 +1081,93 @@ const addCostCenterDeleteCommentInChunks = async (rowIds: number[], smartsheetId
         }
     }
 };
+
+export const updateAmountValuesInRoofingWipSheet = async (req: Request, res: Response) => {
+    try {
+        const activeSheetInfo = await smartsheet.sheets.getSheet({ id: jobCardRoofingDetailSheetId });
+        const activeRows = activeSheetInfo.rows;
+        let costCenterIdColumnId = await getColumnIdForColumnName("Cost_Center.ID", jobCardRoofingDetailSheetId);
+        let sectionIdColumnId = await getColumnIdForColumnName("Job_Section.ID", jobCardRoofingDetailSheetId);
+        const jobIdColumnId = await getColumnIdForColumnName("JobID", jobCardRoofingDetailSheetId)
+        const existingActiveCostcenterJobsInSheet: CostCenterJobInfo[] = activeRows
+            .map((row: SmartsheetSheetRowsType) => {
+                const cellDataCostCenter = row.cells.find(
+                    (cellData) => cellData.columnId === costCenterIdColumnId
+                );
+                const cellDataJobSection = row.cells.find(
+                    (cellData) => cellData.columnId === sectionIdColumnId
+                );
+                const cellDataJobId = row.cells.find(
+                    (cellData) => cellData.columnId === jobIdColumnId
+                );
+
+                if (cellDataCostCenter && cellDataJobSection && cellDataJobId) {
+                    return {
+                        costCenterId: cellDataCostCenter.value,
+                        sectionId: cellDataJobSection.value,
+                        cellDataJobId: cellDataJobId.value,
+                    };
+                }
+
+                return null;
+            })
+            .filter(
+                (value: CostCenterJobInfo | null): value is CostCenterJobInfo =>
+                    value !== null
+            );
+
+    
+        let allCostCenterIdsData = Array.from(new Set([...existingActiveCostcenterJobsInSheet]))
+        console.log("allCostCenterIdsData", allCostCenterIdsData);
+        if (allCostCenterIdsData.length) {
+            const fetchedCostCenterData: SimproJobCostCenterTypeForAmountUpdate[] = await SmartsheetService.fetchCostCenterDataForGivenCostCenterIds(allCostCenterIdsData);
+            console.log("fetchedCostCenterData", fetchedCostCenterData);
+            const activeJobSheetInfo = await smartsheet.sheets.getSheet({ id: jobCardRoofingDetailSheetId });
+            const activeJobSheetColumns = activeJobSheetInfo.columns;
+            const costCenterIdColumn = activeJobSheetColumns.find((col: SmartsheetColumnType) => col.title === "Cost_Center.ID");
+            const costCenterIdColumnId = costCenterIdColumn.id;
+            if (!costCenterIdColumn) {
+                throw new Error("Cost_Center.ID column not found in the sheet");
+            }
+            const existingRowInActiveJobsSheet: SmartsheetSheetRowsType[] = activeJobSheetInfo.rows;
+
+            for (const jobCostCenterForAmountUpdate of fetchedCostCenterData) {
+                let costCenterRowDataForActiveJobsSheet: SmartsheetSheetRowsType | undefined;
+                for (const element of existingRowInActiveJobsSheet) {
+                    const cellData = element.cells.find(
+                        (cell: { columnId: string; value: any }) => cell.columnId === costCenterIdColumnId
+                    );
+                    if (cellData?.value === jobCostCenterForAmountUpdate.CostCenter.ID) {
+                        costCenterRowDataForActiveJobsSheet = element;
+                        break;
+                    }
+                }
+
+                if (costCenterRowDataForActiveJobsSheet) {
+                    const rowIdMap = {
+                        [jobCostCenterForAmountUpdate.CostCenter.ID.toString()]: costCenterRowDataForActiveJobsSheet.id?.toString() || "",
+                    };
+                    const convertedData = convertSimproCostCenterAmountUpdateToSmartsheetFormat(
+                        [jobCostCenterForAmountUpdate],
+                        activeJobSheetColumns,
+                        rowIdMap
+                    );
+
+                    const chunks = splitIntoChunks(convertedData, 100);
+                    for (const chunk of chunks) {
+                        await smartsheet.sheets.updateRow({
+                            sheetId: jobCardRoofingDetailSheetId,
+                            body: chunk
+                        })
+
+                        console.log("update chunk", chunk?.length)
+                    }
+                }
+            }
+        }
+        console.log("Amount values updated in both the sheets successfully.");
+        res.status(200).json({ message: "Amount values updated in both the sheets successfully." });
+    } catch (err) {
+        res.status(500).json({ err: err })
+    }
+}
