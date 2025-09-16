@@ -408,5 +408,9 @@ export type CostCenterJobInfo = {
 
 type SimproJobCostCenterTypeForAmountUpdate = {
     CostCenter: SimproCostCenterType;
-    Site: SimproSiteType
+    Site: SimproSiteType,
+     Section: {
+        ID: number;
+        Name: string;
+    };
 };

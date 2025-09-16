@@ -1054,9 +1054,13 @@ export class SmartsheetService {
                 );
                 const siteResponseData = siteResponse.data;
 
+                const sectionResponse = await axiosSimPRO.get(`/jobs/${jobId}/sections/${sectionId}`);
+                const sectionResponseData = sectionResponse.data;
+
                 const jobCostCenterData: SimproJobCostCenterTypeForAmountUpdate = {
                     CostCenter: costCenterResponseData,
                     Site: siteResponseData,
+                    Section:sectionResponseData,
                 };
 
                 allResponses.push(jobCostCenterData);
