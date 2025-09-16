@@ -1116,58 +1116,72 @@ export const updateAmountValuesInRoofingWipSheet = async (req: Request, res: Res
                     value !== null
             );
 
-    
+
         let allCostCenterIdsData = Array.from(new Set([...existingActiveCostcenterJobsInSheet]))
         console.log("allCostCenterIdsData", allCostCenterIdsData);
         if (allCostCenterIdsData.length) {
-            const fetchedCostCenterData: SimproJobCostCenterTypeForAmountUpdate[] = await SmartsheetService.fetchCostCenterDataForGivenCostCenterIds(allCostCenterIdsData);
-            console.log("fetchedCostCenterData", fetchedCostCenterData);
+            const fetchedCostCenterData: SimproJobCostCenterTypeForAmountUpdate[] =
+                await SmartsheetService.fetchCostCenterDataForGivenCostCenterIds(allCostCenterIdsData);
+
             const activeJobSheetInfo = await smartsheet.sheets.getSheet({ id: jobCardRoofingDetailSheetId });
             const activeJobSheetColumns = activeJobSheetInfo.columns;
-            const costCenterIdColumn = activeJobSheetColumns.find((col: SmartsheetColumnType) => col.title === "Cost_Center.ID");
-            const costCenterIdColumnId = costCenterIdColumn.id;
+            const costCenterIdColumn = activeJobSheetColumns.find(
+                (col: SmartsheetColumnType) => col.title === "Cost_Center.ID"
+            );
+
             if (!costCenterIdColumn) {
                 throw new Error("Cost_Center.ID column not found in the sheet");
             }
+
+            const costCenterIdColumnId = costCenterIdColumn.id;
             const existingRowInActiveJobsSheet: SmartsheetSheetRowsType[] = activeJobSheetInfo.rows;
 
+            // 🔹 Collect all updates here
+            let allConvertedData: any[] = [];
+
             for (const jobCostCenterForAmountUpdate of fetchedCostCenterData) {
-                let costCenterRowDataForActiveJobsSheet: SmartsheetSheetRowsType | undefined;
-                for (const element of existingRowInActiveJobsSheet) {
+                const costCenterRowDataForActiveJobsSheet = existingRowInActiveJobsSheet.find((element) => {
                     const cellData = element.cells.find(
                         (cell: { columnId: string; value: any }) => cell.columnId === costCenterIdColumnId
                     );
-                    if (cellData?.value === jobCostCenterForAmountUpdate.CostCenter.ID) {
-                        costCenterRowDataForActiveJobsSheet = element;
-                        break;
-                    }
-                }
+                    return cellData?.value === jobCostCenterForAmountUpdate.CostCenter.ID;
+                });
 
                 if (costCenterRowDataForActiveJobsSheet) {
                     const rowIdMap = {
-                        [jobCostCenterForAmountUpdate.CostCenter.ID.toString()]: costCenterRowDataForActiveJobsSheet.id?.toString() || "",
+                        [jobCostCenterForAmountUpdate.CostCenter.ID.toString()]:
+                            costCenterRowDataForActiveJobsSheet.id?.toString() || "",
                     };
+
                     const convertedData = convertSimproCostCenterAmountUpdateToSmartsheetFormat(
                         [jobCostCenterForAmountUpdate],
                         activeJobSheetColumns,
                         rowIdMap
                     );
 
-                    const chunks = splitIntoChunks(convertedData, 100);
-                    for (const chunk of chunks) {
-                        await smartsheet.sheets.updateRow({
-                            sheetId: jobCardRoofingDetailSheetId,
-                            body: chunk
-                        })
-
-                        console.log("update chunk", chunk?.length)
-                    }
+                    allConvertedData.push(...convertedData); // ✅ accumulate
                 }
             }
+
+            console.log("Total updates to send:", allConvertedData.length);
+
+            // 🔹 Now send updates in chunks of 100
+            const chunks = splitIntoChunks(allConvertedData, 100);
+            console.log("Chunks length", chunks.length);
+
+            for (const chunk of chunks) {
+                console.log("Updating chunk of size", chunk.length);
+                await smartsheet.sheets.updateRow({
+                    sheetId: jobCardRoofingDetailSheetId,
+                    body: chunk,
+                });
+            }
         }
+
         console.log("Amount values updated in both the sheets successfully.");
         res.status(200).json({ message: "Amount values updated in both the sheets successfully." });
     } catch (err) {
+        console.log("ERror",err)
         res.status(500).json({ err: err })
     }
 }

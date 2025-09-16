@@ -148,6 +148,7 @@ export type SimproJobRoofingDetailType = {
     JobID: string | number | undefined;
     Customer: string | null | undefined;
     "Job.SiteName": string | null | undefined;
+    "SectionName": string | null | undefined;
     "Site.Suburb": string | null | undefined;
     "Job.Name": string | null | undefined;
     "Job.Stage": string | null | undefined;

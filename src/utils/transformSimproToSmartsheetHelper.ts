@@ -74,7 +74,7 @@ export const convertSimproScheduleDataToSmartsheetFormatForUpdate = (
                 "Roof Double or Single": element.Job?.CustomFields?.find(field => field?.CustomField?.Name === "Roofing Job Type")?.Value,
                 "ScheduleNotes": element.Notes ? htmlToText(element.Notes || "") : '',
                 "Percentage Client Invoice Claimed (From Simpro)": Math.round(((element?.CostCenter?.Claimed?.ToDate?.Percent ?? 0) / 100) * 100) / 100,
-                "Suburb": element?.Job?.Site?.Address?.City || "",
+                "Suburb": (element?.Job?.Site?.Address?.City ?? "").trim(),
                 "Job level invoiced Percent": jobLevelInvPercent,
                 "Costcenter level invoiced Percent": ccLevelInvPercent,
                 "CC Yet to invoice": yetToInvoiceValue,
@@ -182,7 +182,7 @@ export const convertSimproScheduleDataToSmartsheetFormat = (
                 "Roof Double or Single": element.Job?.CustomFields?.find(field => field?.CustomField?.Name === "Roofing Job Type")?.Value,
                 "ScheduleNotes": element.Notes ? htmlToText(element.Notes || "") : '',
                 "Percentage Client Invoice Claimed (From Simpro)": Math.round(((element?.CostCenter?.Claimed?.ToDate?.Percent ?? 0) / 100) * 100) / 100,
-                "Suburb": element?.Job?.Site?.Address?.City || "",
+                "Suburb": (element?.Job?.Site?.Address?.City ?? "").trim(),
                 "Job level invoiced Percent": jobLevelInvPercent,
                 "Costcenter level invoiced Percent": ccLevelInvPercent,
                 "CC Yet to invoice": yetToInvoiceValue,
@@ -458,7 +458,8 @@ export const convertSimproRoofingDataToSmartsheetFormat = (
                 JobID: row?.Job?.ID,
                 Customer: customerName,
                 "Job.SiteName": row?.Job?.Site?.Name,
-                "Site.Suburb": row?.Site?.Address?.City,
+                "SectionName": row?.Section?.Name,
+                "Site.Suburb": (row?.Site?.Address?.City ?? "").trim(),
                 "Job.Name": row?.Job?.Name,
                 "Job.Stage": row?.Job?.Stage,
                 "Job_Section.ID": row?.Section?.ID,
@@ -534,7 +535,8 @@ export const convertSimprocostCenterDataToSmartsheetFormatForUpdate = (
                 JobID: row?.Job?.ID,
                 Customer: customerName,
                 "Job.SiteName": row?.Job?.Site?.Name,
-                "Site.Suburb": row?.Site?.Address?.City,
+                "SectionName": row?.Section?.Name,
+                "Site.Suburb": (row?.Site?.Address?.City ?? "").trim(),
                 "Job.Name": row?.Job?.Name,
                 "Job.Stage": row?.Job?.Stage,
                 "Job_Section.ID": row?.Section?.ID,
@@ -653,7 +655,8 @@ export const convertSimproCostCenterAmountUpdateToSmartsheetFormat = (
             "CostCentre_Total_Ex.Tax": row.CostCenter.Total?.ExTax ?? null,
             "CC_Material_Cost": Number(((row?.CostCenter?.Totals?.MaterialsCost?.Actual ?? 0)).toFixed(2)),
             "CC_Resource_Cost": Number(((row?.CostCenter?.Totals?.ResourcesCost?.Total?.Actual ?? 0)).toFixed(2)),
-            "Site.Suburb": row.Site.Address?.City
+            "Site.Suburb": (row?.Site?.Address?.City ?? "").trim(),
+            "SectionName":  (row?.Section?.Name ?? "").trim(),
         };
 
         const options: SmartsheetSheetRowsType = {
