@@ -23,13 +23,13 @@ export class SmartsheetService {
             const { scheduleID, jobID, sectionID, costCenterID } = webhookData.reference;
             let fetchedChartOfAccounts = await axiosSimPRO.get('/setup/accounts/chartOfAccounts/?pageSize=250&columns=ID,Name,Number');
             let chartOfAccountsArray: SimproAccountType[] = fetchedChartOfAccounts?.data;
-            console.log('scheduleID, jobID, sectionID, costCenterID', scheduleID, jobID, sectionID, costCenterID)
+            // console.log('scheduleID, jobID, sectionID, costCenterID', scheduleID, jobID, sectionID, costCenterID)
             let simPROScheduleUpdateUrl = `/schedules/${scheduleID}`
-            console.log('simPROScheduleUpdateUrl', simPROScheduleUpdateUrl)
+            // console.log('simPROScheduleUpdateUrl', simPROScheduleUpdateUrl)
             let individualScheduleResponse = await axiosSimPRO(`${simPROScheduleUpdateUrl}?columns=ID,Type,Reference,Staff,Date,Blocks,Notes`)
             let jobForScheduleResponse = await axiosSimPRO(`/jobs/${jobID}?columns=ID,Type,Site,SiteContact,DateIssued,Status,Total,Customer,Name,ProjectManager,CustomFields,Totals`)
             let schedule: SimproScheduleType = individualScheduleResponse?.data;
-            console.log('Shceuld Blocks', schedule.Blocks)
+            // console.log('Shceuld Blocks', schedule.Blocks)
             let fetchedJobData: SimproJobType = jobForScheduleResponse?.data;
             let siteId = fetchedJobData?.Site?.ID;
             if (siteId) {
@@ -44,7 +44,7 @@ export class SmartsheetService {
                 try {
                     // This will always fail
                     const customerResponse = await axiosSimPRO.get(`/customers/${customerId}`)
-                    console.log("customerResponse: ", customerResponse)
+                    // console.log("customerResponse: ", customerResponse)
                 } catch (err: any) {
                     // console.log("Error getting customer", )
                     let endpoint = err?.response?.data?._href;
@@ -52,7 +52,7 @@ export class SmartsheetService {
                     // Extract the part starting from "/customers"
                     const startFromCustomers = endpoint.substring(endpoint.indexOf("/customers"));
 
-                    console.log("startFromCustomers: ", startFromCustomers);
+                    // console.log("startFromCustomers: ", startFromCustomers);
 
                     // Check if it's "/customers/companies" or "/customers/individuals"
                     if (startFromCustomers.includes("/companies")) {
@@ -60,14 +60,14 @@ export class SmartsheetService {
                         const companyResponse = await axiosSimPRO.get(
                             `${startFromCustomers}?columns=ID,CompanyName,Phone,Address,Email`
                         );
-                        console.log("Company Response: ", companyResponse?.data);
+                        // console.log("Company Response: ", companyResponse?.data);
                         schedule.Job.Customer = { ...companyResponse.data, Type: "Company" };
                     } else if (startFromCustomers.includes("/individuals")) {
                         // Handle the case for individuals
                         const individualResponse = await axiosSimPRO.get(
                             `${startFromCustomers}?columns=ID,GivenName,FamilyName,Phone,Address,Email`
                         );
-                        console.log("Individual Response: ", individualResponse?.data);
+                        // console.log("Individual Response: ", individualResponse?.data);
                         schedule.Job.Customer = { ...individualResponse.data, Type: "Individual" };
                     } else {
                         console.error("Unknown customer type in the endpoint");
@@ -76,16 +76,16 @@ export class SmartsheetService {
             }
 
 
-            console.log('costCenterDataForSchedule', `/jobCostCenters/?ID=${costCenterID}&columns=ID,Name,Job,Section,CostCenter`)
+            // console.log('costCenterDataForSchedule', `/jobCostCenters/?ID=${costCenterID}&columns=ID,Name,Job,Section,CostCenter`)
             const costCenterDataForSchedule = await axiosSimPRO.get(`/jobCostCenters/?ID=${costCenterID}&columns=ID,Name,Job,Section,CostCenter`);
             let setupCostCenterID = costCenterDataForSchedule.data[0]?.CostCenter?.ID;
             let fetchedSetupCostCenterData = await axiosSimPRO.get(`/setup/accounts/costCenters/${setupCostCenterID}?columns=ID,Name,IncomeAccountNo`);
             let setupCostCenterData = fetchedSetupCostCenterData.data;
-            console.log('CostCenterId IncomeAccountNo', costCenterID, setupCostCenterData);
+            // console.log('CostCenterId IncomeAccountNo', costCenterID, setupCostCenterData);
 
             if (setupCostCenterData?.IncomeAccountNo) {
                 let incomeAccountName = chartOfAccountsArray?.find(account => account?.Number == setupCostCenterData?.IncomeAccountNo)?.Name;
-                console.log("Income Account Name: " + incomeAccountName)
+                // console.log("Income Account Name: " + incomeAccountName)
                 if (incomeAccountName == "Roofing Income") {
                     isInvoiceAccountNameRoofing = true;
                 }
@@ -96,7 +96,7 @@ export class SmartsheetService {
                 schedule.CostCenter = costCenterResponse.data;
             }
 
-            console.log('IsInvoiceAccountNameRoofing: ' + isInvoiceAccountNameRoofing, costCenterID, scheduleID)
+            // console.log('IsInvoiceAccountNameRoofing: ' + isInvoiceAccountNameRoofing, costCenterID, scheduleID)
             if (isInvoiceAccountNameRoofing) {
                 // console.log('jobCardReportSheetId', jobCardReportSheetId)
                 // if (jobCardReportSheetId) {
@@ -153,14 +153,14 @@ export class SmartsheetService {
                 //     }
                 // }
 
-                console.log('jobCardV2SheetId', jobCardV2SheetId)
+                // console.log('jobCardV2SheetId', jobCardV2SheetId)
 
                 if (jobCardV2SheetId) {
                     const sheetInfo = await smartsheet.sheets.getSheet({ id: jobCardV2SheetId });
                     const columns = sheetInfo.columns;
                     const column = columns.find((col: SmartsheetColumnType) => col.title === "ScheduleID");
 
-                    console.log("schedule column in v2", column)
+                    // console.log("schedule column in v2", column)
                     if (!column) {
                         throw {
                             message: "ScheduleID column not found in the sheet",
@@ -171,7 +171,7 @@ export class SmartsheetService {
                     const scheduleIdColumnId = column.id;
                     const existingRows: SmartsheetSheetRowsType[] = sheetInfo.rows;
                     let scheduleDataForSmartsheet: SmartsheetSheetRowsType | undefined;
-                    console.log('existingRows', existingRows.length)
+                    // console.log('existingRows', existingRows.length)
                     for (let i = 0; i < existingRows.length; i++) {
                         let currentRow = existingRows[i];
                         const cellData = currentRow.cells.find(
@@ -195,10 +195,10 @@ export class SmartsheetService {
                             sheetId: jobCardV2SheetId,
                             body: convertedData,
                         });
-                        console.log('Updated row in smartsheet in sheet ', jobCardV2SheetId)
+                        // console.log('Updated row in smartsheet in sheet ', jobCardV2SheetId)
                     } else {
                         // Add logic to check the row in  move past sheet
-                        console.log("Schedule not found in the main sheet, checking Move Past Sheet", schedule.ID)
+                        // console.log("Schedule not found in the main sheet, checking Move Past Sheet", schedule.ID)
                         let movePastSheetInfo = await smartsheet.sheets.getSheet({ id: jobCardV2MovePastSheetId });
                         const movePastSheetColumns = movePastSheetInfo.columns;
                         const movePastScheduleColumn = movePastSheetColumns.find((col: SmartsheetColumnType) => col.title === "ScheduleID");
@@ -227,15 +227,15 @@ export class SmartsheetService {
                                 sheetId: jobCardV2MovePastSheetId,
                                 body: convertedData,
                             });
-                            console.log('Updated row in smartsheet in Move Past Sheet ', jobCardV2MovePastSheetId)
+                            // console.log('Updated row in smartsheet in Move Past Sheet ', jobCardV2MovePastSheetId)
                         } else {
-                            console.log("Schedule not found in Move Past Sheet, adding new row for schedule ", schedule.ID)
+                            // console.log("Schedule not found in Move Past Sheet, adding new row for schedule ", schedule.ID)
                             const convertedDataForSmartsheet = convertSimproScheduleDataToSmartsheetFormat([schedule], columns, 'full');
                             await smartsheet.sheets.addRows({
                                 sheetId: jobCardV2SheetId,
                                 body: convertedDataForSmartsheet,
                             });
-                            console.log('Added row in smartsheet in sheeet', jobCardV2SheetId)
+                            // console.log('Added row in smartsheet in sheeet', jobCardV2SheetId)
                         }
 
 
@@ -256,7 +256,7 @@ export class SmartsheetService {
     static async handleDeleteScheduleInSmartsheet(webhookData: SimproWebhookType) {
         try {
             const { scheduleID, jobID, sectionID } = webhookData.reference;
-            console.log('scheduleID, jobID, sectionID', scheduleID, jobID, sectionID)
+            // console.log('scheduleID, jobID, sectionID', scheduleID, jobID, sectionID)
 
             // if (jobCardReportSheetId) {
             //     const sheetInfo = await smartsheet.sheets.getSheet({ id: jobCardReportSheetId });
@@ -294,7 +294,7 @@ export class SmartsheetService {
 
             // }
 
-            console.log('jobCardV2SheetId', jobCardV2SheetId)
+            // console.log('jobCardV2SheetId', jobCardV2SheetId)
 
             if (jobCardV2SheetId) {
                 const sheetInfo = await smartsheet.sheets.getSheet({ id: jobCardV2SheetId });
@@ -302,15 +302,15 @@ export class SmartsheetService {
                 const scheduleColumn = columns.find((col: SmartsheetColumnType) => col.title === "ScheduleID");
                 const scheduleIdColumnId = scheduleColumn.id;
 
-                console.log("schedule column in v2 for delete", scheduleColumn)
+                // console.log("schedule column in v2 for delete", scheduleColumn)
 
                 const scheduleCommentColumn = columns.find((col: SmartsheetColumnType) => col.title === "ScheduleComment");
-                console.log("schedule comment column in v2 for delete", scheduleCommentColumn)
+                // console.log("schedule comment column in v2 for delete", scheduleCommentColumn)
                 const scheduleCommentColumnId = scheduleCommentColumn.id;
                 let scheduleDataForSmartsheet: SmartsheetSheetRowsType | undefined;
                 const existingRows: SmartsheetSheetRowsType[] = sheetInfo.rows;
 
-                console.log("Scheudle ID", scheduleID)
+                // console.log("Scheudle ID", scheduleID)
                 for (let i = 0; i < existingRows.length; i++) {
                     let currentRow = existingRows[i];
                     const cellData = currentRow.cells.find(
@@ -338,7 +338,7 @@ export class SmartsheetService {
                     console.log('delete comment added to the schedule in smartsheet', jobCardV2SheetId)
                 } else {
                     // Logic to check the row in move past sheet
-                    console.log("Schedule not found in the main sheet, checking Move Past Sheet", scheduleID)
+                    // console.log("Schedule not found in the main sheet, checking Move Past Sheet", scheduleID)
                     let movePastSheetInfo = await smartsheet.sheets.getSheet({ id: jobCardV2MovePastSheetId });
                     const movePastSheetColumns = movePastSheetInfo.columns;
                     const movePastScheduleColumn = movePastSheetColumns.find((col: SmartsheetColumnType) => col.title === "ScheduleID");
@@ -388,11 +388,11 @@ export class SmartsheetService {
             const { invoiceID } = webhookData.reference;
             const { ID, date_triggered } = webhookData;
             if (invoiceID) {
-                console.log("Invoice ID: ", invoiceID);
+                // console.log("Invoice ID: ", invoiceID);
                 const url = `/invoices/${invoiceID}?columns=ID,Jobs`;
                 const invoiceData = await axiosSimPRO.get(url);
                 const invoice = invoiceData.data;
-                console.log("Invoice Data: ", invoice);
+                // console.log("Invoice Data: ", invoice);
                 let jobIDsForInvoice: number[] = invoice?.Jobs?.map((job: any) => job.ID) || [];
 
                 for (const jobID of jobIDsForInvoice) {
@@ -476,7 +476,7 @@ export class SmartsheetService {
         }
 
 
-        console.log("Processing Job ID in handleAddUpdateCostcenterRoofingToSmartSheet: ", jobID);
+        // console.log("Processing Job ID in handleAddUpdateCostcenterRoofingToSmartSheet: ", jobID);
         let costCenterDataFromSimpro: SimproJobCostCenterType[] = [];
         const url = `/jobCostCenters/?Job.ID=${jobID}`;
         const costCenters: SimproJobCostCenterType[] = await fetchSimproPaginatedData(url, "ID,CostCenter,Name,Job,Section,DateModified,_href");
@@ -495,7 +495,7 @@ export class SmartsheetService {
                 if (setupCostCenterData?.IncomeAccountNo) {
                     let incomeAccountName = chartOfAccountsArray?.find(account => account?.Number == setupCostCenterData?.IncomeAccountNo)?.Name;
                     if (incomeAccountName == "Roofing Income") {
-                        console.log("Roofing income  1", jobCostCenter?.ID, jobCostCenter?.Job?.ID);
+                        // console.log("Roofing income  1", jobCostCenter?.ID, jobCostCenter?.Job?.ID);
                         try {
                             const jcUrl = jobCostCenter?._href?.substring(jobCostCenter?._href?.indexOf('jobs'), jobCostCenter?._href.length);
                             let costCenterResponse = await axiosSimPRO.get(`${jcUrl}?columns=Name,ID,Claimed,Total,Totals,Site`);
@@ -527,7 +527,7 @@ export class SmartsheetService {
             }
         }
         await SmartsheetService.updateCostcenterRoofingToSmartSheet(jobID, costCenterDataFromSimpro);
-        console.log(`Completed processing for job ${jobID}`);
+        // console.log(`Completed processing for job ${jobID}`);
     }
 
     static async updateCostcenterRoofingToSmartSheet(
@@ -567,7 +567,7 @@ export class SmartsheetService {
 
                 })
                 .filter(Boolean);
-            console.log('existingCostCenterIdsDataInActiveJobSheet', existingCostCenterIdsDataInActiveJobSheet);
+            // console.log('existingCostCenterIdsDataInActiveJobSheet', existingCostCenterIdsDataInActiveJobSheet);
 
             let existingCostCenterIdsDataForJobinActiveJobSheet =
                 existingRowInActiveJobsSheet?.filter((row: SmartsheetSheetRowsType) => {
@@ -579,22 +579,22 @@ export class SmartsheetService {
 
 
             let costCenterIdNotPresentInSimproResponse: string[] = SmartsheetService.filterTheCostCenterIdNotInSimproResponse(costCenterIdColumnId, existingCostCenterIdsDataForJobinActiveJobSheet, costCenterDataFromSimpro);
-            console.log('costCenterIdNotPresentInSimproResponse', costCenterIdNotPresentInSimproResponse);
+            // console.log('costCenterIdNotPresentInSimproResponse', costCenterIdNotPresentInSimproResponse);
             let costCenterIdToBeMarkedAsDeleted: string[] = [];
             if (costCenterIdNotPresentInSimproResponse.length > 0) {
                 costCenterIdToBeMarkedAsDeleted = await SmartsheetService.validateCostCentersBatch(costCenterIdNotPresentInSimproResponse);
                 const simproCommentColumn = activeJobSheetColumns.find((col: SmartsheetColumnType) => col.title === "SIMPROComment");
                 const simproCommentColumnId = simproCommentColumn.id;
                 if (costCenterIdToBeMarkedAsDeleted.length > 0) {
-                    console.log('costCenterIdToBeMarkedAsDeleted', costCenterIdToBeMarkedAsDeleted);
+                    // console.log('costCenterIdToBeMarkedAsDeleted', costCenterIdToBeMarkedAsDeleted);
                     const rowsIdsToMarkDeleted = existingCostCenterIdsDataInActiveJobSheet
                         .filter(item => costCenterIdToBeMarkedAsDeleted.includes(item.costCenterId))
                         .map(item => item.rowId);
 
-                    console.log('rowsIdsToMarkDeleted', rowsIdsToMarkDeleted)
+                    // console.log('rowsIdsToMarkDeleted', rowsIdsToMarkDeleted)
 
                     const chunks = splitIntoChunks(rowsIdsToMarkDeleted, 300);
-                    console.log('Total chunks to update for deletion:', chunks.length);
+                    // console.log('Total chunks to update for deletion:', chunks.length);
 
                     for (const chunk of chunks) {
                         // Prepare rows for batch update
@@ -609,7 +609,7 @@ export class SmartsheetService {
                             body: rowsToUpdate,
                         });
 
-                        console.log('WIP mark as delete  in active sheet', chunk.length, 'rows');
+                        // console.log('WIP mark as delete  in active sheet', chunk.length, 'rows');
                     }
                 }
             }
@@ -650,7 +650,7 @@ export class SmartsheetService {
 
                             })
                             .filter(Boolean);
-                        console.log('existingCostCenterIdsDataInArchievedJobSheet', existingCostCenterIdsDataInArchievedJobSheet)
+                        // console.log('existingCostCenterIdsDataInArchievedJobSheet', existingCostCenterIdsDataInArchievedJobSheet)
 
                         let existingCostCenterIdsDataForJobinArchivedJobSheet =
                             existingRowInArchivedJobsSheet?.filter((row: SmartsheetSheetRowsType) => {
@@ -662,22 +662,22 @@ export class SmartsheetService {
 
 
                         let costCenterIdNotPresentInSimproResponseForArchivedJobSheet: string[] = SmartsheetService.filterTheCostCenterIdNotInSimproResponse(costCenterIdColumnIdInArchivedSheet, existingCostCenterIdsDataForJobinArchivedJobSheet, costCenterDataFromSimpro);
-                        console.log('costCenterIdNotPresentInSimproResponseForArchivedJobSheet', costCenterIdNotPresentInSimproResponseForArchivedJobSheet);
+                        // console.log('costCenterIdNotPresentInSimproResponseForArchivedJobSheet', costCenterIdNotPresentInSimproResponseForArchivedJobSheet);
                         let costCenterIdToBeMarkedAsDeletedinArchievedJobSheet: string[] = [];
                         if (costCenterIdNotPresentInSimproResponseForArchivedJobSheet.length > 0) {
                             costCenterIdToBeMarkedAsDeletedinArchievedJobSheet = await SmartsheetService.validateCostCentersBatch(costCenterIdNotPresentInSimproResponseForArchivedJobSheet);
                             const simproCommentColumnInArchivedJobSheet = archivedJobSheetColumns.find((col: SmartsheetColumnType) => col.title === "SIMPROComment");
                             const simproCommentColumnIdInArchivedSheet = simproCommentColumnInArchivedJobSheet.id;
                             if (costCenterIdToBeMarkedAsDeletedinArchievedJobSheet.length > 0) {
-                                console.log('costCenterIdToBeMarkedAsDeletedinArchievedJobSheet', costCenterIdToBeMarkedAsDeletedinArchievedJobSheet);
+                                // console.log('costCenterIdToBeMarkedAsDeletedinArchievedJobSheet', costCenterIdToBeMarkedAsDeletedinArchievedJobSheet);
                                 const rowsIdsToMarkDeletedInArchivedSheet = existingCostCenterIdsDataInArchievedJobSheet
                                     .filter(item => costCenterIdToBeMarkedAsDeletedinArchievedJobSheet.includes(item.costCenterId))
                                     .map(item => item.rowId);
 
-                                console.log('rowsIdsToMarkDeletedInArchivedSheet', rowsIdsToMarkDeletedInArchivedSheet)
+                                // console.log('rowsIdsToMarkDeletedInArchivedSheet', rowsIdsToMarkDeletedInArchivedSheet)
 
                                 const chunks = splitIntoChunks(rowsIdsToMarkDeletedInArchivedSheet, 300);
-                                console.log('Total chunks to update for deletion:', chunks.length);
+                                // console.log('Total chunks to update for deletion:', chunks.length);
 
                                 for (const chunk of chunks) {
                                     // Prepare rows for batch update
@@ -692,7 +692,7 @@ export class SmartsheetService {
                                         body: rowsToUpdate,
                                     });
 
-                                    console.log('WIP mark as delete  in archeived sheet', chunk.length, 'rows');
+                                    // console.log('WIP mark as delete  in archeived sheet', chunk.length, 'rows');
                                 }
                             }
                         }
@@ -970,7 +970,7 @@ export class SmartsheetService {
                                 sheetId: workOrderLineItemsActiveSheetId,
                                 body: convertedDataForActiveSheet,
                             });
-                            console.log('Updated row in smartsheet in sheet for contractor job work order line item ', workOrderLineItemsActiveSheetId)
+                            // console.log('Updated row in smartsheet in sheet for contractor job work order line item ', workOrderLineItemsActiveSheetId)
                         } else {
                             const archivedWorkOrdersheetInfo = await smartsheet.sheets.getSheet({ id: workOrderLineItemsArchivedSheetId });
                             const columnsForArchivedWorkOrderSheet = archivedWorkOrdersheetInfo.columns;
@@ -1004,14 +1004,14 @@ export class SmartsheetService {
                                     sheetId: workOrderLineItemsArchivedSheetId,
                                     body: convertedDataForArchivedSheet,
                                 });
-                                console.log('Updated row in smartsheet in archived sheet for contractor job work order line item ', workOrderLineItemsArchivedSheetId)
+                                // console.log('Updated row in smartsheet in archived sheet for contractor job work order line item ', workOrderLineItemsArchivedSheetId)
                             } else {
                                 const convertedDataForSmartsheet = convertSimproContractorDataToSmartsheetFormat([currentLineItem], columnsForActiveWorkOrderSheet);
                                 await smartsheet.sheets.addRows({
                                     sheetId: workOrderLineItemsActiveSheetId,
                                     body: convertedDataForSmartsheet,
                                 });
-                                console.log('Added row in smartsheet in sheeet for contractor job work order line item ', workOrderLineItemsActiveSheetId)
+                                // console.log('Added row in smartsheet in sheeet for contractor job work order line item ', workOrderLineItemsActiveSheetId)
                             }
                         }
                     }
