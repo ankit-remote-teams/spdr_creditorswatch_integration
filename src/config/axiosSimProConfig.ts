@@ -44,7 +44,7 @@ axiosRetry(axiosSimPRO, {
 // Request Interceptor
 axiosSimPRO.interceptors.request.use(
   (config: InternalAxiosRequestConfig): InternalAxiosRequestConfig => {
-    console.log(`➡️ [${config.method?.toUpperCase()}] Request to SimPRO: ${config.url}`);
+    // console.log(`➡️ [${config.method?.toUpperCase()}] Request to SimPRO: ${config.url}`);
     return config;
   },
   (error: AxiosError): Promise<never> => {

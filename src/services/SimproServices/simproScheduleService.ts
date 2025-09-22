@@ -94,7 +94,7 @@ export const fetchScheduleData = async () => {
                         if (setupCostCenterData?.IncomeAccountNo) {
                             let incomeAccountName = chartOfAccountsArray?.find(account => account?.Number == setupCostCenterData?.IncomeAccountNo)?.Name;
                             if (incomeAccountName == "Roofing Income") {
-                                console.log('CostCenterId For Roofing Income 3', costCenterIdForSchedule, jobIdForScheduleFetched)
+                                // console.log('CostCenterId For Roofing Income 3', costCenterIdForSchedule, jobIdForScheduleFetched)
                                 jobIdsToAddArray.push(jobIdForScheduleFetched)
                             }
                         }
@@ -115,12 +115,12 @@ export const fetchScheduleData = async () => {
 
             }
 
-            console.log('jobsToFilter Length: ', jobIdsToAddArray.length)
-            console.log('Current schedule Length: ', fetchedSimproSchedulesData.length)
+            // console.log('jobsToFilter Length: ', jobIdsToAddArray.length)
+            // console.log('Current schedule Length: ', fetchedSimproSchedulesData.length)
             fetchedSimproSchedulesData = fetchedSimproSchedulesData.filter(schedule =>
                 jobIdsToAddArray.includes(schedule?.Job?.ID ?? -1)
             );
-            console.log('Filtered schedule Length: ', fetchedSimproSchedulesData.length)
+            // console.log('Filtered schedule Length: ', fetchedSimproSchedulesData.length)
             return fetchedSimproSchedulesData;
         } else {
             return [];
@@ -247,7 +247,7 @@ export const fetchCurrentDateScheduleData = async () => {
                         if (setupCostCenterData?.IncomeAccountNo) {
                             let incomeAccountName = chartOfAccountsArray?.find(account => account?.Number == setupCostCenterData?.IncomeAccountNo)?.Name;
                             if (incomeAccountName == "Roofing Income") {
-                                console.log('CostCenterId For Roofing Income 2', costCenterIdForSchedule, jobIdForScheduleFetched)
+                                // console.log('CostCenterId For Roofing Income 2', costCenterIdForSchedule, jobIdForScheduleFetched)
                                 jobIdsToAddArray.push(jobIdForScheduleFetched)
                             }
                         }
@@ -267,12 +267,12 @@ export const fetchCurrentDateScheduleData = async () => {
 
             }
 
-            console.log('jobsToFilter Length: ', jobIdsToAddArray.length)
-            console.log('Current schedule Length: ', fetchedSimproSchedulesData.length)
+            // console.log('jobsToFilter Length: ', jobIdsToAddArray.length)
+            // console.log('Current schedule Length: ', fetchedSimproSchedulesData.length)
             fetchedSimproSchedulesData = fetchedSimproSchedulesData.filter(schedule =>
                 jobIdsToAddArray.includes(schedule?.Job?.ID ?? -1)
             );
-            console.log('Filtered schedule Length: ', fetchedSimproSchedulesData.length)
+            // console.log('Filtered schedule Length: ', fetchedSimproSchedulesData.length)
             return fetchedSimproSchedulesData;
         } else {
             return [];
@@ -379,7 +379,7 @@ export const fetchNextDateScheduleData = async () => {
                         if (setupCostCenterData?.IncomeAccountNo) {
                             let incomeAccountName = chartOfAccountsArray?.find(account => account?.Number == setupCostCenterData?.IncomeAccountNo)?.Name;
                             if (incomeAccountName == "Roofing Income") {
-                                console.log('CostCenterId For Roofing Income 1', costCenterIdForSchedule, jobIdForScheduleFetched)
+                                // console.log('CostCenterId For Roofing Income 1', costCenterIdForSchedule, jobIdForScheduleFetched)
                                 jobIdsToAddArray.push(jobIdForScheduleFetched)
                             }
                         }
@@ -399,12 +399,12 @@ export const fetchNextDateScheduleData = async () => {
 
             }
 
-            console.log('jobsToFilter Length: ', jobIdsToAddArray.length)
-            console.log('Current schedule Length: ', fetchedSimproSchedulesData.length)
+            // console.log('jobsToFilter Length: ', jobIdsToAddArray.length)
+            // console.log('Current schedule Length: ', fetchedSimproSchedulesData.length)
             fetchedSimproSchedulesData = fetchedSimproSchedulesData.filter(schedule =>
                 jobIdsToAddArray.includes(schedule?.Job?.ID ?? -1)
             );
-            console.log('Filtered schedule Length: ', fetchedSimproSchedulesData.length)
+            // console.log('Filtered schedule Length: ', fetchedSimproSchedulesData.length)
             return fetchedSimproSchedulesData;
         } else {
             return [];

@@ -21,7 +21,7 @@ simproWebhookQueue.process(async (job) => {
         switch (webhookData.ID) {
             case "job.schedule.created":
             case "job.schedule.updated":
-                console.log("Schedule Create/Update ", webhookData);
+                // console.log("Schedule Create/Update ", webhookData);
                 await SmartsheetService.handleAddUpdateScheduleToSmartsheet(webhookData);
                 break;
             
@@ -31,22 +31,22 @@ simproWebhookQueue.process(async (job) => {
                 break;
 
             case "job.schedule.deleted":
-                console.log("Schedule Deleted ", webhookData);
+                // console.log("Schedule Deleted ", webhookData);
                 await SmartsheetService.handleDeleteScheduleInSmartsheet(webhookData);
                 break;
 
             case "job.created":
             case "job.updated":
-                console.log("Job Created/Updated ", webhookData);
+                // console.log("Job Created/Updated ", webhookData);
                 await SmartsheetService.handleAddUpdateCostcenterRoofingToSmartSheet(webhookData);
-                console.log("Job processed successfully");
+                // console.log("Job processed successfully");
                 break;
 
             case "invoice.created":
             case "invoice.updated":
-                console.log("Invoice Created/Updated ", webhookData);
+                // console.log("Invoice Created/Updated ", webhookData);
                 await SmartsheetService.handleAddUpdateRoofingCostcenterForInvoiceSmartsheet(webhookData);
-                console.log("Invoice processed successfully");
+                // console.log("Invoice processed successfully");
                 break;
 
             default:

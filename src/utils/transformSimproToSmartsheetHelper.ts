@@ -343,7 +343,7 @@ export const convertSimproLeadsDataToSmartsheetFormat = (rows: SimproLeadType[],
             ),
         };
 
-        console.log('rowObj', rowObj)
+        // console.log('rowObj', rowObj)
 
 
         const options: SmartsheetSheetRowsType = {
