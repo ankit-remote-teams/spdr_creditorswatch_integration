@@ -451,7 +451,7 @@ export class SmartsheetService {
         const { jobID } = webhookData.reference;
         const { date_triggered, ID } = webhookData;
 
-        if (ID === "job.updated") {
+        if (ID !== "job.created") {
             const toleranceMs = 60000; // 1 minute
             const webhookTriggerDate = new Date(date_triggered);
 
@@ -476,7 +476,6 @@ export class SmartsheetService {
         }
 
 
-        // console.log("Processing Job ID in handleAddUpdateCostcenterRoofingToSmartSheet: ", jobID);
         let costCenterDataFromSimpro: SimproJobCostCenterType[] = [];
         const url = `/jobCostCenters/?Job.ID=${jobID}`;
         const costCenters: SimproJobCostCenterType[] = await fetchSimproPaginatedData(url, "ID,CostCenter,Name,Job,Section,DateModified,_href");
