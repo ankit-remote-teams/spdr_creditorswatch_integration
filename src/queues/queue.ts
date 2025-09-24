@@ -24,7 +24,7 @@ simproWebhookQueue.process(async (job) => {
                 // console.log("Schedule Create/Update ", webhookData);
                 await SmartsheetService.handleAddUpdateScheduleToSmartsheet(webhookData);
                 break;
-            
+
             case "contractor.job.updated":
             case "contractor.job.created":
                 await SmartsheetService.handleAddUpdateWorkOrderLineItemsToSmartsheet(webhookData);
@@ -48,6 +48,16 @@ simproWebhookQueue.process(async (job) => {
                 await SmartsheetService.handleAddUpdateRoofingCostcenterForInvoiceSmartsheet(webhookData);
                 // console.log("Invoice processed successfully");
                 break;
+
+            case "job.stage.pending":
+            case "job.stage.progress":
+            case "job.stage.complete":
+            case "job.stage.invoiced":
+            case "job.stage.archived":
+                // console.log("Job Stage Change ", webhookData);
+                await SmartsheetService.handleAddUpdateCostcenterRoofingToSmartSheet(webhookData);
+                break;
+
 
             default:
                 console.warn("Unhandled webhook ID:", webhookData.ID);
