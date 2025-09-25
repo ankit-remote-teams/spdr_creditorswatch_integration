@@ -1062,13 +1062,19 @@ export class SmartsheetService {
                 const jobCostCenterData: SimproJobCostCenterTypeForAmountUpdate = {
                     CostCenter: costCenterResponseData,
                     Site: siteResponseData,
-                    Section:sectionResponseData,
+                    Section: sectionResponseData,
                     JobStage: jobStageResponseData?.Stage || null,
                 };
 
                 allResponses.push(jobCostCenterData);
+
+                if ((i + 1) % 50 === 0) {
+                    console.log(`Fetched ${i + 1} cost centers out of ${costCenterIdsDataFetchFromSimpro.length}`);
+                }
+
+
             } catch (err) {
-                console.log("Error fetching the data",err)
+                console.log("Error fetching the data", err)
             }
 
         }
