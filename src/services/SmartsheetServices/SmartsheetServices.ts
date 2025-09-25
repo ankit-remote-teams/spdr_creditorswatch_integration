@@ -1056,15 +1056,19 @@ export class SmartsheetService {
                 const sectionResponse = await axiosSimPRO.get(`/jobs/${jobId}/sections/${sectionId}`);
                 const sectionResponseData = sectionResponse.data;
 
+                const jobStageResponse = await axiosSimPRO.get(`/jobs/${jobId}?columns=ID,Stage`);
+                const jobStageResponseData = jobStageResponse.data;
+
                 const jobCostCenterData: SimproJobCostCenterTypeForAmountUpdate = {
                     CostCenter: costCenterResponseData,
                     Site: siteResponseData,
                     Section:sectionResponseData,
+                    JobStage: jobStageResponseData?.Stage || null,
                 };
 
                 allResponses.push(jobCostCenterData);
             } catch (err) {
-                console.log("Error fetching the data")
+                console.log("Error fetching the data",err)
             }
 
         }

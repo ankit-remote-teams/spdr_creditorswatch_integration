@@ -657,6 +657,7 @@ export const convertSimproCostCenterAmountUpdateToSmartsheetFormat = (
             "CC_Resource_Cost": Number(((row?.CostCenter?.Totals?.ResourcesCost?.Total?.Actual ?? 0)).toFixed(2)),
             "Site.Suburb": (row?.Site?.Address?.City ?? "").trim(),
             "SectionName":  (row?.Section?.Name ?? "").trim(),
+            "Job.Stage": row?.JobStage ?? "",
         };
 
         const options: SmartsheetSheetRowsType = {
