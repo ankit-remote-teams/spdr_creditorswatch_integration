@@ -413,4 +413,5 @@ type SimproJobCostCenterTypeForAmountUpdate = {
         ID: number;
         Name: string;
     };
+    JobStage: string | null;
 };
