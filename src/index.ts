@@ -35,6 +35,7 @@ if (process.env.NODE_ENV === 'production') {
         // './cron/jobCardScheduler',
         // './cron/jobCardMinimalUpdateScheduler',
         // './cron/ongoingQuotationsAndLeadsScheduler',
+        './cron/rt-team-scheduler'
     ];
     cronJobs.forEach(job => {
         require(job);
