@@ -1084,11 +1084,11 @@ const addCostCenterDeleteCommentInChunks = async (rowIds: number[], smartsheetId
 
 export const updateAmountValuesInRoofingWipSheet = async (req: Request, res: Response) => {
     try {
-        const activeSheetInfo = await smartsheet.sheets.getSheet({ id: wipJobArchivedSheetId });
+        const activeSheetInfo = await smartsheet.sheets.getSheet({ id: jobCardRoofingDetailSheetId });
         const activeRows = activeSheetInfo.rows;
-        let costCenterIdColumnId = await getColumnIdForColumnName("Cost_Center.ID", wipJobArchivedSheetId);
-        let sectionIdColumnId = await getColumnIdForColumnName("Job_Section.ID", wipJobArchivedSheetId);
-        const jobIdColumnId = await getColumnIdForColumnName("JobID", wipJobArchivedSheetId)
+        let costCenterIdColumnId = await getColumnIdForColumnName("Cost_Center.ID", jobCardRoofingDetailSheetId);
+        let sectionIdColumnId = await getColumnIdForColumnName("Job_Section.ID", jobCardRoofingDetailSheetId);
+        const jobIdColumnId = await getColumnIdForColumnName("JobID", jobCardRoofingDetailSheetId)
         const existingActiveCostcenterJobsInSheet: CostCenterJobInfo[] = activeRows
             .map((row: SmartsheetSheetRowsType) => {
                 const cellDataCostCenter = row.cells.find(
@@ -1123,7 +1123,7 @@ export const updateAmountValuesInRoofingWipSheet = async (req: Request, res: Res
             const fetchedCostCenterData: SimproJobCostCenterTypeForAmountUpdate[] =
                 await SmartsheetService.fetchCostCenterDataForGivenCostCenterIds(allCostCenterIdsData);
 
-            const activeJobSheetInfo = await smartsheet.sheets.getSheet({ id: wipJobArchivedSheetId });
+            const activeJobSheetInfo = await smartsheet.sheets.getSheet({ id: jobCardRoofingDetailSheetId });
             const activeJobSheetColumns = activeJobSheetInfo.columns;
             const costCenterIdColumn = activeJobSheetColumns.find(
                 (col: SmartsheetColumnType) => col.title === "Cost_Center.ID"
@@ -1172,7 +1172,7 @@ export const updateAmountValuesInRoofingWipSheet = async (req: Request, res: Res
             for (const chunk of chunks) {
                 console.log("Updating chunk of size", chunk.length,"at index",i++, "with total chunks length of ",chunks.length);
                 await smartsheet.sheets.updateRow({
-                    sheetId: wipJobArchivedSheetId,
+                    sheetId: jobCardRoofingDetailSheetId,
                     body: chunk,
                 });
             }

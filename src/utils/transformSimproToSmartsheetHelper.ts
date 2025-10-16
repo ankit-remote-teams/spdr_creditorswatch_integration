@@ -655,8 +655,9 @@ export const convertSimproCostCenterAmountUpdateToSmartsheetFormat = (
             "CostCentre_Total_Ex.Tax": row.CostCenter.Total?.ExTax ?? null,
             "CC_Material_Cost": Number(((row?.CostCenter?.Totals?.MaterialsCost?.Actual ?? 0)).toFixed(2)),
             "CC_Resource_Cost": Number(((row?.CostCenter?.Totals?.ResourcesCost?.Total?.Actual ?? 0)).toFixed(2)),
+            "Remaining_Invoice_Percentage": row?.CostCenter?.Claimed?.Remaining?.Percent || (!row?.CostCenter?.Claimed ? 100 : 0),
             "Site.Suburb": (row?.Site?.Address?.City ?? "").trim(),
-            "SectionName":  (row?.Section?.Name ?? "").trim(),
+            "SectionName": (row?.Section?.Name ?? "").trim(),
             "Job.Stage": row?.JobStage ?? "",
         };
 
