@@ -24,6 +24,7 @@ import { fetchScheduleData, fetchScheduleMinimal } from '../services/SimproServi
 import { fetchSimproQuotationData } from '../services/SimproServices/simproQuotationService';
 import { fetchSimproLeadsData } from '../services/SimproServices/simproLeadsService';
 import { simproWebhookQueue } from '../queues/queue';
+import { handledEventList } from '../utils/constant';
 const jobCardReportSheetId = process.env.JOB_CARD_SHEET_ID ? process.env.JOB_CARD_SHEET_ID : "";
 const jobCardV2SheetId = process.env.JOB_CARD_SHEET_V2_ID ? process.env.JOB_CARD_SHEET_V2_ID : "";
 const jobCardRoofingDetailSheetId = process.env.JOB_CARD_SHEET_ROOFING_DETAIL_ID ? process.env.JOB_CARD_SHEET_ROOFING_DETAIL_ID : "";
@@ -35,7 +36,7 @@ const validateSimproToken = async () => {
         return true;
     } catch (err) {
         if (err instanceof AxiosError && err.response?.status === 401) {
-            console.error('SimPRO V2 token validation failed. Please check SIMPRO_ACCESS_TOKEN_V2');
+            console.error('SimPRO token validation failed. Please check SIMPRO_ACCESS_TOKEN');
             return false;
         }
         throw err;
@@ -365,7 +366,12 @@ export const simproWebhookHandler = async (req: Request, res: Response): Promise
         console.log('POST /simpro/webhooks', req.body);
         const webhookData: SimproWebhookType = req.body;
 
-        await simproWebhookQueue.add({ webhookData })
+        // handledEventList contains array of events which are handled in the queue, only process those events which are in that list
+        if (handledEventList.includes(webhookData.ID)) {
+            await simproWebhookQueue.add({ webhookData });
+        } else {
+            console.warn("Received unhandled webhook ID:", webhookData.ID);
+        }
 
         // if (webhookData.ID === "job.schedule.created" || webhookData.ID === "job.schedule.updated") {
         //     console.log("Schedule Create ", webhookData);
@@ -457,7 +463,6 @@ export const fetchJobCostCenterDetail = async (req: Request, res: Response) => {
     }
 };
 
-console.log('process.env.SIMPRO_ACCESS_TOKEN_V2', process.env.SIMPRO_ACCESS_TOKEN_V2);
 
 export const fetchActiveJobs = async (): Promise<SimproJobType[]> => {
     try {

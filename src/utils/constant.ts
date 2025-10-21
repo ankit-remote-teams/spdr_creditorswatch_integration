@@ -1,0 +1,16 @@
+export const handledEventList: string[] = [
+    "job.schedule.created",
+    "job.schedule.updated",
+    // "contractor.job.updated",
+    // "contractor.job.created",
+    "job.schedule.deleted",
+    "job.created",
+    "job.updated",
+    "invoice.created",
+    "invoice.updated",
+    "job.stage.pending",
+    "job.stage.progress",
+    "job.stage.complete",
+    "job.stage.invoiced",
+    "job.stage.archived",
+]
