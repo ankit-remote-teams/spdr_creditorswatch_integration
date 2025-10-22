@@ -24,6 +24,7 @@
     "axios-retry": "^4.5.0",
     "bull": "^4.16.5",
     "cross-env": "^7.0.3",
+    "dayjs": "^1.11.18",
     "docker-compose": "^1.2.0",
     "dot-env": "^0.0.1",
     "express": "^4.21.0",
