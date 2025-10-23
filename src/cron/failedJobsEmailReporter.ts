@@ -136,4 +136,4 @@ cron.schedule('0 4 * * *', async () => {
   await processFailedJobsReport();
 });
 
-console.log('✅ Cron job scheduled to run every day at 8 AM.');
+console.log('✅ Cron job scheduled to run every day at 4 AM.');
