@@ -25,7 +25,7 @@ export class SmartsheetService {
             let chartOfAccountsArray: SimproAccountType[] = fetchedChartOfAccounts?.data;
             // console.log('scheduleID, jobID, sectionID, costCenterID', scheduleID, jobID, sectionID, costCenterID)
             // /api/v1.0/companies/{companyID}/jobs/{jobID}/sections/{sectionID}/costCenters/{costCenterID}/schedules/{scheduleID}
-            let simPROScheduleUpdateUrl = `/job/${jobID}/sections/${sectionID}/costCenters/${costCenterID}/schedules/${scheduleID}`;
+            let simPROScheduleUpdateUrl = `/jobs/${jobID}/sections/${sectionID}/costCenters/${costCenterID}/schedules/${scheduleID}`;
             // console.log('simPROScheduleUpdateUrl', simPROScheduleUpdateUrl)
             let individualScheduleResponse = await axiosSimPRO(`${simPROScheduleUpdateUrl}?columns=ID,Type,Staff,Date,Blocks,Notes`)
             let jobForScheduleResponse = await axiosSimPRO(`/jobs/${jobID}?columns=ID,Type,Site,SiteContact,DateIssued,Status,Total,Customer,Name,ProjectManager,CustomFields,Totals`)
