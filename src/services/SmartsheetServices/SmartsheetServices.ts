@@ -24,9 +24,10 @@ export class SmartsheetService {
             let fetchedChartOfAccounts = await axiosSimPRO.get('/setup/accounts/chartOfAccounts/?pageSize=250&columns=ID,Name,Number');
             let chartOfAccountsArray: SimproAccountType[] = fetchedChartOfAccounts?.data;
             // console.log('scheduleID, jobID, sectionID, costCenterID', scheduleID, jobID, sectionID, costCenterID)
-            let simPROScheduleUpdateUrl = `/schedules/${scheduleID}`
+            // /api/v1.0/companies/{companyID}/jobs/{jobID}/sections/{sectionID}/costCenters/{costCenterID}/schedules/{scheduleID}
+            let simPROScheduleUpdateUrl = `/job/${jobID}/sections/${sectionID}/costCenters/${costCenterID}/schedules/${scheduleID}`;
             // console.log('simPROScheduleUpdateUrl', simPROScheduleUpdateUrl)
-            let individualScheduleResponse = await axiosSimPRO(`${simPROScheduleUpdateUrl}?columns=ID,Type,Reference,Staff,Date,Blocks,Notes`)
+            let individualScheduleResponse = await axiosSimPRO(`${simPROScheduleUpdateUrl}?columns=ID,Type,Staff,Date,Blocks,Notes`)
             let jobForScheduleResponse = await axiosSimPRO(`/jobs/${jobID}?columns=ID,Type,Site,SiteContact,DateIssued,Status,Total,Customer,Name,ProjectManager,CustomFields,Totals`)
             let schedule: SimproScheduleType = individualScheduleResponse?.data;
             // console.log('Shceuld Blocks', schedule.Blocks)
@@ -302,7 +303,7 @@ export class SmartsheetService {
                 const scheduleColumn = columns.find((col: SmartsheetColumnType) => col.title === "ScheduleID");
                 const scheduleIdColumnId = scheduleColumn.id;
 
-                // console.log("schedule column in v2 for delete", scheduleColumn)
+                console.log("schedule column in v2 for delete", scheduleColumn)
 
                 const scheduleCommentColumn = columns.find((col: SmartsheetColumnType) => col.title === "ScheduleComment");
                 // console.log("schedule comment column in v2 for delete", scheduleCommentColumn)
@@ -310,7 +311,7 @@ export class SmartsheetService {
                 let scheduleDataForSmartsheet: SmartsheetSheetRowsType | undefined;
                 const existingRows: SmartsheetSheetRowsType[] = sheetInfo.rows;
 
-                // console.log("Scheudle ID", scheduleID)
+                console.log("Scheudle ID", scheduleID)
                 for (let i = 0; i < existingRows.length; i++) {
                     let currentRow = existingRows[i];
                     const cellData = currentRow.cells.find(
@@ -322,7 +323,7 @@ export class SmartsheetService {
                     }
                 }
 
-                // console.log('scheduleDataForSmartsheet for delete', scheduleDataForSmartsheet)
+                console.log('scheduleDataForSmartsheet for delete', scheduleDataForSmartsheet)
 
                 if (scheduleDataForSmartsheet) {
                     const rowsToUpdate = [{
@@ -338,7 +339,7 @@ export class SmartsheetService {
                     console.log('delete comment added to the schedule in smartsheet', jobCardV2SheetId)
                 } else {
                     // Logic to check the row in move past sheet
-                    // console.log("Schedule not found in the main sheet, checking Move Past Sheet", scheduleID)
+                    console.log("Schedule not found in the main sheet, checking Move Past Sheet", scheduleID)
                     let movePastSheetInfo = await smartsheet.sheets.getSheet({ id: jobCardV2MovePastSheetId });
                     const movePastSheetColumns = movePastSheetInfo.columns;
                     const movePastScheduleColumn = movePastSheetColumns.find((col: SmartsheetColumnType) => col.title === "ScheduleID");
