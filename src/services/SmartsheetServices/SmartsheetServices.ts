@@ -23,14 +23,14 @@ export class SmartsheetService {
             const { scheduleID, jobID, sectionID, costCenterID } = webhookData.reference;
             let fetchedChartOfAccounts = await axiosSimPRO.get('/setup/accounts/chartOfAccounts/?pageSize=250&columns=ID,Name,Number');
             let chartOfAccountsArray: SimproAccountType[] = fetchedChartOfAccounts?.data;
-            // console.log('scheduleID, jobID, sectionID, costCenterID', scheduleID, jobID, sectionID, costCenterID)
+            console.log('scheduleID, jobID, sectionID, costCenterID', scheduleID, jobID, sectionID, costCenterID)
             // /api/v1.0/companies/{companyID}/jobs/{jobID}/sections/{sectionID}/costCenters/{costCenterID}/schedules/{scheduleID}
             let simPROScheduleUpdateUrl = `/jobs/${jobID}/sections/${sectionID}/costCenters/${costCenterID}/schedules/${scheduleID}`;
-            // console.log('simPROScheduleUpdateUrl', simPROScheduleUpdateUrl)
+            console.log('simPROScheduleUpdateUrl', simPROScheduleUpdateUrl)
             let individualScheduleResponse = await axiosSimPRO(`${simPROScheduleUpdateUrl}?columns=ID,Staff,Date,Blocks,Notes`)
             let jobForScheduleResponse = await axiosSimPRO(`/jobs/${jobID}?columns=ID,Type,Site,SiteContact,DateIssued,Status,Total,Customer,Name,ProjectManager,CustomFields,Totals`)
             let schedule: SimproScheduleType = individualScheduleResponse?.data;
-            // console.log('Shceuld Blocks', schedule.Blocks)
+            console.log('Shceuld Blocks', schedule.Blocks)
             let fetchedJobData: SimproJobType = jobForScheduleResponse?.data;
             let siteId = fetchedJobData?.Site?.ID;
             if (siteId) {
@@ -53,7 +53,7 @@ export class SmartsheetService {
                     // Extract the part starting from "/customers"
                     const startFromCustomers = endpoint.substring(endpoint.indexOf("/customers"));
 
-                    // console.log("startFromCustomers: ", startFromCustomers);
+                    console.log("startFromCustomers: ", startFromCustomers);
 
                     // Check if it's "/customers/companies" or "/customers/individuals"
                     if (startFromCustomers.includes("/companies")) {
@@ -61,14 +61,14 @@ export class SmartsheetService {
                         const companyResponse = await axiosSimPRO.get(
                             `${startFromCustomers}?columns=ID,CompanyName,Phone,Address,Email`
                         );
-                        // console.log("Company Response: ", companyResponse?.data);
+                        console.log("Company Response: ", companyResponse?.data);
                         schedule.Job.Customer = { ...companyResponse.data, Type: "Company" };
                     } else if (startFromCustomers.includes("/individuals")) {
                         // Handle the case for individuals
                         const individualResponse = await axiosSimPRO.get(
                             `${startFromCustomers}?columns=ID,GivenName,FamilyName,Phone,Address,Email`
                         );
-                        // console.log("Individual Response: ", individualResponse?.data);
+                        console.log("Individual Response: ", individualResponse?.data);
                         schedule.Job.Customer = { ...individualResponse.data, Type: "Individual" };
                     } else {
                         console.error("Unknown customer type in the endpoint");
@@ -82,7 +82,7 @@ export class SmartsheetService {
             let setupCostCenterID = costCenterDataForSchedule.data[0]?.CostCenter?.ID;
             let fetchedSetupCostCenterData = await axiosSimPRO.get(`/setup/accounts/costCenters/${setupCostCenterID}?columns=ID,Name,IncomeAccountNo`);
             let setupCostCenterData = fetchedSetupCostCenterData.data;
-            // console.log('CostCenterId IncomeAccountNo', costCenterID, setupCostCenterData);
+            console.log('CostCenterId IncomeAccountNo', costCenterID, setupCostCenterData);
 
             if (setupCostCenterData?.IncomeAccountNo) {
                 let incomeAccountName = chartOfAccountsArray?.find(account => account?.Number == setupCostCenterData?.IncomeAccountNo)?.Name;
@@ -93,75 +93,22 @@ export class SmartsheetService {
             }
 
             let costCenterResponse = await axiosSimPRO.get(`jobs/${jobID}/sections/${sectionID}/costCenters/${costCenterID}?columns=Name,ID,Claimed,Total,Totals`);
+            
             if (costCenterResponse) {
+                console.log('CostCenterResponse Data', costCenterResponse.data)
                 schedule.CostCenter = costCenterResponse.data;
             }
 
             // console.log('IsInvoiceAccountNameRoofing: ' + isInvoiceAccountNameRoofing, costCenterID, scheduleID)
             if (isInvoiceAccountNameRoofing) {
-                // console.log('jobCardReportSheetId', jobCardReportSheetId)
-                // if (jobCardReportSheetId) {
-                //     const sheetInfo = await smartsheet.sheets.getSheet({ id: jobCardReportSheetId });
-                //     const columns = sheetInfo.columns;
-                //     const column = columns.find((col: SmartsheetColumnType) => col.title === "ScheduleID");
-
-                //     console.log("schedule column", column)
-
-                //     // console.log('convertedDataForSmartsheet', convertedDataForSmartsheet)
-                //     if (!column) {
-                //         throw {
-                //             message: "ScheduleID column not found in the sheet",
-                //             status: 400
-                //         }
-                //     }
-                //     const scheduleIdColumnId = column.id;
-                //     const existingRows: SmartsheetSheetRowsType[] = sheetInfo.rows;
-                //     let scheduleDataForSmartsheet: SmartsheetSheetRowsType | undefined;
-
-                //     for (let i = 0; i < existingRows.length; i++) {
-                //         let currentRow = existingRows[i];
-                //         const cellData = currentRow.cells.find(
-                //             (cell: { columnId: string; value: any }) => cell.columnId === scheduleIdColumnId
-                //         );
-                //         if (cellData?.value === schedule.ID) {
-                //             scheduleDataForSmartsheet = currentRow;
-                //             break;
-                //         }
-                //     }
-
-                //     if (scheduleDataForSmartsheet) {
-                //         let rowIdMap: { [key: string]: string } = {};
-                //         rowIdMap = {
-                //             [schedule.ID.toString()]: scheduleDataForSmartsheet?.id?.toString() || "",
-                //         };
-                //         const convertedData = convertSimproScheduleDataToSmartsheetFormatForUpdate([schedule], columns, rowIdMap, 'full');
-
-                //         await smartsheet.sheets.updateRow({
-                //             sheetId: jobCardReportSheetId,
-                //             body: convertedData,
-                //         });
-                //         // console.log('Updated row in smartsheet')
-                //         console.log('Updated row in smartsheet in sheet ', jobCardReportSheetId)
-
-                //     } else {
-                //         const convertedDataForSmartsheet = convertSimproScheduleDataToSmartsheetFormat([schedule], columns, 'full');
-                //         const newRow = convertedDataForSmartsheet[0];
-                //         await smartsheet.sheets.addRows({
-                //             sheetId: jobCardReportSheetId,
-                //             body: convertedDataForSmartsheet,
-                //         });
-                //         console.log('Added row in smartsheet in sheeet', jobCardReportSheetId)
-                //     }
-                // }
-
-                // console.log('jobCardV2SheetId', jobCardV2SheetId)
-
+                
                 if (jobCardV2SheetId) {
+                    console.log("Adding/Updating schedule in Job Card V2 Sheet for schedule ID: ", schedule.ID,"in sheet ID: ", jobCardV2SheetId);
                     const sheetInfo = await smartsheet.sheets.getSheet({ id: jobCardV2SheetId });
                     const columns = sheetInfo.columns;
                     const column = columns.find((col: SmartsheetColumnType) => col.title === "ScheduleID");
 
-                    // console.log("schedule column in v2", column)
+                    console.log("schedule column in v2", column)
                     if (!column) {
                         throw {
                             message: "ScheduleID column not found in the sheet",
@@ -172,7 +119,7 @@ export class SmartsheetService {
                     const scheduleIdColumnId = column.id;
                     const existingRows: SmartsheetSheetRowsType[] = sheetInfo.rows;
                     let scheduleDataForSmartsheet: SmartsheetSheetRowsType | undefined;
-                    // console.log('existingRows', existingRows.length)
+                    console.log('existingRows', existingRows.length)
                     for (let i = 0; i < existingRows.length; i++) {
                         let currentRow = existingRows[i];
                         const cellData = currentRow.cells.find(
@@ -184,7 +131,7 @@ export class SmartsheetService {
                         }
                     }
 
-                    // console.log('scheduleDataForSmartsheet', scheduleDataForSmartsheet)
+                    console.log('scheduleDataForSmartsheet', scheduleDataForSmartsheet)
                     if (scheduleDataForSmartsheet) {
                         let rowIdMap: { [key: string]: string } = {};
                         rowIdMap = {
@@ -196,10 +143,10 @@ export class SmartsheetService {
                             sheetId: jobCardV2SheetId,
                             body: convertedData,
                         });
-                        // console.log('Updated row in smartsheet in sheet ', jobCardV2SheetId)
+                        console.log('Updated row in smartsheet in sheet active ', jobCardV2SheetId)
                     } else {
                         // Add logic to check the row in  move past sheet
-                        // console.log("Schedule not found in the main sheet, checking Move Past Sheet", schedule.ID)
+                        console.log("Schedule not found in the main sheet, checking Move Past Sheet", schedule.ID, "in sheet ID move past: ", jobCardV2MovePastSheetId)
                         let movePastSheetInfo = await smartsheet.sheets.getSheet({ id: jobCardV2MovePastSheetId });
                         const movePastSheetColumns = movePastSheetInfo.columns;
                         const movePastScheduleColumn = movePastSheetColumns.find((col: SmartsheetColumnType) => col.title === "ScheduleID");
@@ -228,15 +175,15 @@ export class SmartsheetService {
                                 sheetId: jobCardV2MovePastSheetId,
                                 body: convertedData,
                             });
-                            // console.log('Updated row in smartsheet in Move Past Sheet ', jobCardV2MovePastSheetId)
+                            console.log('Updated row in smartsheet in Move Past Sheet ', jobCardV2MovePastSheetId)
                         } else {
-                            // console.log("Schedule not found in Move Past Sheet, adding new row for schedule ", schedule.ID)
+                            console.log("Schedule not found in Move Past Sheet, adding new row for schedule ", schedule.ID)
                             const convertedDataForSmartsheet = convertSimproScheduleDataToSmartsheetFormat([schedule], columns, 'full');
                             await smartsheet.sheets.addRows({
                                 sheetId: jobCardV2SheetId,
                                 body: convertedDataForSmartsheet,
                             });
-                            // console.log('Added row in smartsheet in sheeet', jobCardV2SheetId)
+                            console.log('Added row in smartsheet in sheeet', jobCardV2SheetId)
                         }
 
 
