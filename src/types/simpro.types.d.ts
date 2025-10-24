@@ -54,7 +54,7 @@ export type SimproCostCenterType = {
 export type SimproScheduleType = {
     ID: number;
     Type: string;
-    Reference: string;
+    Reference?: string;
     TotalHours?: number;
     Staff: SimproStaffType;
     Date: string;
