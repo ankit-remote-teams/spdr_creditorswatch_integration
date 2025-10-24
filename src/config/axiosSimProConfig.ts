@@ -2,7 +2,7 @@ import axios, {
   AxiosInstance,
   AxiosResponse,
   AxiosError,
-  InternalAxiosRequestConfig
+  InternalAxiosRequestConfig,
 } from 'axios';
 import rateLimit from 'axios-rate-limit';
 import axiosRetry, { isNetworkOrIdempotentRequestError } from 'axios-retry';
@@ -44,11 +44,14 @@ axiosRetry(axiosSimPRO, {
 // Request Interceptor
 axiosSimPRO.interceptors.request.use(
   (config: InternalAxiosRequestConfig): InternalAxiosRequestConfig => {
-    // console.log(`➡️ [${config.method?.toUpperCase()}] Request to SimPRO: ${config.url}`);
+    console.log(`➡️ [${config.method?.toUpperCase()}] Request to SimPRO: ${config.url}`);
     return config;
   },
   (error: AxiosError): Promise<never> => {
     console.error('❌ Request error:', error.message);
+    if (error.stack) {
+      console.error('🧵 Request error stack trace:\n', error.stack);
+    }
     return Promise.reject(error);
   }
 );
@@ -67,6 +70,10 @@ axiosSimPRO.interceptors.response.use(
       console.error(`⚠️ Error from SimPRO (HTTP ${status}):`, error.message);
     } else {
       console.error('🚫 Unknown response error:', error.message);
+    }
+
+    if (error.stack) {
+      console.error('🧵 Response error stack trace:\n', error.stack);
     }
 
     return Promise.reject(error);
