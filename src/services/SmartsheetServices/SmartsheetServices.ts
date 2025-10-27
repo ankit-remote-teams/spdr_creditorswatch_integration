@@ -200,6 +200,7 @@ export class SmartsheetService {
             }
         }
     }
+    
 
     static async handleDeleteScheduleInSmartsheet(webhookData: SimproWebhookType) {
         try {
