@@ -22,7 +22,6 @@ import {
     SimproJobCostCenterTypeForAmountUpdate
 } from '../types/simpro.types';
 import { splitIntoChunks } from '../utils/helper';
-import moment from 'moment';
 import { AxiosError } from 'axios';
 import { fetchDataCostCenters, fetchScheduleDataForExistingScheduleIds } from './simproController';
 import {
@@ -45,9 +44,12 @@ const smartsheet = SmartsheetClient.createClient({ accessToken: smartSheetAccess
 const jobTrackerSheetId = process.env.TASK_TRACKER_SHEET_ID ? process.env.TASK_TRACKER_SHEET_ID : "";
 const ongoingQuotationSheetId = process.env.SIMPRO_ONGOING_QUOTE_SHEET_ID ? process.env.SIMPRO_ONGOING_QUOTE_SHEET_ID : "";
 const ongoingLeadsSheetId = process.env.SIMPRO_ONGOING_LEADS_SHEET_ID ? process.env.SIMPRO_ONGOING_LEADS_SHEET_ID : "";
-const jobCardSheetId = process.env.JOB_CARD_SHEET_ID ? process.env.JOB_CARD_SHEET_ID : "";
 const jobCardRoofingDetailSheetId = process.env.JOB_CARD_SHEET_ROOFING_DETAIL_ID ?? "";
 const wipJobArchivedSheetId = process.env.WIP_JOB_ARCHIVED_SHEET_ID ?? "";
+const jobCardV2ActiveSheetId = process.env.JOB_CARD_SHEET_V2_ID ? process.env.JOB_CARD_SHEET_V2_ID : "";
+const jobCardV2MovePastSheetId = process.env.JOB_CARD_V2_MOVE_PAST_SHEET_ID ?? "";
+
+
 
 // Define interfaces for Smartsheet events and cells
 interface ISmartsheetEvent {
@@ -133,13 +135,13 @@ export const handleTotalHourWebhookEvent = async (event: ISmartsheetEvent): Prom
 
 // Function to get column ID for a column name
 const getColumnIdForColumnName = async (columnName: string, sheetId: string): Promise<number> => {
-    console.log('Get column id for column name', columnName);
+    // console.log('Get column id for column name', columnName);
     try {
         const columns = await smartsheet.sheets.getColumns({ sheetId });
-        console.log('columns ', columns?.data?.length)
+        // console.log('columns ', columns?.data?.length)
         // Specify the type of 'col' as 'Column' in the 'find' method callback
         const column = columns.data.find((col: SmartsheetColumnType) => col.title === columnName);
-        console.log('column:', column)
+        // console.log('column:', column)
         if (column) {
             return column.id;
         } else {
@@ -167,22 +169,32 @@ const getCellData = async (sheetId: string, rowId: number, columnId: number): Pr
 
 
 
-export const addJobCardDataToSmartsheet = async (rows: SimproScheduleType[], smartsheetId: string) => {
+export const addJobCardDataToSmartsheet = async (rows: SimproScheduleType[]) => {
     try {
-        const sheetInfo = await smartsheet.sheets.getSheet({ id: smartsheetId });
-        const columns = sheetInfo.columns;
-        let rowsToAdd: SimproScheduleType[] = [];
-        let rowsToUpdate: SimproScheduleType[] = [];
+
+        console.log("Fethced Job Card data length: ", rows.length);
+        const activeJobCardV2SheetInfo = await smartsheet.sheets.getSheet({ id: jobCardV2ActiveSheetId });
+        const archivedJobCardV2SheetInfo = await smartsheet.sheets.getSheet({ id: jobCardV2MovePastSheetId });
+        const columnsForActiveSheet = activeJobCardV2SheetInfo.columns;
+        let rowsToAddInActiveSheet: SimproScheduleType[] = [];
+        let rowsToUpdateInActiveSheet: SimproScheduleType[] = [];
+        let rowsToUpdateInArchivedSheet: SimproScheduleType[] = [];
 
         let fetchedScheduleIDs = rows.map(row => row.ID);
-        console.log('fetchedScheduleIDs: ', fetchedScheduleIDs.length)
-        let scheduleIdColumnId = await getColumnIdForColumnName("ScheduleID", smartsheetId);
-        console.log('scheduleIdColumnId', scheduleIdColumnId)
-        const existingRows = sheetInfo.rows;
+        console.log('fetchedScheduleIDs count: ', fetchedScheduleIDs.length);
 
-        let existingScheduleIdsInSheet: number[] = existingRows
+        let scheduleIdColumnIdInActiveSheet = await getColumnIdForColumnName("ScheduleID", jobCardV2ActiveSheetId);
+        let scheduleIdColumnIdInArchivedSheet = await getColumnIdForColumnName("ScheduleID", jobCardV2MovePastSheetId);
+
+        console.log('scheduleIdColumnIdInActiveSheet', scheduleIdColumnIdInActiveSheet)
+        console.log('scheduleIdColumnIdInArchivedSheet', scheduleIdColumnIdInArchivedSheet)
+
+        const existingRowsInActiveSheet = activeJobCardV2SheetInfo.rows;
+        const existingRowsInArchivedSheet = archivedJobCardV2SheetInfo.rows;
+
+        let existingScheduleIdsInActiveSheet: number[] = existingRowsInActiveSheet
             .map((row: SmartsheetSheetRowsType) => {
-                const cellData = row.cells.find((cellData) => cellData.columnId === scheduleIdColumnId);
+                const cellData = row.cells.find((cellData) => cellData.columnId === scheduleIdColumnIdInActiveSheet);
                 if (cellData) {
                     return cellData.value;
                 }
@@ -190,32 +202,62 @@ export const addJobCardDataToSmartsheet = async (rows: SimproScheduleType[], sma
             })
             .filter((value: number | string | null) => value !== null);
 
-        let scheduleIdToUpdate = Array.isArray(existingScheduleIdsInSheet)
-            ? existingScheduleIdsInSheet.filter(scheduleId => fetchedScheduleIDs.includes(scheduleId))
+        console.log("existingScheduleIdsInActiveSheet", existingScheduleIdsInActiveSheet)
+
+        let existingScheduleIdsInArchivedSheet: number[] = existingRowsInArchivedSheet
+            .map((row: SmartsheetSheetRowsType) => {
+                const cellData = row.cells.find((cellData) => cellData.columnId === scheduleIdColumnIdInArchivedSheet);
+                if (cellData) {
+                    return cellData.value;
+                }
+                return null;
+            })
+            .filter((value: number | string | null) => value !== null);
+
+        console.log('existingScheduleIdsInArchivedSheet', existingScheduleIdsInArchivedSheet)
+
+        let scheduleIdsToUpdateInActiveSheet = Array.isArray(existingScheduleIdsInActiveSheet)
+            ? existingScheduleIdsInActiveSheet.filter(scheduleId => fetchedScheduleIDs.includes(scheduleId))
             : [];
 
-        let scheduleIdsNotPartOfSimproResponse = Array.isArray(fetchedScheduleIDs) ? existingScheduleIdsInSheet.filter(scheduleId => !fetchedScheduleIDs.includes(scheduleId)) : [];
+        console.log('scheduleIdsToUpdateInActiveSheet', scheduleIdsToUpdateInActiveSheet)
 
-        let scheduleIdToAdd = Array.isArray(fetchedScheduleIDs) ? fetchedScheduleIDs.filter(scheduleId => !existingScheduleIdsInSheet.includes(scheduleId)) : [];
+        let scheduleIdsToUpdateInArchivedSheet = Array.isArray(existingScheduleIdsInArchivedSheet)
+            ? existingScheduleIdsInArchivedSheet.filter(scheduleId => fetchedScheduleIDs.includes(scheduleId))
+            : [];
+
+        console.log('scheduleIdsToUpdateInArchivedSheet', scheduleIdsToUpdateInArchivedSheet)
+
+
+        // schdedule ids which are availalable in both sheet not part of simpro response
+        let scheduleIdNotPartForSimproResponseInActiveSheet = Array.isArray(fetchedScheduleIDs) ? existingScheduleIdsInActiveSheet.filter(scheduleId => !fetchedScheduleIDs.includes(scheduleId)) : [];
+        let scheduleIdNotPartForSimproResponseInArchivedSheet = Array.isArray(fetchedScheduleIDs) ? existingScheduleIdsInArchivedSheet.filter(scheduleId => !fetchedScheduleIDs.includes(scheduleId)) : [];
+        console.log('scheduleIdNotPartForSimproResponseInActiveSheet', scheduleIdNotPartForSimproResponseInActiveSheet)
+        console.log('scheduleIdNotPartForSimproResponseInArchivedSheet', scheduleIdNotPartForSimproResponseInArchivedSheet)
+
+        // Schedule id to array  is array of id which is not found in both active and archived sheet 
+        let scheduleIdToAddInActiveSheet = Array.isArray(fetchedScheduleIDs) ? fetchedScheduleIDs.filter(scheduleId => !existingScheduleIdsInActiveSheet.includes(scheduleId) && !existingScheduleIdsInArchivedSheet.includes(scheduleId)) : [];
+        console.log('scheduleIdToAddInActiveSheet', scheduleIdToAddInActiveSheet)
 
         rows.forEach((row) => {
-            if (scheduleIdToAdd.includes(row.ID)) {
-                rowsToAdd.push(row);
-            } else if (scheduleIdToUpdate.includes(row.ID)) {
-                rowsToUpdate.push(row)
+            if (scheduleIdToAddInActiveSheet.includes(row.ID)) {
+                rowsToAddInActiveSheet.push(row);
+            } else if (scheduleIdsToUpdateInActiveSheet.includes(row.ID)) {
+                rowsToUpdateInActiveSheet.push(row)
+            } else if (scheduleIdsToUpdateInArchivedSheet.includes(row.ID)) {
+                rowsToUpdateInArchivedSheet.push(row)
             }
         })
 
-        if (rowsToAdd.length) {
-            const rowsToAddToSmartSheet = convertSimproScheduleDataToSmartsheetFormat(rowsToAdd, columns, "full");
+        if (rowsToAddInActiveSheet.length) {
+            const rowsToAddToSmartSheet = convertSimproScheduleDataToSmartsheetFormat(rowsToAddInActiveSheet, columnsForActiveSheet, "full");
             if (rowsToAddToSmartSheet.length > 0) {
                 console.log('Adding the rows to sheet for jobcard', rowsToAddToSmartSheet.length)
                 const chunks = splitIntoChunks(rowsToAddToSmartSheet, 100);
-
                 for (const chunk of chunks) {
                     try {
                         await smartsheet.sheets.addRows({
-                            sheetId: smartsheetId,
+                            sheetId: jobCardV2ActiveSheetId,
                             body: chunk,
                         });
 
@@ -228,8 +270,13 @@ export const addJobCardDataToSmartsheet = async (rows: SimproScheduleType[], sma
             }
         }
 
-        if (rowsToUpdate.length) {
-            await updateExistingRecordsInJobCardSheet(rowsToUpdate, scheduleIdsNotPartOfSimproResponse, smartsheetId)
+
+        if (rowsToUpdateInActiveSheet.length) {
+            await updateExistingRecordsInJobCardSheet(rowsToUpdateInActiveSheet, scheduleIdNotPartForSimproResponseInActiveSheet, jobCardV2ActiveSheetId)
+        }
+
+        if (rowsToUpdateInArchivedSheet.length) {
+            await updateExistingRecordsInJobCardSheet(rowsToUpdateInArchivedSheet, scheduleIdNotPartForSimproResponseInArchivedSheet, jobCardV2MovePastSheetId)
         }
 
 
@@ -798,15 +845,14 @@ export const addMinimalJobCardDataToSmartsheet = async (rows: SimproScheduleType
     }
 }
 
-console.log('jobCardSheetId', jobCardSheetId)
 // This is to test the site suburb information
 export const updateSuburbDataForSite = async (req: Request, res: Response) => {
     try {
-        const sheetInfo = await smartsheet.sheets.getSheet({ id: jobCardSheetId });
+        const sheetInfo = await smartsheet.sheets.getSheet({ id: jobCardV2ActiveSheetId });
 
-        let suburbColumnId = await getColumnIdForColumnName("Suburb", jobCardSheetId.toString());
+        let suburbColumnId = await getColumnIdForColumnName("Suburb", jobCardV2ActiveSheetId.toString());
         console.log('suburbColumnId', suburbColumnId)
-        let siteIDColumnId = await getColumnIdForColumnName("SiteID", jobCardSheetId.toString());
+        let siteIDColumnId = await getColumnIdForColumnName("SiteID", jobCardV2ActiveSheetId.toString());
         const existingRows: SmartsheetSheetRowsType[] = sheetInfo.rows;
         let dataToUpdate = [];
         for (let i = 0; i < existingRows.length; i++) {
@@ -829,7 +875,7 @@ export const updateSuburbDataForSite = async (req: Request, res: Response) => {
         for (const chunk of chunks) {
 
             await smartsheet.sheets.updateRow({
-                sheetId: jobCardSheetId,
+                sheetId: jobCardV2ActiveSheetId,
                 body: chunk,
             });
             console.log("no of chunks updated", chunk.length)
@@ -1168,9 +1214,9 @@ export const updateAmountValuesInRoofingWipSheet = async (req: Request, res: Res
             // 🔹 Now send updates in chunks of 100
             const chunks = splitIntoChunks(allConvertedData, 100);
             console.log("Chunks length", chunks.length);
-            let i=0;
+            let i = 0;
             for (const chunk of chunks) {
-                console.log("Updating chunk of size", chunk.length,"at index",i++, "with total chunks length of ",chunks.length);
+                console.log("Updating chunk of size", chunk.length, "at index", i++, "with total chunks length of ", chunks.length);
                 await smartsheet.sheets.updateRow({
                     sheetId: jobCardRoofingDetailSheetId,
                     body: chunk,
@@ -1181,7 +1227,7 @@ export const updateAmountValuesInRoofingWipSheet = async (req: Request, res: Res
         console.log("Amount values updated in both the sheets successfully.");
         res.status(200).json({ message: "Amount values updated in both the sheets successfully." });
     } catch (err) {
-        console.log("ERror",err)
+        console.log("ERror", err)
         res.status(500).json({ err: err })
     }
 }

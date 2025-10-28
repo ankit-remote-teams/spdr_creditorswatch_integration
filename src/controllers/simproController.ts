@@ -25,9 +25,9 @@ import { fetchSimproQuotationData } from '../services/SimproServices/simproQuota
 import { fetchSimproLeadsData } from '../services/SimproServices/simproLeadsService';
 import { simproWebhookQueue } from '../queues/queue';
 import { handledEventList } from '../utils/constant';
-const jobCardReportSheetId = process.env.JOB_CARD_SHEET_ID ? process.env.JOB_CARD_SHEET_ID : "";
-const jobCardV2SheetId = process.env.JOB_CARD_SHEET_V2_ID ? process.env.JOB_CARD_SHEET_V2_ID : "";
-const jobCardRoofingDetailSheetId = process.env.JOB_CARD_SHEET_ROOFING_DETAIL_ID ? process.env.JOB_CARD_SHEET_ROOFING_DETAIL_ID : "";
+const jobCardV2SheetId = process.env.JOB_CARD_SHEET_V2_ID ?? "";
+const jobCardV2MovePastSheetId = process.env.JOB_CARD_V2_MOVE_PAST_SHEET_ID ?? "";
+const jobCardRoofingDetailSheetId = process.env.JOB_CARD_SHEET_ROOFING_DETAIL_ID ?? "";
 
 
 const validateSimproToken = async () => {
@@ -219,26 +219,14 @@ export const getJobCardReport = async (req: Request, res: Response) => {
     try {
         console.log("Fetch started for new data")
         let fetchedSimproSchedulesData: SimproScheduleType[] = await fetchScheduleData();
-        console.log("fetch completed for new data")
-
-        console.log("Adding new records to smartsheet through manual api trigger for sheet v1", jobCardV2SheetId)
-        let responseOneFromSmartsheet = await addJobCardDataToSmartsheet(fetchedSimproSchedulesData, jobCardV2SheetId.toString());
+        console.log("fetch completed for new data",fetchedSimproSchedulesData.length)
 
 
-        console.log("Adding new records to smartsheet through manual api trigger for sheet v2")
-        let responseTwoFromSmartsheet = await addJobCardDataToSmartsheet(fetchedSimproSchedulesData, jobCardV2SheetId);
-
+        console.log("Adding new records to smartsheet through manual api trigger for sheet v2 active sheet")
+         await addJobCardDataToSmartsheet(fetchedSimproSchedulesData);
 
         console.log("Completed: Adding new records to smartsheet")
-
-        if (responseOneFromSmartsheet?.status && responseTwoFromSmartsheet?.status) { // original code
-            // if (responseOneFromSmartsheet?.status) {
-            res.status(200).json({ fetchedSimproSchedulesData });
-        } else {
-            throw {
-                message: "Something went wrong"
-            }
-        }
+        res.status(200).json({ message: "Successfully updated the job card data" });
     } catch (err) {
         if (err instanceof AxiosError) {
             console.log("Error in getJobCardReport as AxiosError");
@@ -324,13 +312,11 @@ export const getMinimalJobReport = async (req: Request, res: Response) => {
         let fetchedSimproSchedulesData: SimproScheduleType[] = await fetchScheduleMinimal();
         console.log("fetch completed for new data")
 
-        console.log("Adding new records to smartsheet through manual api trigger for sheet v1")
-        await addMinimalJobCardDataToSmartsheet(fetchedSimproSchedulesData, jobCardReportSheetId, "minimal");
-        // let responseOneFromSmartsheet = await addJobCardDataToSmartsheet(fetchedSimproSchedulesData, jobCardReportSheetId);
+        console.log("Adding new records to smartsheet through manual api trigger for sheet v2")
+        await addMinimalJobCardDataToSmartsheet(fetchedSimproSchedulesData, jobCardV2SheetId, "minimal");
 
 
         console.log("Adding new records to smartsheet through manual api trigger for sheet v2")
-        // let responseTwoFromSmartsheet = await addJobCardDataToSmartsheet(fetchedSimproSchedulesData, jobCardV2SheetId);
 
 
         console.log("Completed: Adding new records to smartsheet")
