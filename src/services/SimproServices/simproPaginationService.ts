@@ -28,13 +28,14 @@ export const fetchSimproPaginatedData = async <T>(url: string, columns: string, 
             const response = await axiosSimPRO.get(url, requestOptions);
 
             const entity = response.data;
+            // console.log(`Fetched ${entity.length} records from page ${pageNum}`);
             if (!entity || entity.length === 0) {
                 console.warn(`No entity found on page ${pageNum}`);
                 break;
             }
 
             allEntity = allEntity.concat(entity);
-
+            // console.log(`Total records accumulated: ${allEntity.length}`);
             totalPages = parseInt(response.headers['result-pages'], 10) || 1;
             pageNum++;
         } while (pageNum <= totalPages);

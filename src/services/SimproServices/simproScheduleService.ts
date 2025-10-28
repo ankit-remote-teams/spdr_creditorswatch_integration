@@ -41,11 +41,13 @@ export const fetchScheduleData = async () => {
         if (Object.keys(simproCustomerMap).length) {
             const currentDate = moment().subtract(2, 'day').format("YYYY-MM-DD");
             const url = `/schedules/?Type=job&Date=gt(${currentDate})&pageSize=100`;
-            let fetchedSimproSchedulesData: SimproScheduleType[] = await fetchSimproPaginatedData(url, "ID,Type,Reference,Staff,Date,Blocks,Notes");
+            let fetchedSimproSchedulesData: SimproScheduleType[] = await fetchSimproPaginatedData(url, "ID,Reference,Staff,Date,Blocks,Notes");
+            // console.log('Total schedules fetched: ', fetchedSimproSchedulesData.length)
             let jobIdsToAddArray: number[] = []
             // Fetch job information sequentially
             for (let i = 0; i < fetchedSimproSchedulesData.length; i++) {
                 const schedule = fetchedSimproSchedulesData[i];
+                console.log('Schedule',schedule)
                 let jobIdForSchedule = schedule?.Reference?.split('-')[0];
                 let costCenterIdForSchedule = schedule?.Reference?.split('-')[1];
                 if (jobIdForSchedule) {
@@ -59,10 +61,7 @@ export const fetchScheduleData = async () => {
                             let siteResponseData = siteResponse.data;
                             fetchedJobData.Site = siteResponseData;
                         }
-                        // let jobTradeValue = fetchedJobData?.CustomFields?.find(field => field?.CustomField?.Name === "Job Trade (ie, Plumbing, Drainage, Roofing)")?.Value;
-                        // if (jobTradeValue == 'Roofing') {
-                        //     jobIdsToAddArray.push(fetchedJobData.ID)
-                        // }
+      
                         schedule.Job = fetchedJobData;
                         if (schedule?.Job?.Customer) {
                             const customerId = schedule.Job.Customer.ID?.toString();
@@ -75,6 +74,7 @@ export const fetchScheduleData = async () => {
                     }
                 }
 
+                console.log('costCenterId for Shcduel   ',costCenterIdForSchedule)
                 if (costCenterIdForSchedule) {
                     try {
                         const costCenterDataForSchedule = await axiosSimPRO.get(`/jobCostCenters/?ID=${costCenterIdForSchedule}&columns=ID,Name,Job,Section,CostCenter`);
@@ -116,11 +116,11 @@ export const fetchScheduleData = async () => {
             }
 
             // console.log('jobsToFilter Length: ', jobIdsToAddArray.length)
-            // console.log('Current schedule Length: ', fetchedSimproSchedulesData.length)
+            console.log('Current schedule Length: ', fetchedSimproSchedulesData.length)
             fetchedSimproSchedulesData = fetchedSimproSchedulesData.filter(schedule =>
                 jobIdsToAddArray.includes(schedule?.Job?.ID ?? -1)
             );
-            // console.log('Filtered schedule Length: ', fetchedSimproSchedulesData.length)
+            console.log('Filtered schedule Length: ', fetchedSimproSchedulesData.length)
             return fetchedSimproSchedulesData;
         } else {
             return [];
@@ -228,6 +228,7 @@ export const fetchCurrentDateScheduleData = async () => {
                     }
                 }
 
+                console.log('costCenterIdForSchedule',costCenterIdForSchedule)
                 if (costCenterIdForSchedule) {
                     try {
                         const costCenterDataForSchedule = await axiosSimPRO.get(`/jobCostCenters/?ID=${costCenterIdForSchedule}&columns=ID,Name,Job,Section,CostCenter`);
@@ -246,6 +247,7 @@ export const fetchCurrentDateScheduleData = async () => {
                         let setupCostCenterData = fetchedSetupCostCenterData.data;
                         if (setupCostCenterData?.IncomeAccountNo) {
                             let incomeAccountName = chartOfAccountsArray?.find(account => account?.Number == setupCostCenterData?.IncomeAccountNo)?.Name;
+                            console.log('Income Account Name: ', incomeAccountName);
                             if (incomeAccountName == "Roofing Income") {
                                 // console.log('CostCenterId For Roofing Income 2', costCenterIdForSchedule, jobIdForScheduleFetched)
                                 jobIdsToAddArray.push(jobIdForScheduleFetched)
