@@ -2,6 +2,7 @@
 import Queue from 'bull';
 import { SmartsheetService } from '../services/SmartsheetServices/SmartsheetServices';
 import { SimproWebhookType } from '../types/simpro.types';
+import moment from 'moment';
 
 // Create a Bull queue
 const simproWebhookQueue = new Queue('simproWebhookQueue', {
@@ -84,5 +85,33 @@ simproWebhookQueue.on('failed', (job, err) => {
     });
 });
 
-// Export the queue for use in other files
+/**
+ * Retry failed jobs that failed within the last `hours` hours.
+ * This uses Bull’s API instead of manual Redis commands.
+ */
+export async function retryFailedJobsInLastHours(hours: number): Promise<void> {
+    const currentTime = Date.now();
+    const cutoffTime = currentTime - hours * 60 * 60 * 1000;
+
+    console.log(`🔄 Retrying failed jobs from the last ${hours} hour(s)...`);
+
+    // Get all failed jobs directly from Bull
+    const failedJobs = await simproWebhookQueue.getFailed();
+    console.log(`Found ${failedJobs.length} failed job(s) in total.`);
+    let retriedCount = 0;
+
+    for (const job of failedJobs) {
+        const failedAt = job.finishedOn || job.processedOn;
+        console.log(`Checking job ${job.id} failed at ${moment(failedAt).format('YYYY-MM-DD HH:mm:ss')}`);
+        if (failedAt && failedAt >= cutoffTime) {
+            console.log(`↻ Retrying job ${job.id} failed at ${new Date(failedAt).toISOString()}`);
+            await job.retry();
+            retriedCount++;
+        }
+    }
+
+    console.log(`✅ Retry process complete. ${retriedCount} job(s) retried.`);
+}
+
+// Export the queue and helper function
 export { simproWebhookQueue };

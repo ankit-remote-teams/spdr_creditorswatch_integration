@@ -7,6 +7,7 @@ app.use(express.json({ limit: '10mb' }));
 import simproRoutes from './routes/simproRoute';
 import creditorsWatchRoutes from './routes/creditorsWatchRoutes';
 import smartSheetRoutes from './routes/smartSheetRoutes';
+import redisRoutes from './routes/redisRoutes';
 import { ExpressAdapter } from '@bull-board/express';
 import { createBullBoard } from '@bull-board/api';
 import { BullAdapter } from '@bull-board/api/bullAdapter';
@@ -57,6 +58,7 @@ app.use('/admin/queues', serverAdapter.getRouter());
 app.use('/api/smartsheet', smartSheetRoutes);
 app.use('/api/creditorswatch', creditorsWatchRoutes);
 app.use('/api/simpro', simproRoutes);
+app.use('/api/redis', redisRoutes);
 
 
 app.get('/', (req: Request, res: Response) => {

@@ -196,7 +196,7 @@ export class SmartsheetService {
         } catch (err) {
             console.log("Error in the update schedule simpro webhook", err);
             throw {
-                message: "Error in the update schedule simpro webhook"
+                message: `Error in the update schedule simpro webhook: ${JSON.stringify(err)}`
             }
         }
     }
