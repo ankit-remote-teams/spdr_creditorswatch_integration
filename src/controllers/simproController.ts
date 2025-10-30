@@ -25,6 +25,8 @@ import { fetchSimproQuotationData } from '../services/SimproServices/simproQuota
 import { fetchSimproLeadsData } from '../services/SimproServices/simproLeadsService';
 import { simproWebhookQueue } from '../queues/queue';
 import { handledEventList } from '../utils/constant';
+import { get30HoursAgo } from '../utils/helper';
+import { SmartsheetService } from '../services/SmartsheetServices/SmartsheetServices';
 const jobCardV2SheetId = process.env.JOB_CARD_SHEET_V2_ID ?? "";
 const jobCardV2MovePastSheetId = process.env.JOB_CARD_V2_MOVE_PAST_SHEET_ID ?? "";
 const jobCardRoofingDetailSheetId = process.env.JOB_CARD_SHEET_ROOFING_DETAIL_ID ?? "";
@@ -219,11 +221,11 @@ export const getJobCardReport = async (req: Request, res: Response) => {
     try {
         console.log("Fetch started for new data")
         let fetchedSimproSchedulesData: SimproScheduleType[] = await fetchScheduleData();
-        console.log("fetch completed for new data",fetchedSimproSchedulesData.length)
+        console.log("fetch completed for new data", fetchedSimproSchedulesData.length)
 
 
         console.log("Adding new records to smartsheet through manual api trigger for sheet v2 active sheet")
-         await addJobCardDataToSmartsheet(fetchedSimproSchedulesData);
+        await addJobCardDataToSmartsheet(fetchedSimproSchedulesData);
 
         console.log("Completed: Adding new records to smartsheet")
         res.status(200).json({ message: "Successfully updated the job card data" });
@@ -594,4 +596,89 @@ export const getCostCentersData = async (costCenters: SimproJobCostCenterType[],
         index++;
     }
     callback(costCenterIdToMarkDeleted, costCenterDataFromSimpro);
+}
+
+
+export const manualSyncWipRoofingSheet = async (req: Request, res: Response) => {
+    try {
+        console.log("Manual Sync WIP Roofing Sheet: Fetch started for new data")
+
+        const ifModifiedSinceHeader = get30HoursAgo();
+        let simproJobsResponse: SimproJobType[] = await fetchSimproPaginatedData('/jobs/?pageSize=100', "ID", ifModifiedSinceHeader);
+        const simproJobIds = simproJobsResponse.map(job => job.ID);
+        console.log(`Manual Sync WIP Roofing Sheet: Fetched ${simproJobIds.length} jobs modified since ${ifModifiedSinceHeader}`);
+        let fetchedChartOfAccounts = await axiosSimPRO.get('/setup/accounts/chartOfAccounts/?pageSize=250&columns=ID,Name,Number');
+        let chartOfAccountsArray: SimproAccountType[] = fetchedChartOfAccounts?.data;
+        for (let i = 0; i < simproJobIds.length; i++) {
+            let costCenterDataFromSimpro: SimproJobCostCenterType[] = [];
+            let jobID = simproJobIds[i];
+            const url = `/jobCostCenters/?Job.ID=${jobID}`;
+            const costCenters: SimproJobCostCenterType[] = await fetchSimproPaginatedData(url, "ID,CostCenter,Name,Job,Section,DateModified,_href");
+            let foundCostCenters = 0;
+            const jobDataForCostCentre = await axiosSimPRO.get(`/jobs/${jobID}?columns=ID,Type,Site,SiteContact,DateIssued,Status,Total,Customer,Name,ProjectManager,CustomFields,Totals,Stage`);
+            let fetchedJobData: SimproJobType = jobDataForCostCentre?.data;
+            for (const jobCostCenter of costCenters) {
+                console.dir(jobCostCenter, { depth: null })
+                jobCostCenter.Job = fetchedJobData;
+                try {
+                    const ccRecordId = jobCostCenter?.CostCenter?.ID;
+                    let fetchedSetupCostCenterData = await axiosSimPRO.get(`/setup/accounts/costCenters/${ccRecordId}?columns=ID,Name,IncomeAccountNo`);
+                    let setupCostCenterData = fetchedSetupCostCenterData.data;
+                    if (setupCostCenterData?.IncomeAccountNo) {
+                        let incomeAccountName = chartOfAccountsArray?.find(account => account?.Number == setupCostCenterData?.IncomeAccountNo)?.Name;
+                        if (incomeAccountName == "Roofing Income") {
+                            // console.log("Roofing income  1", jobCostCenter?.ID, jobCostCenter?.Job?.ID);
+                            try {
+                                const jcUrl = jobCostCenter?._href?.substring(jobCostCenter?._href?.indexOf('jobs'), jobCostCenter?._href.length);
+                                let costCenterResponse = await axiosSimPRO.get(`${jcUrl}?columns=Name,ID,Claimed,Total,Totals,Site`);
+                                if (costCenterResponse) {
+                                    jobCostCenter.CostCenter = costCenterResponse.data;
+                                    const siteResponse = await axiosSimPRO.get(`/sites/${costCenterResponse.data?.Site.ID}?columns=ID,Name,Address`);
+                                    const siteResponseData = siteResponse.data;
+                                    jobCostCenter.Site = siteResponseData;
+                                    jobCostCenter.ccRecordId = ccRecordId;
+                                    foundCostCenters++;
+                                    costCenterDataFromSimpro.push(jobCostCenter);
+                                }
+                            } catch (error) {
+                                console.log("Error in costCenterFetch : ", error)
+                            }
+                        }
+                    }
+                } catch (err) {
+                    if (err instanceof AxiosError) {
+                        console.log("Error in fetch Const center from setup");
+                        console.log("Error details: ", err.response?.data);
+
+                    } else if (err instanceof Error) {
+                        console.error("Unexpected error:", err.message);
+                    } else {
+                        // Handle non-Error objects
+                        console.error("Non-error rejection:", JSON.stringify(err));
+                    }
+                }
+            }
+             await SmartsheetService.updateCostcenterRoofingToSmartSheet(jobID, costCenterDataFromSimpro);
+        }
+
+        console.log("Manual Sync WIP Roofing Sheet: Completed: Adding new records to smartsheet")
+
+        res.status(200).json({ message: "Successfully updated the WIP roofing sheet data" });
+    } catch (err) {
+        if (err instanceof AxiosError) {
+            console.log("Error in manualSyncWipRoofingSheet as AxiosError");
+            console.log("Error details: ", err.response?.data);
+            res.status(err.response?.status || 500).send({
+                message: 'Error from Axios request',
+                details: err.response?.data
+            });
+        }
+        else {
+            console.log("Error in manualSyncWipRoofingSheet as other error");
+            console.log("Error details: ", err);
+            res.status(500).send({
+                message: `Internal Server Error : ${JSON.stringify(err)}`
+            });
+        }
+    }
 }
