@@ -86,7 +86,7 @@ export class SmartsheetService {
 
             if (setupCostCenterData?.IncomeAccountNo) {
                 let incomeAccountName = chartOfAccountsArray?.find(account => account?.Number == setupCostCenterData?.IncomeAccountNo)?.Name;
-                // console.log("Income Account Name: " + incomeAccountName)
+                console.log("Income Account Name: " + incomeAccountName)
                 if (incomeAccountName == "Roofing Income") {
                     isInvoiceAccountNameRoofing = true;
                 }
@@ -442,6 +442,7 @@ export class SmartsheetService {
                 let setupCostCenterData = fetchedSetupCostCenterData.data;
                 if (setupCostCenterData?.IncomeAccountNo) {
                     let incomeAccountName = chartOfAccountsArray?.find(account => account?.Number == setupCostCenterData?.IncomeAccountNo)?.Name;
+                    console.log("Income Account Name : " + incomeAccountName)
                     if (incomeAccountName == "Roofing Income") {
                         // console.log("Roofing income  1", jobCostCenter?.ID, jobCostCenter?.Job?.ID);
                         try {

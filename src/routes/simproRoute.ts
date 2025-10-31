@@ -8,7 +8,8 @@ import {
     simproWebhookHandler,
     fetchJobCostCenterDetail,
     manualSyncWipRoofingSheet,
-
+    manualSyncWipRoofingSheetForJobID,
+    getJobCardReportByID
 } from '../controllers/simproController';
 
 router.get('/check-middleware', apiKeyAuth, async (req, res) => {
@@ -23,7 +24,12 @@ router.get('/get-jobcostcenter-details/:incomeAccount', apiKeyAuth, fetchJobCost
 // Manual Sync routes 
 // Route to update the job card v2 data in the smartsheet for  the previous 2 days to all future schedule for the data.
 router.get('/get-job-card-report', apiKeyAuth, getJobCardReport);
+
+// Route to manually sync the WIP Roofing sheet for the jobs updated in last 30 hours
 router.get('/manual-sync-wip-roofing-sheet', apiKeyAuth, manualSyncWipRoofingSheet);
+
+router.get('/get-job-card-report/:jobID/:sectionID/:costCenterID/:scheduleID', apiKeyAuth, getJobCardReportByID);
+router.get('/manual-sync-wip-roofing-sheet/:jobID', apiKeyAuth, manualSyncWipRoofingSheetForJobID);
 
 
 export default router;
