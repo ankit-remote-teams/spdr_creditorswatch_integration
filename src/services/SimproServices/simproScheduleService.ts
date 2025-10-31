@@ -39,7 +39,7 @@ export const fetchScheduleData = async () => {
         }
 
         if (Object.keys(simproCustomerMap).length) {
-            const currentDate = moment().subtract(2, 'day').format("YYYY-MM-DD");
+            const currentDate = moment().subtract(7, 'day').format("YYYY-MM-DD");
             const url = `/schedules/?Type=job&Date=gt(${currentDate})&pageSize=100`;
             let fetchedSimproSchedulesData: SimproScheduleType[] = await fetchSimproPaginatedData(url, "ID,Reference,Staff,Date,Blocks,Notes");
             // console.log('Total schedules fetched: ', fetchedSimproSchedulesData.length)

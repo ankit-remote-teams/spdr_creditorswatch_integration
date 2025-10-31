@@ -205,46 +205,6 @@ export class SmartsheetService {
     static async handleDeleteScheduleInSmartsheet(webhookData: SimproWebhookType) {
         try {
             const { scheduleID, jobID, sectionID } = webhookData.reference;
-            // console.log('scheduleID, jobID, sectionID', scheduleID, jobID, sectionID)
-
-            // if (jobCardReportSheetId) {
-            //     const sheetInfo = await smartsheet.sheets.getSheet({ id: jobCardReportSheetId });
-            //     const columns = sheetInfo.columns;
-            //     const scheduleColumn = columns.find((col: SmartsheetColumnType) => col.title === "ScheduleID");
-            //     const scheduleIdColumnId = scheduleColumn.id;
-            //     const scheduleCommentColumn = columns.find((col: SmartsheetColumnType) => col.title === "ScheduleComment");
-            //     const scheduleCommentColumnId = scheduleCommentColumn.id;
-            //     let scheduleDataForSmartsheet: SmartsheetSheetRowsType | undefined;
-            //     const existingRows: SmartsheetSheetRowsType[] = sheetInfo.rows;
-
-
-            //     for (let i = 0; i < existingRows.length; i++) {
-            //         let currentRow = existingRows[i];
-            //         const cellData = currentRow.cells.find(
-            //             (cell: { columnId: string; value: any }) => cell.columnId === scheduleIdColumnId
-            //         );
-            //         if (cellData?.value === scheduleID) {
-            //             scheduleDataForSmartsheet = currentRow;
-            //             break;
-            //         }
-            //     }
-
-            //     const rowsToUpdate = [{
-            //         id: scheduleDataForSmartsheet?.id,
-            //         cells: [{ columnId: scheduleCommentColumnId, value: "Deleted from Simpro" }],
-            //     }]
-
-            //     await smartsheet.sheets.updateRow({
-            //         sheetId: jobCardReportSheetId,
-            //         body: rowsToUpdate,
-            //     });
-
-            //     console.log('delete comment added to the schedule in smartsheet', jobCardReportSheetId)
-
-            // }
-
-            // console.log('jobCardV2SheetId', jobCardV2SheetId)
-
             if (jobCardV2SheetId) {
                 const sheetInfo = await smartsheet.sheets.getSheet({ id: jobCardV2SheetId });
                 const columns = sheetInfo.columns;
