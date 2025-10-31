@@ -25,7 +25,7 @@ import { fetchSimproQuotationData } from '../services/SimproServices/simproQuota
 import { fetchSimproLeadsData } from '../services/SimproServices/simproLeadsService';
 import { simproWebhookQueue } from '../queues/queue';
 import { handledEventList } from '../utils/constant';
-import { get30HoursAgo } from '../utils/helper';
+import { get30HoursAgo, getHoursAgo } from '../utils/helper';
 import { SmartsheetService } from '../services/SmartsheetServices/SmartsheetServices';
 const jobCardV2SheetId = process.env.JOB_CARD_SHEET_V2_ID ?? "";
 const jobCardV2MovePastSheetId = process.env.JOB_CARD_V2_MOVE_PAST_SHEET_ID ?? "";
@@ -602,8 +602,9 @@ export const getCostCentersData = async (costCenters: SimproJobCostCenterType[],
 export const manualSyncWipRoofingSheet = async (req: Request, res: Response) => {
     try {
         console.log("Manual Sync WIP Roofing Sheet: Fetch started for new data")
-
-        const ifModifiedSinceHeader = get30HoursAgo();
+        const hoursParam = req.params.hours;
+        const hours = parseInt(hoursParam, 10);
+        const ifModifiedSinceHeader = getHoursAgo(hours);
         let simproJobsResponse: SimproJobType[] = await fetchSimproPaginatedData('/jobs/?pageSize=100', "ID", ifModifiedSinceHeader);
         const simproJobIds = simproJobsResponse.map(job => job.ID);
         console.log(`Manual Sync WIP Roofing Sheet: Fetched ${simproJobIds.length} jobs modified since ${ifModifiedSinceHeader}`);
@@ -738,7 +739,7 @@ export const getJobCardReportByID = async (req: Request, res: Response) => {
     try {
 
         // router.get('/get-job-card-report/:jobID/:sectionID/:costCenterID/:scheduleID', apiKeyAuth, getJobCardReportByID);
-        
+
         const jobIDParams = req.params.jobID;
         const sectionIDParams = req.params.sectionID;
         const costCenterIDParams = req.params.costCenterID;
@@ -753,7 +754,7 @@ export const getJobCardReportByID = async (req: Request, res: Response) => {
         await SmartsheetService.handleAddUpdateScheduleToSmartsheet({
             ID: "job.schedule.updated",
             build: "",
-            description: "Manual sync for Job Card Sheet for schedule id "+ scheduleID,
+            description: "Manual sync for Job Card Sheet for schedule id " + scheduleID,
             name: "Job Created",
             action: "created",
             reference: {

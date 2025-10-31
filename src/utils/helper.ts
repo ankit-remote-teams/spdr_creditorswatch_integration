@@ -24,6 +24,15 @@ export const get30HoursAgo = (): string => {
     return fortyFiveDaysAgo.toUTCString();
 };
 
+
+export const getHoursAgo = (hours: number): string => {
+  const now = new Date();
+  const pastTime = new Date(now.getTime() - hours * 60 * 60 * 1000);
+  return pastTime.toUTCString();
+};
+
+
+
 export const calculateLatePaymentFeeAndBalanceDue = (
     invoice: CreditorsWatchInvoiceType,
 ): number => {

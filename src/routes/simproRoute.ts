@@ -26,7 +26,7 @@ router.get('/get-jobcostcenter-details/:incomeAccount', apiKeyAuth, fetchJobCost
 router.get('/get-job-card-report', apiKeyAuth, getJobCardReport);
 
 // Route to manually sync the WIP Roofing sheet for the jobs updated in last 30 hours
-router.get('/manual-sync-wip-roofing-sheet', apiKeyAuth, manualSyncWipRoofingSheet);
+router.get('/manual-sync-wip-roofing-sheet/:hours', apiKeyAuth, manualSyncWipRoofingSheet);
 
 router.get('/get-job-card-report/:jobID/:sectionID/:costCenterID/:scheduleID', apiKeyAuth, getJobCardReportByID);
 router.get('/manual-sync-wip-roofing-sheet/:jobID', apiKeyAuth, manualSyncWipRoofingSheetForJobID);
