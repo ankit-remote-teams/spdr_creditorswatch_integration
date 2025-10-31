@@ -658,12 +658,119 @@ export const manualSyncWipRoofingSheet = async (req: Request, res: Response) => 
                     }
                 }
             }
-             await SmartsheetService.updateCostcenterRoofingToSmartSheet(jobID, costCenterDataFromSimpro);
+            await SmartsheetService.updateCostcenterRoofingToSmartSheet(jobID, costCenterDataFromSimpro);
         }
 
         console.log("Manual Sync WIP Roofing Sheet: Completed: Adding new records to smartsheet")
 
         res.status(200).json({ message: "Successfully updated the WIP roofing sheet data" });
+    } catch (err) {
+        if (err instanceof AxiosError) {
+            console.log("Error in manualSyncWipRoofingSheet as AxiosError");
+            console.log("Error details: ", err.response?.data);
+            res.status(err.response?.status || 500).send({
+                message: 'Error from Axios request',
+                details: err.response?.data
+            });
+        }
+        else {
+            console.log("Error in manualSyncWipRoofingSheet as other error");
+            console.log("Error details: ", err);
+            res.status(500).send({
+                message: `Internal Server Error : ${JSON.stringify(err)}`
+            });
+        }
+    }
+}
+
+export const manualSyncWipRoofingSheetForJobID = async (req: Request, res: Response) => {
+    try {
+        const jobIDParams = req.params.jobID;
+        console.log(`Manual Sync WIP Roofing Sheet for JobID ${jobIDParams}: Fetch started for new data`)
+        const jobID = parseInt(jobIDParams, 10);
+        if (isNaN(jobID) || jobID <= 0) {
+            return res.status(400).json({ message: 'Invalid JodID parameter. It must be a positive integer.' });
+        }
+
+        console.log("Processing Job Id: ", jobID);
+        await SmartsheetService.handleAddUpdateCostcenterRoofingToSmartSheet({
+            ID: "job.created",
+            build: "",
+            description: "Manual sync for WIP Roofing Sheet",
+            name: "Job Created",
+            action: "created",
+            reference: {
+                companyID: 0,
+                scheduleID: 0,
+                jobID: jobID,
+                sectionID: 0,
+                costCenterID: 0,
+                invoiceID: 0,
+            },
+            date_triggered: new Date().toISOString(),
+        });
+
+        console.log("Manual Sync WIP Roofing Sheet for JobID: Completed: Adding new records to smartsheet")
+        res.status(200).json({ message: `Successfully updated the WIP roofing sheet data for Job ID ${jobID}` });
+
+
+    } catch (err) {
+        if (err instanceof AxiosError) {
+            console.log("Error in manualSyncWipRoofingSheet as AxiosError");
+            console.log("Error details: ", err.response?.data);
+            res.status(err.response?.status || 500).send({
+                message: 'Error from Axios request',
+                details: err.response?.data
+            });
+        }
+        else {
+            console.log("Error in manualSyncWipRoofingSheet as other error");
+            console.log("Error details: ", err);
+            res.status(500).send({
+                message: `Internal Server Error : ${JSON.stringify(err)}`
+            });
+        }
+    }
+}
+
+
+export const getJobCardReportByID = async (req: Request, res: Response) => {
+    try {
+
+        // router.get('/get-job-card-report/:jobID/:sectionID/:costCenterID/:scheduleID', apiKeyAuth, getJobCardReportByID);
+        
+        const jobIDParams = req.params.jobID;
+        const sectionIDParams = req.params.sectionID;
+        const costCenterIDParams = req.params.costCenterID;
+        const scheduleIDParams = req.params.scheduleID;
+        console.log(`Manual Sync WIP Roofing Sheet for JobID ${jobIDParams}: Fetch started for new data`)
+        const jobID = parseInt(jobIDParams, 10);
+        const sectionID = parseInt(sectionIDParams, 10);
+        const costCenterID = parseInt(costCenterIDParams, 10);
+        const scheduleID = parseInt(scheduleIDParams, 10);
+
+
+        await SmartsheetService.handleAddUpdateScheduleToSmartsheet({
+            ID: "job.schedule.updated",
+            build: "",
+            description: "Manual sync for Job Card Sheet for schedule id "+ scheduleID,
+            name: "Job Created",
+            action: "created",
+            reference: {
+                companyID: 2,
+                scheduleID: scheduleID,
+                jobID: jobID,
+                sectionID: sectionID,
+                costCenterID: costCenterID,
+                invoiceID: 0,
+            },
+            date_triggered: new Date().toISOString(),
+        });
+
+        console.log("Manual Sync WIP Roofing Sheet for JobID: Completed: Adding new records to smartsheet")
+        res.status(200).json({ message: `Successfully updated the WIP roofing sheet data for Job ID ${jobID}` });
+
+
     } catch (err) {
         if (err instanceof AxiosError) {
             console.log("Error in manualSyncWipRoofingSheet as AxiosError");
